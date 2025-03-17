@@ -3,7 +3,29 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { UserRole, User } from '@/types/database.types';
+import { UserRole } from '@/types/database.types';
+
+// Define User interface locally to avoid circular dependencies
+interface User {
+  id: string;
+  email: string;
+  created_at?: string;
+  user_metadata: {
+    first_name?: string;
+    last_name?: string;
+    role?: UserRole;
+    full_name?: string;
+    avatar_url?: string;
+    phone_number?: string;
+    date_of_birth?: string;
+    country?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    pincode?: string;
+    patient_id?: string;
+  };
+}
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);

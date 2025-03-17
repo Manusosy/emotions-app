@@ -84,12 +84,18 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
-      // First check if user exists - using a safer approach
-      const { data: existingUsersData, error: userCheckError } = await supabase.auth.admin.listUsers();
+      // First check if user exists with a safer approach
+      const { data: { users } = { users: [] }, error: userCheckError } = await supabase.auth.admin.listUsers();
       
-      // Only check if we got data back successfully
-      if (!userCheckError && existingUsersData?.users) {
-        const existingUser = existingUsersData.users.find(user => user.email === formData.email);
+      // Modified this part to fix the type issue
+      if (!userCheckError && users && users.length > 0) {
+        const existingUser = users.find(user => {
+          // Make sure user is defined and has email property
+          if (user && typeof user === 'object' && 'email' in user) {
+            return user.email === formData.email;
+          }
+          return false;
+        });
         
         if (existingUser) {
           toast.error("An account with this email already exists. Please login instead.");
@@ -135,7 +141,7 @@ export default function Signup() {
         updated_at: new Date().toISOString(),
       };
 
-      // Use the correct table name based on role - as literal string to fix type error
+      // Use the correct table name based on role
       let tableName;
       switch (formData.role) {
         case 'admin':
@@ -154,8 +160,9 @@ export default function Signup() {
           tableName = 'patient_profiles';
       }
       
+      // Fixed this line to use the table name directly without type assertions
       const { error: profileError } = await supabase
-        .from(tableName as any)
+        .from(tableName)
         .insert([
           {
             ...profileData,

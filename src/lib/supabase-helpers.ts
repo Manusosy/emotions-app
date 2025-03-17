@@ -30,9 +30,9 @@ export const getUserProfile = async (userId: string, role: string) => {
         throw new Error('Invalid role');
     }
 
-    // Use type assertion to handle the dynamic table name
+    // Use explicit any type to avoid infinite type instantiation
     const { data, error } = await supabase
-      .from(table as any)
+      .from(table)
       .select('*')
       .eq('id', userId)
       .single();
@@ -67,9 +67,9 @@ export const updateUserProfile = async (userId: string, role: string, profileDat
         throw new Error('Invalid role');
     }
 
-    // Use type assertion to handle the dynamic table name
+    // Use explicit string type for table to avoid type issues
     const { data, error } = await supabase
-      .from(table as any)
+      .from(table)
       .update(profileData)
       .eq('id', userId)
       .select();
