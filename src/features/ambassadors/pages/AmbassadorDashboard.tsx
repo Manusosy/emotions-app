@@ -175,155 +175,155 @@ const AmbassadorDashboard = () => {
   return (
     <DashboardLayout>
       <div className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6">
-          <Card className="p-4 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm text-gray-600">Total Clients</p>
-                <h3 className="text-3xl font-bold mt-1">{stats.totalClients}</h3>
-                <p className="text-xs text-green-500 mt-1">
-                  <span className="inline-block mr-1">↑</span> {stats.clientIncrease}
-                </p>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6">
+            <Card className="p-4 hover:shadow-md transition-shadow">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm text-gray-600">Total Clients</p>
+                  <h3 className="text-3xl font-bold mt-1">{stats.totalClients}</h3>
+                  <p className="text-xs text-green-500 mt-1">
+                    <span className="inline-block mr-1">↑</span> {stats.clientIncrease}
+                  </p>
+                </div>
               <div className="p-3 bg-purple-100 rounded-full">
                 <Users className="h-6 w-6 text-purple-500" />
               </div>
-            </div>
-          </Card>
-          
-          <Card className="p-4 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm text-gray-600">Clients Today</p>
-                <h3 className="text-3xl font-bold mt-1">{stats.clientsToday}</h3>
-                <p className="text-xs text-green-500 mt-1">
-                  <span className="inline-block mr-1">↑</span> {stats.clientTodayIncrease}
-                </p>
               </div>
+            </Card>
+            
+            <Card className="p-4 hover:shadow-md transition-shadow">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm text-gray-600">Clients Today</p>
+                  <h3 className="text-3xl font-bold mt-1">{stats.clientsToday}</h3>
+                  <p className="text-xs text-green-500 mt-1">
+                    <span className="inline-block mr-1">↑</span> {stats.clientTodayIncrease}
+                  </p>
+                </div>
               <div className="p-3 bg-blue-100 rounded-full">
                 <Users className="h-6 w-6 text-blue-500" />
               </div>
-            </div>
-          </Card>
-          
-          <Card className="p-4 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm text-gray-600">Sessions Today</p>
-                <h3 className="text-3xl font-bold mt-1">{stats.sessionsToday}</h3>
-                <p className="text-xs text-green-500 mt-1">
-                  <span className="inline-block mr-1">↑</span> {stats.sessionIncrease}
-                </p>
               </div>
+            </Card>
+            
+            <Card className="p-4 hover:shadow-md transition-shadow">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm text-gray-600">Sessions Today</p>
+                  <h3 className="text-3xl font-bold mt-1">{stats.sessionsToday}</h3>
+                  <p className="text-xs text-green-500 mt-1">
+                    <span className="inline-block mr-1">↑</span> {stats.sessionIncrease}
+                  </p>
+                </div>
               <div className="p-3 bg-blue-100 rounded-full">
                 <Calendar className="h-6 w-6 text-blue-500" />
               </div>
-            </div>
-          </Card>
-        </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <Card className="lg:col-span-8 overflow-hidden">
-            <div className="p-4 border-b bg-white">
-              <div className="flex justify-between items-center">
-                <h3 className="font-semibold">Weekly Revenue <span className="text-gray-500 text-sm font-normal">Mar 14 - Mar 21, 2025</span></h3>
               </div>
-              <div className="flex mt-3 space-x-2">
-                <button className="text-sm px-3 py-1 rounded-md bg-blue-100 text-blue-500 font-medium">Weekly</button>
-                <button className="text-sm px-3 py-1 rounded-md text-gray-500 hover:bg-gray-100">Monthly</button>
-              </div>
-            </div>
-            
-            <div className="p-4 h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={revenueData}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                >
-                  <defs>
-                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#4B7BF5" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#4B7BF5" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <Tooltip />
-                  <Area 
-                    type="monotone" 
-                    dataKey="amount" 
-                    stroke="#4B7BF5" 
-                    fillOpacity={1} 
-                    fill="url(#colorRevenue)" 
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
+            </Card>
+          </div>
           
-          <Card className="lg:col-span-4">
-            <div className="p-4 border-b bg-white">
-              <div className="flex justify-between items-center">
-                <h3 className="font-semibold">Weekly Sessions <span className="text-gray-500 text-sm font-normal">Mar 14 - Mar 21, 2025</span></h3>
-              </div>
-              <div className="flex mt-3 space-x-2">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <Card className="lg:col-span-8 overflow-hidden">
+                <div className="p-4 border-b bg-white">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-semibold">Weekly Revenue <span className="text-gray-500 text-sm font-normal">Mar 14 - Mar 21, 2025</span></h3>
+                  </div>
+                  <div className="flex mt-3 space-x-2">
                 <button className="text-sm px-3 py-1 rounded-md bg-blue-100 text-blue-500 font-medium">Weekly</button>
-                <button className="text-sm px-3 py-1 rounded-md text-gray-500 hover:bg-gray-100">Monthly</button>
-              </div>
-            </div>
-            
-            <div className="p-4 h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={appointmentData}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Bar 
-                    dataKey="appointments" 
-                    fill="#9b87f5" 
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-        </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
-          <Card className="lg:col-span-8">
-            <div className="p-4 border-b flex justify-between items-center">
-              <h3 className="font-semibold">Recent Clients</h3>
-              <Link to="/ambassador-dashboard/clients" className="text-sm text-blue-500">View All</Link>
-            </div>
-            
-            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {recentClients.map((client, index) => (
-                <div key={index} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                  <div className="flex space-x-4">
-                    <div className="w-12 h-12 rounded-md bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
-                      {client.name.charAt(0)}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-medium text-sm">{client.name}</h4>
-                      <p className="text-xs text-gray-500">Client ID: {client.clientId}</p>
-                      <p className="text-xs text-gray-500 mt-2">Last Session</p>
-                      <p className="text-xs">{client.lastSession}</p>
-                    </div>
+                    <button className="text-sm px-3 py-1 rounded-md text-gray-500 hover:bg-gray-100">Monthly</button>
                   </div>
                 </div>
-              ))}
-            </div>
-          </Card>
-          
-          <Card className="lg:col-span-4">
-            <div className="bg-[#0078FF] text-white p-5 rounded-t-lg">
-              <h3 className="font-semibold text-xl mb-4">Upcoming Appointment</h3>
+                
+            <div className="p-4 h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={revenueData}
+                      margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                    >
+                      <defs>
+                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#4B7BF5" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#4B7BF5" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <Tooltip />
+                      <Area 
+                        type="monotone" 
+                        dataKey="amount" 
+                        stroke="#4B7BF5" 
+                        fillOpacity={1} 
+                        fill="url(#colorRevenue)" 
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
               
+          <Card className="lg:col-span-4">
+                <div className="p-4 border-b bg-white">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-semibold">Weekly Sessions <span className="text-gray-500 text-sm font-normal">Mar 14 - Mar 21, 2025</span></h3>
+                  </div>
+                  <div className="flex mt-3 space-x-2">
+                <button className="text-sm px-3 py-1 rounded-md bg-blue-100 text-blue-500 font-medium">Weekly</button>
+                    <button className="text-sm px-3 py-1 rounded-md text-gray-500 hover:bg-gray-100">Monthly</button>
+                  </div>
+                </div>
+                
+            <div className="p-4 h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={appointmentData}
+                      margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip />
+                      <Bar 
+                        dataKey="appointments" 
+                        fill="#9b87f5" 
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+        </div>
+              
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
+          <Card className="lg:col-span-8">
+                <div className="p-4 border-b flex justify-between items-center">
+                  <h3 className="font-semibold">Recent Clients</h3>
+              <Link to="/ambassador-dashboard/clients" className="text-sm text-blue-500">View All</Link>
+                </div>
+                
+                <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {recentClients.map((client, index) => (
+                    <div key={index} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div className="flex space-x-4">
+                    <div className="w-12 h-12 rounded-md bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
+                          {client.name.charAt(0)}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium text-sm">{client.name}</h4>
+                          <p className="text-xs text-gray-500">Client ID: {client.clientId}</p>
+                          <p className="text-xs text-gray-500 mt-2">Last Session</p>
+                          <p className="text-xs">{client.lastSession}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            
+          <Card className="lg:col-span-4">
+                <div className="bg-[#0078FF] text-white p-5 rounded-t-lg">
+                  <h3 className="font-semibold text-xl mb-4">Upcoming Appointment</h3>
+                  
               {appointments[0] && (
                 <>
                   <div className="flex items-center pb-4 border-b border-blue-400/30">

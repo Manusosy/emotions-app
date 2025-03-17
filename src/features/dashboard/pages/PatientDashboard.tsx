@@ -228,7 +228,7 @@ export default function PatientDashboard() {
 
               {/* Quick Actions */}
               <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Button
+          <Button 
                   variant="outline"
                   className="h-[64px] w-full bg-[#fda901] border-2 border-[#fda901] text-white hover:bg-blue-600 hover:border-blue-600 hover:text-white transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-3"
                   onClick={() => navigate('/patient-dashboard/appointments')}
@@ -238,7 +238,7 @@ export default function PatientDashboard() {
                     <span className="font-semibold">Book Session</span>
                     <span className="text-xs opacity-90">Schedule therapy</span>
                   </div>
-                </Button>
+          </Button>
 
                 <Button
                   variant="outline"
@@ -249,7 +249,7 @@ export default function PatientDashboard() {
                   <div className="flex flex-col items-start">
                     <span className="font-semibold">Therapists</span>
                     <span className="text-xs opacity-90">Find your match</span>
-                  </div>
+        </div>
                 </Button>
 
                 <Button
@@ -261,7 +261,7 @@ export default function PatientDashboard() {
                   <div className="flex flex-col items-start">
                     <span className="font-semibold">Ambassadors</span>
                     <span className="text-xs opacity-90">Mental health guides</span>
-                  </div>
+              </div>
                 </Button>
 
                 <Button
@@ -273,7 +273,7 @@ export default function PatientDashboard() {
                   <div className="flex flex-col items-start">
                     <span className="font-semibold">Log Mood</span>
                     <span className="text-xs opacity-90">Track your progress</span>
-                  </div>
+                </div>
                 </Button>
               </div>
 
@@ -315,13 +315,13 @@ export default function PatientDashboard() {
               <Card className="h-full">
                 <CardContent className="p-6">
                   <MoodAnalytics />
-                </CardContent>
-              </Card>
-            </div>
-            
+            </CardContent>
+          </Card>
+        </div>
+        
             {/* Dashboard Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Upcoming Appointments */}
+        {/* Upcoming Appointments */}
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>Upcoming Appointments</CardTitle>
@@ -355,7 +355,7 @@ export default function PatientDashboard() {
                                 {appointment.therapist.name[0]}
                               </AvatarFallback>
                             </Avatar>
-                            <div>
+        <div>
                               <h4 className="font-medium">{appointment.therapist.name}</h4>
                               <p className="text-sm text-gray-500">{appointment.therapist.specialty}</p>
                               <div className="flex items-center gap-2 mt-1">
@@ -364,14 +364,14 @@ export default function PatientDashboard() {
                                   {appointment.date} at {appointment.time}
                                 </span>
                               </div>
-                            </div>
-                          </div>
-                          <Button
+            </div>
+          </div>
+              <Button
                             size="sm"
                             className="bg-[#fda901] text-black hover:bg-[#fda901]/90"
                           >
                             Join Session
-                          </Button>
+              </Button>
                         </div>
                       ))}
                     </div>
@@ -390,8 +390,8 @@ export default function PatientDashboard() {
                       </Button>
                     </div>
                   )}
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
 
               {/* Recent Messages */}
               <Card>
@@ -438,10 +438,10 @@ export default function PatientDashboard() {
                             </div>
                             {message.unread && (
                               <Badge className="bg-[#fda901] text-black">New</Badge>
-                            )}
-                          </div>
+            )}
+          </div>
                         ))}
-                      </div>
+          </div>
                     ) : (
                       <div className="text-center py-8">
                         <MessageSquare className="h-12 w-12 mx-auto text-[#fda901]" />
@@ -452,8 +452,8 @@ export default function PatientDashboard() {
                       </div>
                     )}
                   </ScrollArea>
-                </CardContent>
-              </Card>
+            </CardContent>
+          </Card>
             </div>
           </div>
         </div>

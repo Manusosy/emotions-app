@@ -13,12 +13,20 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     outDir: "dist",
-    sourcemap: true,
+    assetsDir: "assets",
+    sourcemap: false,
     minify: "esbuild",
+    chunkSizeWarningLimit: 1600,
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ["react", "react-dom"],
+          vendor: ["react", "react-dom", "react-router-dom"],
+          ui: [
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-toast",
+            "@radix-ui/react-tooltip",
+            "@radix-ui/react-popover",
+          ]
         },
       },
     },

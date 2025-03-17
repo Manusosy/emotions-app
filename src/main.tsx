@@ -5,6 +5,20 @@ import App from './App';
 import ErrorBoundary from './components/ErrorBoundary';
 import './index.css';
 
+// Global error handling
+window.addEventListener('error', (event) => {
+  console.error('Global error caught:', event.error);
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Unhandled promise rejection:', event.reason);
+});
+
+// For debugging, especially in production
+if (import.meta.env.PROD) {
+  console.log('Running in production mode');
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

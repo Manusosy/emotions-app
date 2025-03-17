@@ -233,27 +233,27 @@ export default function Signup() {
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
               placeholder="Enter your email"
-              value={formData.email}
+            value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              required
-            />
-          </div>
+            required
+          />
+        </div>
           <div className="grid gap-2">
-            <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">Password</Label>
             <div className="relative">
-              <Input
-                id="password"
+          <Input
+            id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="Create a password"
-                value={formData.password}
+            value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                required
-              />
+            required
+          />
               <Button
                 type="button"
                 variant="ghost"
@@ -271,25 +271,25 @@ export default function Signup() {
                 </span>
               </Button>
             </div>
-          </div>
+        </div>
           <div className="grid gap-2">
-            <Label htmlFor="country">Country</Label>
-            <Select
-              value={formData.country}
+          <Label htmlFor="country">Country</Label>
+          <Select
+            value={formData.country}
               onValueChange={(value) => setFormData({ ...formData, country: value })}
-            >
+          >
               <SelectTrigger id="country">
-                <SelectValue placeholder="Select your country" />
-              </SelectTrigger>
-              <SelectContent>
-                {countries.map((country) => (
-                  <SelectItem key={country.code} value={country.code}>
-                    {country.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+              <SelectValue placeholder="Select your country" />
+            </SelectTrigger>
+            <SelectContent>
+              {countries.map((country) => (
+                <SelectItem key={country.code} value={country.code}>
+                  {country.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         </div>
 
         <div className="space-y-4">
