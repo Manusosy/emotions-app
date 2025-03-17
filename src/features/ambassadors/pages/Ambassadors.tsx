@@ -1,46 +1,185 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useSupabaseClient } from '@supabase/supabase-js';
+import { toast } from 'sonner';
 
-import React from "react";
-import Header from "@/app/layout/Header";
-import HighlightedDoctors from "@/features/mood-tracking/components/HighlightedDoctors";
-import { motion } from "framer-motion";
+import { AmbassadorCard } from '../components/AmbassadorCard';
+import { AmbassadorOnboarding } from '../components/AmbassadorOnboarding';
 
-const Ambassadors = () => {
+interface Ambassador {
+  id: string;
+  full_name: string;
+  avatar_url: string;
+  location: string;
+  rating: number;
+  availability_status: boolean;
+}
+
+export function Ambassadors() {
+  const [ambassadors, setAmbassadors] = useState<Ambassador[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const navigate = useNavigate();
+  const supabase = useSupabaseClient();
+
+  useEffect(() => {
+    checkOnboardingStatus();
+    loadAmbassadors();
+    loadFavorites();
+  }, []);
+
+  const checkOnboardingStatus = async () => {
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError) throw userError;
+
+      const { data, error } = await supabase
+        .from('users')
+        .select('role, onboarding_completed')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+
+      if (data.role === 'ambassador' && !data.onboarding_completed) {
+        setNeedsOnboarding(true);
+      }
+    } catch (error) {
+      console.error('Error checking onboarding status:', error);
+    }
+  };
+
+  const loadAmbassadors = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select(`
+          id,
+          full_name,
+          avatar_url,
+          profiles (
+            location,
+            rating,
+            availability_status
+          )
+        `)
+        .eq('role', 'ambassador')
+        .eq('onboarding_completed', true);
+
+      if (error) throw error;
+
+      const formattedAmbassadors = data.map((item) => ({
+        id: item.id,
+        full_name: item.full_name,
+        avatar_url: item.avatar_url,
+        location: item.profiles.location,
+        rating: item.profiles.rating,
+        availability_status: item.profiles.availability_status,
+      }));
+
+      setAmbassadors(formattedAmbassadors);
+    } catch (error) {
+      toast.error('Failed to load ambassadors');
+      console.error('Error loading ambassadors:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadFavorites = async () => {
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError) throw userError;
+
+      const { data, error } = await supabase
+        .from('favorite_ambassadors')
+        .select('ambassador_id')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setFavorites(data.map((item) => item.ambassador_id));
+    } catch (error) {
+      console.error('Error loading favorites:', error);
+    }
+  };
+
+  const toggleFavorite = async (ambassadorId: string) => {
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError) throw userError;
+
+      const isFavorited = favorites.includes(ambassadorId);
+
+      if (isFavorited) {
+        await supabase
+          .from('favorite_ambassadors')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('ambassador_id', ambassadorId);
+
+        setFavorites(favorites.filter((id) => id !== ambassadorId));
+      } else {
+        await supabase.from('favorite_ambassadors').insert({
+          user_id: user.id,
+          ambassador_id: ambassadorId,
+        });
+
+        setFavorites([...favorites, ambassadorId]);
+      }
+    } catch (error) {
+      toast.error('Failed to update favorites');
+      console.error('Error updating favorites:', error);
+    }
+  };
+
+  if (needsOnboarding) {
+    return <AmbassadorOnboarding />;
+  }
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-purple-light via-white to-brand-blue-light">
-      <Header />
-      
-      <div className="fixed inset-0 z-0 opacity-30">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-brand-purple-light via-transparent to-brand-blue-light" />
-        <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.07'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-        }} />
-      </div>
-      
-      <div className="relative z-10 pt-32">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="container mx-auto px-4 mb-12"
-        >
-          <h1 className="text-4xl md:text-5xl font-bold text-center text-[#001A41] mb-6">
-            Mental Health Ambassadors
-          </h1>
-          <p className="text-lg text-center text-gray-600 max-w-3xl mx-auto">
-            Our mental health ambassadors are dedicated professionals who provide support and guidance 
-            to help you navigate your mental health journey. Connect with them for a free consultation.
+    <div className="container mx-auto py-8">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold">Mental Health Ambassadors</h1>
+          <p className="text-muted-foreground mt-2">
+            Connect with our dedicated mental health ambassadors for support and guidance
           </p>
-        </motion.div>
-        <HighlightedDoctors />
-        
-        <div className="mt-20 px-4">
-          <div className="why-book-badge flex items-center mx-auto justify-center">
-            <span>• Why Book With Us •</span>
-          </div>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {ambassadors.map((ambassador) => (
+          <AmbassadorCard
+            key={ambassador.id}
+            id={ambassador.id}
+            name={ambassador.full_name}
+            location={ambassador.location}
+            rating={ambassador.rating}
+            imageUrl={ambassador.avatar_url}
+            isAvailable={ambassador.availability_status}
+            onFavorite={() => toggleFavorite(ambassador.id)}
+            isFavorited={favorites.includes(ambassador.id)}
+          />
+        ))}
       </div>
     </div>
   );
-};
-
-export default Ambassadors;
+}
