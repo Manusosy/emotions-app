@@ -1,0 +1,168 @@
+[33m257767d[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Update Vite config and add Netlify configuration
+[33m052906a[m Merge and resolve conflicts
+[33m0bad6f3[m Initial commit: Ambassador dashboard and Supabase integration
+[33ma9789da[m feat: Add ambassador dashboard features and Supabase integration
+[33m4bfed6a[m Fix dashboard loading state
+[33mb11fd43[m Fix patient dashboard loading issue
+[33m344d1a5[m Implement patient dashboard
+[33mc59782e[m Run SQL migrations
+[33m2666013[m Link booking button to login flow
+[33md676f1d[m Update country list
+[33m5b7c697[m Move scrolling info strip
+[33m54a0940[m Restore scrolling info strip
+[33m31e5296[m Add partners logos
+[33m33468d8[m Update footer responsiveness
+[33m0b3392e[m Update Footer and improve responsiveness
+[33m2428a40[m Simplify footer section
+[33m217318b[m Update dates and fix dashboard issues
+[33m040cb0f[m Update ambassador profile image and optimize dashboard
+[33mceb1ed9[m Update dashboard appearance
+[33m905739a[m Fix: Correctly close JSX tags
+[33m0910f6d[m Update ambassador dashboard UI
+[33m97ccd08[m Refactor ambassador dashboard UI
+[33mc29b887[m Update Ambassador Dashboard UI
+[33m5a29483[m Update ambassador dashboard UI
+[33mb555cf3[m Refine dashboard layout and styling
+[33m8acb41a[m Update navigation and signup flow
+[33md3757b8[m Run SQL migrations
+[33m4148cfe[m Implement ambassador dashboard
+[33mfa29b65[m Run reviewed SQL scripts
+[33mf4a2fc3[m Refactor signup role selection
+[33mb928380[m Add user type selection
+[33m9d8a671[m Revert background color change
+[33m402f831[m Refactor scrolling info strip
+[33m172a8d1[m Remove attached text
+[33m492895d[m Move scrolling info strip
+[33mfff6336[m Implement code changes
+[33mf913d7c[m Ensure scrolling component is visible
+[33m7101b17[m Update code based on prompt.
+[33m1591ce0[m Add scrolling banner to Ambassadors page
+[33mf0b1263[m Update ambassador section and navigation
+[33md3cdc4d[m Update highlighted doctors section
+[33maba96ae[m Update doctor data
+[33me201360[m Add new section
+[33m5ab9c86[m Update specialties section dimensions
+[33m61dff08[m Update contact banner and hero section
+[33m6dda7d6[m Swap icons and backgrounds
+[33mfd28ef9[m Update specialty images
+[33m7386266[m Update anxiety section
+[33mee7a8f9[m Update specialties section styles
+[33m1202fe0[m Update top services section
+[33mac07bb3[m Visual edit in Lovable
+[33m1a475ee[m Add new section to MoodTracker
+[33mfd3610b[m Update HeroSection download app button
+[33m5e8a84a[m Change hero section app download color
+[33md69c0e4[m Refactor MoodTracker page
+[33me317299[m Reverted to edit edt-b6104ea8-ba78-478c-aa1e-7d2ef70d5c04: "Update MoodTracker component
+[33m4f58ac1[m Adjust banner responsiveness
+[33m2572705[m Update MoodTracker component
+[33mf3db3c8[m Update hero section background
+[33mf8a2512[m Add assessment start feature
+[33m96b21dc[m Refactor mood tracking section
+[33m56da8c0[m Adjust banner width and animations
+[33mcba9260[m Update mood tracker layout
+[33m9203275[m Add hero section
+[33mb65d160[m Make contact info functional
+[33mde30265[m Adjust component width
+[33me951caf[m Reposition contact banner
+[33m7ef4f73[m Adjust footer appearance
+[33m6735058[m Update ContactBanner and Footer
+[33mbe238cb[m Add new section above footer
+[33mc08a04d[m Update image display
+[33m187fb04[m Replace image in WhyBookUs section
+[33m427c3b1[m Update testimonials section
+[33mc81d328[m Add new section
+[33mc3bbb5d[m Update font styles and text
+[33med684a8[m Restore FAQs and update descriptions
+[33m5e3435e[m Update WhyBookUs component
+[33mae8ebb1[m Update WhyBookUs component styling
+[33me4c6aba[m Fix: Resolve "Accordion" errors
+[33md54af45[m Improve code quality
+[33mdc338a0[m Refine Our Vision section styling
+[33m78b10c9[m Apply consistent fonts and sizes
+[33mc134c8a[m Adapt "Why Book Us" section fonts
+[33m58d75c6[m Improve responsiveness across site
+[33m6a48147[m Remove FAQ section
+[33mf7c36dd[m Update WhyBookUs component
+[33m8f07882[m Refactor FAQ section styling
+[33m4634eb8[m Update component styling
+[33m8c34ab0[m Update FAQ styling
+[33m35bdca7[m Improve Accordion and UI elements
+[33m1208dc7[m Adjust layout of mission section
+[33me21f3a0[m Update layout with images
+[33m7e016d6[m Refactor WhyBookUs component
+[33mc8ee4af[m Refactor mission and vision section
+[33m41332e0[m Fix "Send" name error
+[33m4a0ae63[m Adapt footer layout
+[33m376bc7b[m Remove image from footer
+[33m8f946f4[m Fix: Resolve TypeScript error
+[33m1eec98f[m Add site footer
+[33m88346f6[m Update icon styles
+[33m5b37fca[m Add mission and vision section
+[33m4db5eca[m Restore and improve section
+[33m95fd12c[m Clarify section location
+[33m7ad98fa[m Enhance and fix signup button
+[33m51ed46d[m Fix signup button link
+[33m53b7ad0[m Update WhyBookUs section content
+[33m70ba543[m Refactor MoodTracker and WhyBookUs sections
+[33m644477b[m Update emotion button hover styles
+[33m349e9f7[m Enhance Mood Tracker UI
+[33m5d7b490[m Improve background aesthetics
+[33mcc6a77c[m Reverted to edit edt-38e7dae9-260f-488a-82f5-9b358f641b10: "Update mood tracker text content
+[33m892e93d[m Fix EmotionButton popup position
+[33md0383d4[m Fix popup positioning issue
+[33maa04b5e[m Fix emotion button popup position
+[33mb251935[m Adjust emotion button popup position
+[33me0a546d[m Refactor EmotionButton component
+[33m9eb4662[m Enhance mood tracking section
+[33m5e1c202[m Update mood tracker text content
+[33m12a84c2[m Refine hero section text
+[33m0979c0d[m Add styling details
+[33m751392a[m Implement accordion toggle functionality
+[33m228d78f[m Fix: Unresolved `Search` component
+[33m326bc93[m Refactor CommitmentSection UI
+[33m6c9904c[m Refactor CommitmentSection component
+[33m5a20106[m Update project template
+[33mbb5dedb[m Refactor Commitment Section UI
+[33m38cf62d[m Update CommitmentSection styling
+[33m64c7a59[m Refactor CommitmentSection layout
+[33mb026bab[m Update WhyBookUs section
+[33mb855731[m Emulate existing layout
+[33me4cc0be[m Add homepage section
+[33mea0b804[m Fix import errors and runtime error
+[33m2996e4d[m Reverted to edit edt-e1a5b564-3fb1-4219-bd13-dd8733613a74: "Update favicon
+[33m7e798ce[m Reverted to edit edt-2ce888a6-5527-4074-8eff-6c8286ff38e6: "Update project template
+[33mbe94209[m Reverted to edit edt-5e8c2d59-a503-4fcf-b2c8-70e164754141: "Fix import error in MoodTracker
+[33me76f7ce[m Reverted to edit edt-d18db544-8e6c-424b-bcb9-b3c598ff351a: "Add new section to homepage
+[33m6cd2bee[m Fix import error in MoodTracker
+[33m63440a4[m Add new section to homepage
+[33m5cdcece[m Update project template
+[33me691f3b[m Update favicon
+[33mec6e029[m Refactor WhyBookUs component
+[33m5f2e9d7[m Improve UI consistency
+[33m374ebe4[m Animate "Why Book Us" section
+[33ma374b2f[m Add "Why book Us" section
+[33m788494a[m Improve signup flow and add autosave notifications
+[33m6988b23[m Update journal page
+[33m83ac06f[m Improve Journal Page Layout
+[33m075f692[m Fix: Journal page link
+[33mc3b2475[m Fix type error in JournalPage
+[33m7b712df[m Update Supabase schema
+[33m314c3a5[m Improve signup page and header
+[33mde436b0[m Update login/signup button styles
+[33m0c25995[m Fix "useEffect" error
+[33mcdfbfdf[m Run reviewed SQL script
+[33m501d4a7[m Fix: Import error in MoodTracker.tsx
+[33m5e3e093[m Update hero section floating box
+[33mfef93c2[m Improve header and mood tracker UI
+[33m61ca8da[m Update header and mood tracker
+[33m25f1fd5[m Add hero section buttons
+[33m9e913d3[m Align header menu items
+[33mff51698[m Update header menu
+[33m25a4d49[m Visual edit in Lovable
+[33m40aac62[m Update header styling and mobile menu
+[33m8b76ac5[m Reverted to edit edt-cbb9dd64-371d-4dc7-ba23-1b7a8e884f7a: "Refactor hero section and spacing
+[33mc5d2602[m Reverted to edit edt-c0cf22b0-ca0a-46e1-bd21-f5680a4a6b0f: "Update brand colors
+[33mee5aa0f[m Visual edit in Lovable
+[33m62d8ee5[m Update brand colors
+[33m5af9949[m Refactor hero secti
