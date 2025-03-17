@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -84,17 +83,11 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
-      // First check if user exists with a safer approach
-      const { data: { users } = { users: [] }, error: userCheckError } = await supabase.auth.admin.listUsers();
+      const { data, error: userCheckError } = await supabase.auth.admin.listUsers();
       
-      // Modified this part to fix the type issue
-      if (!userCheckError && users && users.length > 0) {
-        const existingUser = users.find(user => {
-          // Make sure user is defined and has email property
-          if (user && typeof user === 'object' && 'email' in user) {
-            return user.email === formData.email;
-          }
-          return false;
+      if (!userCheckError && data?.users) {
+        const existingUser = data.users.find(user => {
+          return user && typeof user === 'object' && 'email' in user && user.email === formData.email;
         });
         
         if (existingUser) {
@@ -103,11 +96,9 @@ export default function Signup() {
           return;
         }
       } else if (userCheckError) {
-        // If we can't check, log the error but proceed with signup
         console.warn("Could not check for existing user:", userCheckError);
       }
 
-      // 1. Create the user account
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -132,7 +123,6 @@ export default function Signup() {
 
       if (!signUpData.user?.id) throw new Error("Failed to create account. Please try again.");
 
-      // 2. Create role-specific profile - fixing table reference issue
       const profileData = {
         id: signUpData.user.id,
         first_name: formData.firstName,
@@ -141,8 +131,7 @@ export default function Signup() {
         updated_at: new Date().toISOString(),
       };
 
-      // Use the correct table name based on role
-      let tableName;
+      let tableName: 'admin_users' | 'patient_profiles' | 'therapist_profiles' | 'ambassador_profiles';
       switch (formData.role) {
         case 'admin':
           tableName = 'admin_users';
@@ -160,7 +149,6 @@ export default function Signup() {
           tableName = 'patient_profiles';
       }
       
-      // Fixed this line to use the table name directly without type assertions
       const { error: profileError } = await supabase
         .from(tableName)
         .insert([
@@ -196,10 +184,8 @@ export default function Signup() {
 
       if (profileError) throw profileError;
 
-      // 3. Show success message and redirect
       toast.success("Your account has been created successfully!");
       
-      // 4. Redirect based on role
       switch (formData.role) {
         case "patient":
           navigate("/patient-dashboard");
@@ -224,7 +210,6 @@ export default function Signup() {
       
       toast.error(error.message || "Failed to create account. Please try again.");
       
-      // If we have a user ID but profile creation failed, sign out
       if (error.message?.includes('profile')) {
         await supabase.auth.signOut();
       }
@@ -261,27 +246,27 @@ export default function Signup() {
             />
           </div>
           <div className="grid gap-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
               placeholder="Enter your email"
-            value={formData.email}
+              value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            required
-          />
-        </div>
+              required
+            />
+          </div>
           <div className="grid gap-2">
-          <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">Password</Label>
             <div className="relative">
-          <Input
-            id="password"
+              <Input
+                id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="Create a password"
-            value={formData.password}
+                value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            required
-          />
+                required
+              />
               <Button
                 type="button"
                 variant="ghost"
@@ -299,25 +284,25 @@ export default function Signup() {
                 </span>
               </Button>
             </div>
-        </div>
+          </div>
           <div className="grid gap-2">
-          <Label htmlFor="country">Country</Label>
-          <Select
-            value={formData.country}
+            <Label htmlFor="country">Country</Label>
+            <Select
+              value={formData.country}
               onValueChange={(value) => setFormData({ ...formData, country: value })}
-          >
+            >
               <SelectTrigger id="country">
-              <SelectValue placeholder="Select your country" />
-            </SelectTrigger>
-            <SelectContent>
-              {countries.map((country) => (
-                <SelectItem key={country.code} value={country.code}>
-                  {country.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+                <SelectValue placeholder="Select your country" />
+              </SelectTrigger>
+              <SelectContent>
+                {countries.map((country) => (
+                  <SelectItem key={country.code} value={country.code}>
+                    {country.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="space-y-4">

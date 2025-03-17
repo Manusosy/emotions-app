@@ -30,9 +30,9 @@ export const getUserProfile = async (userId: string, role: string) => {
         throw new Error('Invalid role');
     }
 
-    // Use explicit any type to avoid infinite type instantiation
+    // Use type assertion with 'as const' to fix the type error
     const { data, error } = await supabase
-      .from(table)
+      .from(table as 'patient_profiles' | 'ambassador_profiles' | 'therapist_profiles' | 'admin_users')
       .select('*')
       .eq('id', userId)
       .single();
@@ -67,9 +67,9 @@ export const updateUserProfile = async (userId: string, role: string, profileDat
         throw new Error('Invalid role');
     }
 
-    // Use explicit string type for table to avoid type issues
+    // Use type assertion with 'as const' to fix the type error
     const { data, error } = await supabase
-      .from(table)
+      .from(table as 'patient_profiles' | 'ambassador_profiles' | 'therapist_profiles' | 'admin_users')
       .update(profileData)
       .eq('id', userId)
       .select();
