@@ -187,7 +187,7 @@ const AmbassadorDashboard = () => {
                 </div>
               <div className="p-3 bg-purple-100 rounded-full">
                 <Users className="h-6 w-6 text-purple-500" />
-              </div>
+                </div>
               </div>
             </Card>
             
@@ -202,7 +202,7 @@ const AmbassadorDashboard = () => {
                 </div>
               <div className="p-3 bg-blue-100 rounded-full">
                 <Users className="h-6 w-6 text-blue-500" />
-              </div>
+                </div>
               </div>
             </Card>
             
@@ -217,7 +217,7 @@ const AmbassadorDashboard = () => {
                 </div>
               <div className="p-3 bg-blue-100 rounded-full">
                 <Calendar className="h-6 w-6 text-blue-500" />
-              </div>
+                </div>
               </div>
             </Card>
           </div>

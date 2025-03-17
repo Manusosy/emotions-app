@@ -5,18 +5,32 @@ import App from './App';
 import ErrorBoundary from './components/ErrorBoundary';
 import './index.css';
 
-// Global error handling
+// Global error handling with more detailed logging
 window.addEventListener('error', (event) => {
-  console.error('Global error caught:', event.error);
+  console.error('Global error caught:', {
+    message: event.error?.message,
+    stack: event.error?.stack,
+    filename: event.filename,
+    lineno: event.lineno,
+    colno: event.colno
+  });
 });
 
 window.addEventListener('unhandledrejection', (event) => {
-  console.error('Unhandled promise rejection:', event.reason);
+  console.error('Unhandled promise rejection:', {
+    reason: event.reason,
+    stack: event.reason?.stack
+  });
 });
 
-// For debugging, especially in production
+// Enhanced production logging
 if (import.meta.env.PROD) {
-  console.log('Running in production mode');
+  console.log('Environment:', {
+    VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL ? '✓' : '✗',
+    VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY ? '✓' : '✗',
+    MODE: import.meta.env.MODE,
+    BASE_URL: import.meta.env.BASE_URL
+  });
 }
 
 const queryClient = new QueryClient({
@@ -24,6 +38,10 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       staleTime: 30000,
+      // Add error handling for queries
+      onError: (error) => {
+        console.error('Query error:', error);
+      }
     },
   },
 });
@@ -36,12 +54,18 @@ if (!rootElement) {
 
 const root = createRoot(rootElement);
 
-root.render(
-  <React.StrictMode>
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <App />
-      </QueryClientProvider>
-    </ErrorBoundary>
-  </React.StrictMode>
-);
+// Wrap the render in a try-catch for better error handling
+try {
+  root.render(
+    <React.StrictMode>
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <App />
+        </QueryClientProvider>
+      </ErrorBoundary>
+    </React.StrictMode>
+  );
+  console.log('Application rendered successfully');
+} catch (error) {
+  console.error('Failed to render application:', error);
+}
