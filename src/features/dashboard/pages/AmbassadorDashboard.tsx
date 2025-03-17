@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSupabaseClient } from '@supabase/supabase-js';
+import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
