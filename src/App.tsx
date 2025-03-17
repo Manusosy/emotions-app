@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -136,7 +135,9 @@ const App = () => {
 
   // Check if current path is a dashboard route
   const isDashboardRoute = (pathname: string) => {
-    return pathname.includes('dashboard');
+    return pathname.includes('/dashboard') || 
+           pathname.includes('/ambassador') || 
+           pathname.includes('/admin');
   };
 
   const showFooter = !isDashboardRoute(window.location.pathname);
