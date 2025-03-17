@@ -84,19 +84,21 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
-      // First check if user exists - removed filters approach which doesn't exist
-      const { data, error } = await supabase.auth.admin.listUsers();
+      // First check if user exists - using a safer approach
+      const { data: existingUsersData, error: userCheckError } = await supabase.auth.admin.listUsers();
       
-      // Check if email already exists in the returned users
-      const existingUser = data?.users?.find(user => user.email === formData.email);
-      
-      if (error) {
-        // If we can't check (which is likely in production), proceed with signup
-        console.warn("Could not check for existing user:", error);
-      } else if (existingUser) {
-        toast.error("An account with this email already exists. Please login instead.");
-        navigate("/login");
-        return;
+      // Only check if we got data back successfully
+      if (!userCheckError && existingUsersData?.users) {
+        const existingUser = existingUsersData.users.find(user => user.email === formData.email);
+        
+        if (existingUser) {
+          toast.error("An account with this email already exists. Please login instead.");
+          navigate("/login");
+          return;
+        }
+      } else if (userCheckError) {
+        // If we can't check, log the error but proceed with signup
+        console.warn("Could not check for existing user:", userCheckError);
       }
 
       // 1. Create the user account
@@ -133,11 +135,27 @@ export default function Signup() {
         updated_at: new Date().toISOString(),
       };
 
-      // Use the correct table name based on role
-      const tableName = formData.role === 'admin' ? 'admin_users' : `${formData.role}_profiles`;
+      // Use the correct table name based on role - as literal string to fix type error
+      let tableName;
+      switch (formData.role) {
+        case 'admin':
+          tableName = 'admin_users';
+          break;
+        case 'patient':
+          tableName = 'patient_profiles';
+          break;
+        case 'therapist':
+          tableName = 'therapist_profiles';
+          break;
+        case 'ambassador':
+          tableName = 'ambassador_profiles';
+          break;
+        default:
+          tableName = 'patient_profiles';
+      }
       
       const { error: profileError } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .insert([
           {
             ...profileData,

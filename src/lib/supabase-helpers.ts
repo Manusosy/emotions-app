@@ -11,7 +11,8 @@ import {
 // Function to get user profile based on role
 export const getUserProfile = async (userId: string, role: string) => {
   try {
-    let table;
+    // Define the table name based on role
+    let table: string;
     switch (role) {
       case 'patient':
         table = 'patient_profiles';
@@ -29,8 +30,9 @@ export const getUserProfile = async (userId: string, role: string) => {
         throw new Error('Invalid role');
     }
 
+    // Use type assertion to handle the dynamic table name
     const { data, error } = await supabase
-      .from(table)
+      .from(table as any)
       .select('*')
       .eq('id', userId)
       .single();
@@ -46,7 +48,8 @@ export const getUserProfile = async (userId: string, role: string) => {
 // Function to update user profile based on role
 export const updateUserProfile = async (userId: string, role: string, profileData: any) => {
   try {
-    let table;
+    // Define the table name based on role
+    let table: string;
     switch (role) {
       case 'patient':
         table = 'patient_profiles';
@@ -64,8 +67,9 @@ export const updateUserProfile = async (userId: string, role: string, profileDat
         throw new Error('Invalid role');
     }
 
+    // Use type assertion to handle the dynamic table name
     const { data, error } = await supabase
-      .from(table)
+      .from(table as any)
       .update(profileData)
       .eq('id', userId)
       .select();

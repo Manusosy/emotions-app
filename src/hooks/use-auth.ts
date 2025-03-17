@@ -17,9 +17,9 @@ export const useAuth = () => {
       try {
         const { data } = await supabase.auth.getSession();
         if (data.session?.user) {
-          const supabaseUser = data.session.user;
-          // Ensure we set the user with the correct structure
-          setUser(supabaseUser as unknown as User);
+          // Cast to our User type since Supabase user types don't exactly match our custom User type
+          const supabaseUser = data.session.user as unknown as User;
+          setUser(supabaseUser);
           setUserRole(supabaseUser.user_metadata?.role || null);
         } else {
           setUser(null);
@@ -38,9 +38,9 @@ export const useAuth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (session?.user) {
-          const supabaseUser = session.user;
-          // Ensure we set the user with the correct structure
-          setUser(supabaseUser as unknown as User);
+          // Cast to our User type
+          const supabaseUser = session.user as unknown as User;
+          setUser(supabaseUser);
           setUserRole(supabaseUser.user_metadata?.role || null);
         } else {
           setUser(null);
