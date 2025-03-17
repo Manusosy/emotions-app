@@ -161,6 +161,9 @@ importers:
       sonner:
         specifier: ^1.4.0
         version: 1.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      supabase:
+        specifier: ^1.145.4
+        version: 1.226.4
       tailwind-merge:
         specifier: ^2.2.1
         version: 2.5.4
@@ -213,9 +216,6 @@ importers:
       postcss:
         specifier: ^8.4.35
         version: 8.4.47
-      supabase:
-        specifier: ^1.145.4
-        version: 1.226.4
       tailwindcss:
         specifier: ^3.4.1
         version: 3.4.17
