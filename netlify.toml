@@ -1,6 +1,5 @@
-
 [build]
-  command = "npm i -g pnpm && pnpm install --shamefully-hoist && pnpm build"
+  command = "npx pnpm install --no-frozen-lockfile && npx pnpm build"
   publish = "dist"
 
 [[redirects]]
@@ -17,7 +16,8 @@
     Content-Security-Policy = "frame-ancestors 'self' https://*.lovable.ai https://*.lovable.app https://*.lovable.dev"
 
 [build.environment]
-  NODE_VERSION = "18"
+  NODE_VERSION = "18.17.0"
   NPM_FLAGS = "--no-optional"
   CI = "true"
+  USE_NPM_INSTALL = "true"
   ROLLUP_SKIP_NODE_RESOLUTION = "true" 
