@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { DashboardLayout } from "../components/DashboardLayout";
 import { Card } from "@/components/ui/card";
@@ -22,21 +23,9 @@ import {
   FileImage,
   Link as LinkIcon
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
-
-interface Resource {
-  id: string;
-  title: string;
-  description: string;
-  type: 'document' | 'video' | 'image' | 'link';
-  category: string;
-  url: string;
-  created_at: string;
-  downloads: number;
-  shares: number;
-}
+import { Resource } from "@/types/database.types";
 
 const ResourcesPage = () => {
   const { user } = useAuth();
@@ -49,18 +38,67 @@ const ResourcesPage = () => {
     fetchResources();
   }, [user]);
 
+  // Mock resource data as the mental_health_resources table doesn't exist yet
   const fetchResources = async () => {
     if (!user) return;
 
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from("mental_health_resources")
-        .select("*")
-        .eq("ambassador_id", user.id);
-
-      if (error) throw error;
-      setResources(data || []);
+      
+      // Mock data
+      const mockResources: Resource[] = [
+        {
+          id: "1",
+          title: "Managing Anxiety Guide",
+          description: "A comprehensive guide to understanding and managing anxiety",
+          type: "document",
+          category: "anxiety",
+          url: "https://example.com/anxiety-guide.pdf",
+          created_at: "2023-01-15",
+          downloads: 128,
+          shares: 45
+        },
+        {
+          id: "2",
+          title: "Mindfulness Meditation",
+          description: "10-minute guided meditation for stress relief",
+          type: "video",
+          category: "mindfulness",
+          url: "https://example.com/mindfulness-video.mp4",
+          created_at: "2023-02-10",
+          downloads: 253,
+          shares: 82
+        },
+        {
+          id: "3",
+          title: "Depression Infographic",
+          description: "Visual guide to understanding depression symptoms and treatment",
+          type: "image",
+          category: "depression",
+          url: "https://example.com/depression-infographic.png",
+          created_at: "2023-03-05",
+          downloads: 156,
+          shares: 67
+        },
+        {
+          id: "4",
+          title: "Self-Care Checklist",
+          description: "Daily practices for mental health maintenance",
+          type: "document",
+          category: "self-care",
+          url: "https://example.com/self-care-checklist.pdf",
+          created_at: "2023-03-20",
+          downloads: 98,
+          shares: 34
+        }
+      ];
+      
+      setResources(mockResources);
+      
+      toast.info("Note: Using mock data for resources", {
+        description: "The mental_health_resources table has not been created in the database yet"
+      });
+      
     } catch (error: any) {
       console.error("Error fetching resources:", error);
       toast.error(error.message || "Failed to load resources");
@@ -78,13 +116,15 @@ const ResourcesPage = () => {
 
   const handleDownload = async (resource: Resource) => {
     try {
-      // Update download count
-      const { error } = await supabase
-        .from("mental_health_resources")
-        .update({ downloads: resource.downloads + 1 })
-        .eq("id", resource.id);
-
-      if (error) throw error;
+      // Mock download increment
+      const updatedResources = resources.map(res => {
+        if (res.id === resource.id && res.downloads !== undefined) {
+          return { ...res, downloads: res.downloads + 1 };
+        }
+        return res;
+      });
+      
+      setResources(updatedResources);
 
       // Trigger download
       window.open(resource.url, "_blank");
@@ -98,13 +138,15 @@ const ResourcesPage = () => {
     try {
       await navigator.clipboard.writeText(resource.url);
       
-      // Update share count
-      const { error } = await supabase
-        .from("mental_health_resources")
-        .update({ shares: resource.shares + 1 })
-        .eq("id", resource.id);
-
-      if (error) throw error;
+      // Mock share increment
+      const updatedResources = resources.map(res => {
+        if (res.id === resource.id && res.shares !== undefined) {
+          return { ...res, shares: res.shares + 1 };
+        }
+        return res;
+      });
+      
+      setResources(updatedResources);
       
       toast.success("Resource link copied to clipboard");
     } catch (error: any) {
@@ -114,13 +156,7 @@ const ResourcesPage = () => {
 
   const handleDelete = async (resourceId: string) => {
     try {
-      const { error } = await supabase
-        .from("mental_health_resources")
-        .delete()
-        .eq("id", resourceId);
-
-      if (error) throw error;
-      
+      // Mock deletion
       setResources(resources.filter(r => r.id !== resourceId));
       toast.success("Resource deleted successfully");
     } catch (error: any) {
@@ -256,4 +292,4 @@ const ResourcesPage = () => {
   );
 };
 
-export default ResourcesPage; 
+export default ResourcesPage;

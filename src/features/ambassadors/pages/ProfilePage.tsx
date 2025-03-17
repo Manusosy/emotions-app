@@ -1,7 +1,9 @@
+
 import React, { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
-import { toast } from 'react-hot-toast';
+import { useAuth } from '@/hooks/use-auth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { DashboardLayout } from '../components/DashboardLayout';
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -35,13 +37,13 @@ export default function ProfilePage() {
 
       // Update user profile
       const { error: updateError } = await supabase
-        .from('users')
+        .from('ambassador_profiles')
         .update({
           full_name: formData.full_name,
           avatar_url: avatarUrl,
           phone_number: formData.phone_number,
           bio: formData.bio,
-          specialties: formData.specialties,
+          specialities: formData.specialties,
           languages: formData.languages,
           education: formData.education,
           experience: formData.experience,
@@ -59,5 +61,12 @@ export default function ProfilePage() {
     }
   };
 
-  // ... rest of the component code ...
-} 
+  return (
+    <DashboardLayout>
+      <div className="p-6">
+        <h1 className="text-2xl font-bold mb-6">Profile</h1>
+        <p>Profile management functionality is currently under development.</p>
+      </div>
+    </DashboardLayout>
+  );
+}

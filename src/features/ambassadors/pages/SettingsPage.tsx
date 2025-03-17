@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from "react";
-import { useAuth } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
+import { DashboardLayout } from "../components/DashboardLayout";
 
 interface SettingsFormData {
   full_name: string;
@@ -72,7 +74,7 @@ export default function SettingsPage() {
 
     try {
       const { data, error } = await supabase
-        .from("users")
+        .from("ambassador_profiles")
         .select("*")
         .eq("id", user.id)
         .single();
@@ -80,8 +82,13 @@ export default function SettingsPage() {
       if (error) throw error;
 
       setFormData({
-        ...data,
-        avatar: null
+        ...formData,
+        full_name: user.user_metadata?.full_name || '',
+        email: user.email || '',
+        bio: data?.bio || '',
+        avatar: null,
+        avatar_url: data?.avatar_url || '',
+        available: data?.availability_status === 'Available'
       });
     } catch (error: any) {
       toast.error(error.message || "Error fetching profile");
@@ -141,16 +148,12 @@ export default function SettingsPage() {
       }
 
       const { error: updateError } = await supabase
-        .from("users")
+        .from("ambassador_profiles")
         .update({
-          full_name: formData.full_name,
-          phone_number: formData.phone_number,
           bio: formData.bio,
-          specialties: formData.specialties,
-          languages: formData.languages,
+          speciality: formData.specialties.join(','),  // Store as comma-separated string
           education: formData.education,
-          experience: formData.experience,
-          available: formData.available,
+          availability_status: formData.available ? 'Available' : 'Unavailable',
           avatar_url: avatarUrl,
           updated_at: new Date().toISOString()
         })
@@ -167,9 +170,9 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold mb-8">Profile Settings</h1>
+    <DashboardLayout>
+      <div className="p-6">
+        <h1 className="text-2xl font-bold mb-6">Settings</h1>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
@@ -267,15 +270,6 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <Label htmlFor="experience">Experience</Label>
-              <Input
-                id="experience"
-                value={formData.experience}
-                onChange={e => setFormData(prev => ({ ...prev, experience: e.target.value }))}
-              />
-            </div>
-
-            <div>
               <Label>Availability Status</Label>
               <div className="flex items-center gap-2">
                 <Switch
@@ -294,6 +288,6 @@ export default function SettingsPage() {
           </Button>
         </form>
       </div>
-    </div>
+    </DashboardLayout>
   );
-} 
+}

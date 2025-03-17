@@ -1,7 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { User as UserType, UserRole } from '@/types/database.types';
 
 export interface User {
   id: string;
@@ -9,7 +11,8 @@ export interface User {
   user_metadata: {
     first_name?: string;
     last_name?: string;
-    role?: 'patient' | 'therapist' | 'ambassador' | 'admin';
+    role?: UserRole;
+    full_name?: string;
   };
 }
 
@@ -24,8 +27,15 @@ export const useAuth = () => {
     const checkSession = async () => {
       try {
         const { data } = await supabase.auth.getSession();
-        setUser(data.session?.user || null);
-        setUserRole(data.session?.user?.user_metadata?.role || null);
+        if (data.session?.user) {
+          const supabaseUser = data.session.user;
+          // Ensure we set the user with the correct structure
+          setUser(supabaseUser as User);
+          setUserRole(supabaseUser.user_metadata?.role || null);
+        } else {
+          setUser(null);
+          setUserRole(null);
+        }
       } catch (error) {
         console.error('Error checking session:', error);
       } finally {
@@ -38,8 +48,15 @@ export const useAuth = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        setUser(session?.user || null);
-        setUserRole(session?.user?.user_metadata?.role || null);
+        if (session?.user) {
+          const supabaseUser = session.user;
+          // Ensure we set the user with the correct structure
+          setUser(supabaseUser as User);
+          setUserRole(supabaseUser.user_metadata?.role || null);
+        } else {
+          setUser(null);
+          setUserRole(null);
+        }
       }
     );
 
@@ -79,12 +96,31 @@ export const useAuth = () => {
     }
   };
 
+  // Helper to get the full name from user metadata
+  const getFullName = () => {
+    if (!user) return '';
+    
+    if (user.user_metadata?.full_name) {
+      return user.user_metadata.full_name;
+    }
+    
+    const firstName = user.user_metadata?.first_name || '';
+    const lastName = user.user_metadata?.last_name || '';
+    
+    if (firstName || lastName) {
+      return `${firstName} ${lastName}`.trim();
+    }
+    
+    return 'User';
+  };
+
   return {
     user,
     userRole,
     isLoading,
     isAuthenticated: !!user,
     getDashboardUrl,
-    logout
+    logout,
+    getFullName
   };
-}; 
+};

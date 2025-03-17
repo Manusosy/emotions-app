@@ -1,8 +1,8 @@
+
 import React, { useState, useEffect } from "react";
 import { DashboardLayout } from "../components/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import {
   DropdownMenu,
@@ -11,7 +11,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Users, MoreVertical, Calendar, MessageSquare, Settings } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 
@@ -39,18 +38,64 @@ const GroupsPage = () => {
     fetchGroups();
   }, [user]);
 
+  // Using mock data as the support_groups table is not created yet
   const fetchGroups = async () => {
     if (!user) return;
 
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from("support_groups")
-        .select("*")
-        .eq("ambassador_id", user.id);
-
-      if (error) throw error;
-      setGroups(data || []);
+      
+      // Mock data for demonstration
+      const mockGroups: SupportGroup[] = [
+        {
+          id: "1",
+          name: "Anxiety Relief Group",
+          description: "A supportive community for those dealing with anxiety",
+          schedule: [
+            { day: "Monday", time: "7:00 PM" },
+            { day: "Friday", time: "6:30 PM" }
+          ],
+          max_participants: 15,
+          current_participants: 8,
+          status: "active",
+          category: "Anxiety",
+          created_at: "2023-01-15T12:00:00Z"
+        },
+        {
+          id: "2",
+          name: "Depression Support",
+          description: "Support group for managing depression and finding community",
+          schedule: [
+            { day: "Wednesday", time: "6:00 PM" }
+          ],
+          max_participants: 12,
+          current_participants: 10,
+          status: "active",
+          category: "Depression",
+          created_at: "2023-02-10T15:30:00Z"
+        },
+        {
+          id: "3",
+          name: "Stress Management",
+          description: "Learn techniques to manage daily stress and anxiety",
+          schedule: [
+            { day: "Tuesday", time: "5:30 PM" },
+            { day: "Thursday", time: "7:00 PM" }
+          ],
+          max_participants: 20,
+          current_participants: 11,
+          status: "active",
+          category: "Stress",
+          created_at: "2023-03-05T14:15:00Z"
+        }
+      ];
+      
+      setGroups(mockGroups);
+      
+      toast.info("Note: Using mock data for group examples", {
+        description: "The support_groups table has not been created in the database yet"
+      });
+      
     } catch (error: any) {
       console.error("Error fetching groups:", error);
       toast.error(error.message || "Failed to load support groups");
@@ -194,4 +239,4 @@ const GroupsPage = () => {
   );
 };
 
-export default GroupsPage; 
+export default GroupsPage;

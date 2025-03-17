@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -37,7 +38,7 @@ interface DashboardLayoutProps {
 }
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, getFullName, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [availabilityStatus, setAvailabilityStatus] = useState("Available");
@@ -45,11 +46,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   const isMobile = useMediaQuery("(max-width: 768px)");
 
   const handleAvailabilityChange = async (value: string) => {
+    if (!user) return;
+    
     try {
       const { error } = await supabase
         .from("ambassador_profiles")
         .update({ availability_status: value })
-        .eq("id", user?.id);
+        .eq("id", user.id);
 
       if (error) throw error;
 
@@ -61,15 +64,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      navigate("/login");
-    } catch (error: any) {
-      toast.error("Failed to log out");
-    }
-  };
-
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
@@ -77,6 +71,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   const isActiveRoute = (path: string) => {
     return location.pathname === path;
   };
+
+  // Get user's display name from metadata
+  const displayName = getFullName();
 
   return (
     <div className="flex flex-col md:flex-row h-screen bg-gradient-to-b from-[#D1E4FF] to-white">
@@ -127,7 +124,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
             </div>
             <div className="flex-1">
               <h3 className="font-semibold text-gray-900">
-                {user?.user_metadata?.full_name || "Ambassador"}
+                {displayName || "Ambassador"}
               </h3>
               <div className="flex items-center mt-1">
                 <div className="w-1 h-5 bg-blue-600 mr-2"></div>
@@ -291,7 +288,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
             </li>
             <li>
               <button 
-                onClick={handleLogout}
+                onClick={logout}
                 className="w-full flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
               >
                 <LogOut className="h-5 w-5" />
@@ -305,7 +302,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
       <div className="flex-1 overflow-auto">
         <div className="bg-white border-b border-gray-200 px-6 py-3 sticky top-0 z-10 flex justify-between items-center">
           <div className="text-lg font-semibold text-gray-800">
-            {isMobile && isSidebarOpen ? null : "Welcome back, " + (user?.user_metadata?.full_name || "Ambassador")}
+            {isMobile && isSidebarOpen ? null : "Welcome back, " + (displayName || "Ambassador")}
           </div>
           
           <div className="flex items-center space-x-3">
@@ -330,4 +327,4 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   );
 };
 
-export default DashboardLayout; 
+export default DashboardLayout;
