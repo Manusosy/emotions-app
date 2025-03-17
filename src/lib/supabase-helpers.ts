@@ -8,34 +8,33 @@ import {
   Appointment
 } from '@/types/database.types';
 
-// Type for valid profile tables
-type ProfileTable = 'patient_profiles' | 'ambassador_profiles' | 'therapist_profiles' | 'admin_users';
-
-// Function to get user profile based on role
+// Instead of using a union type for table names, use specific literal strings
+// to avoid excessive type instantiation
 export const getUserProfile = async (userId: string, role: string) => {
   try {
+    let tableName = '';
+    
     // Define the table name based on role
-    let table: ProfileTable;
     switch (role) {
       case 'patient':
-        table = 'patient_profiles';
+        tableName = 'patient_profiles';
         break;
       case 'ambassador':
-        table = 'ambassador_profiles';
+        tableName = 'ambassador_profiles';
         break;
       case 'therapist':
-        table = 'therapist_profiles';
+        tableName = 'therapist_profiles';
         break;
       case 'admin':
-        table = 'admin_users';
+        tableName = 'admin_users';
         break;
       default:
         throw new Error('Invalid role');
     }
 
-    // Use a type assertion for the specific table
+    // Use a more direct approach with type assertion to avoid complex type resolution
     const { data, error } = await supabase
-      .from(table)
+      .from(tableName as any)
       .select('*')
       .eq('id', userId)
       .single();
@@ -51,28 +50,29 @@ export const getUserProfile = async (userId: string, role: string) => {
 // Function to update user profile based on role
 export const updateUserProfile = async (userId: string, role: string, profileData: any) => {
   try {
+    let tableName = '';
+    
     // Define the table name based on role
-    let table: ProfileTable;
     switch (role) {
       case 'patient':
-        table = 'patient_profiles';
+        tableName = 'patient_profiles';
         break;
       case 'ambassador':
-        table = 'ambassador_profiles';
+        tableName = 'ambassador_profiles';
         break;
       case 'therapist':
-        table = 'therapist_profiles';
+        tableName = 'therapist_profiles';
         break;
       case 'admin':
-        table = 'admin_users';
+        tableName = 'admin_users';
         break;
       default:
         throw new Error('Invalid role');
     }
 
-    // Use a type assertion for the specific table
+    // Use a more direct approach with type assertion
     const { data, error } = await supabase
-      .from(table)
+      .from(tableName as any)
       .update(profileData)
       .eq('id', userId)
       .select();

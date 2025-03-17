@@ -84,13 +84,17 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
-      // Check if user already exists - use a type assertion since we know the structure
+      // Check if user already exists
       const { data: usersData, error: userCheckError } = await supabase.auth.admin.listUsers();
       
       if (!userCheckError && usersData?.users) {
-        // Safely check each user for the email property
+        // Type check for the user object and safely access email property
         const existingUser = usersData.users.find(user => {
-          return user && typeof user === 'object' && 'email' in user && user.email === formData.email;
+          return user && 
+                 typeof user === 'object' && 
+                 'email' in user && 
+                 typeof user.email === 'string' && 
+                 user.email === formData.email;
         });
         
         if (existingUser) {
@@ -136,12 +140,12 @@ export default function Signup() {
       };
       
       // Set the table name based on role
-      const tableMap = {
+      const tableMap: Record<string, string> = {
         admin: 'admin_users',
         patient: 'patient_profiles',
         therapist: 'therapist_profiles',
         ambassador: 'ambassador_profiles'
-      } as const;
+      };
       
       const tableName = tableMap[formData.role];
       
@@ -176,9 +180,9 @@ export default function Signup() {
           }
         : {};
       
-      // Use a type assertion for the specific table
+      // Use type assertion to avoid complex type resolution
       const { error: profileError } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .insert([{
           ...profileData,
           ...roleSpecificData
