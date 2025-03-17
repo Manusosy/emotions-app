@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,6 +24,7 @@ import FavoritesPage from "@/features/dashboard/pages/FavoritesPage";
 import Settings from "@/features/dashboard/pages/Settings";
 import Profile from "@/features/dashboard/pages/Profile";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const App = () => {
   console.log('App component mounting...');
@@ -33,25 +35,68 @@ const App = () => {
 
   useEffect(() => {
     console.log('App useEffect running...');
+    
     // Initial session check
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Supabase session:', session);
-      setUser(session?.user || null);
-      setUserRole(session?.user?.user_metadata?.role || null);
-      setIsInitialized(true);
-    }).catch(error => {
-      console.error('Error getting session:', error);
-      setIsInitialized(true);
-    });
+    const checkInitialSession = async () => {
+      try {
+        console.log('Checking initial Supabase session...');
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('Initial session check result:', session);
+        
+        if (session?.user) {
+          console.log('User found in session:', session.user);
+          setUser(session.user);
+          
+          const userRole = session.user.user_metadata?.role;
+          console.log('User role from metadata:', userRole);
+          setUserRole(userRole);
+          
+          toast.success(`Welcome back!`);
+        } else {
+          console.log('No authenticated user found');
+        }
+      } catch (error) {
+        console.error('Error getting initial session:', error);
+        toast.error('Authentication error. Please try again.');
+      } finally {
+        console.log('Setting initialization complete');
+        setIsInitialized(true);
+      }
+    };
+
+    checkInitialSession();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('Auth state changed:', event, session);
-      setUser(session?.user || null);
-      setUserRole(session?.user?.user_metadata?.role || null);
+      
+      // Update state based on auth change
+      if (session?.user) {
+        console.log('User from auth change:', session.user);
+        setUser(session.user);
+        
+        const userRole = session.user.user_metadata?.role;
+        console.log('User role from auth change:', userRole);
+        setUserRole(userRole);
+        
+        if (event === 'SIGNED_IN') {
+          toast.success('Successfully signed in!');
+        }
+      } else {
+        console.log('No user after auth change');
+        setUser(null);
+        setUserRole(null);
+        
+        if (event === 'SIGNED_OUT') {
+          toast.success('Successfully signed out');
+        }
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log('Cleaning up auth subscription');
+      subscription.unsubscribe();
+    };
   }, []);
 
   if (!isInitialized) {
@@ -64,6 +109,7 @@ const App = () => {
               Loading...
             </span>
           </div>
+          <p className="mt-2 text-sm text-muted-foreground">Initializing application...</p>
         </div>
       </div>
     );
@@ -72,10 +118,19 @@ const App = () => {
   console.log('App rendering with user:', user, 'and role:', userRole);
 
   const ProtectedRoute = ({ element, allowedRoles = [], redirectTo = "/login" }) => {
-    if (!user) return <Navigate to={redirectTo} replace />;
+    console.log('Protected route check - User:', !!user, 'Required roles:', allowedRoles, 'User role:', userRole);
+    
+    if (!user) {
+      console.log('No authenticated user, redirecting to:', redirectTo);
+      return <Navigate to={redirectTo} replace />;
+    }
+    
     if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
+      console.log('User role not allowed, redirecting to home');
       return <Navigate to="/" replace />;
     }
+    
+    console.log('Access granted to protected route');
     return element;
   };
 

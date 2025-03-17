@@ -47,6 +47,63 @@ export type Database = {
           },
         ]
       }
+      appointments: {
+        Row: {
+          ambassador_id: string | null
+          created_at: string | null
+          date: string
+          duration: string
+          id: string
+          notes: string | null
+          patient_id: string | null
+          status: string | null
+          time: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          ambassador_id?: string | null
+          created_at?: string | null
+          date: string
+          duration: string
+          id?: string
+          notes?: string | null
+          patient_id?: string | null
+          status?: string | null
+          time: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          ambassador_id?: string | null
+          created_at?: string | null
+          date?: string
+          duration?: string
+          id?: string
+          notes?: string | null
+          patient_id?: string | null
+          status?: string | null
+          time?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_ambassador_id_fkey"
+            columns: ["ambassador_id"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           ambassador_id: number
@@ -167,6 +224,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      mood_entries: {
+        Row: {
+          assessment_details: Json | null
+          assessment_result: string
+          created_at: string
+          id: string
+          journal_entry_id: string | null
+          mood_score: number
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          assessment_details?: Json | null
+          assessment_result: string
+          created_at?: string
+          id?: string
+          journal_entry_id?: string | null
+          mood_score: number
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          assessment_details?: Json | null
+          assessment_result?: string
+          created_at?: string
+          id?: string
+          journal_entry_id?: string | null
+          mood_score?: number
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mood_entries_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mood_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patient_sequence: {
+        Row: {
+          id: number
+          last_sequence: number
+        }
+        Insert: {
+          id: number
+          last_sequence?: number
+        }
+        Update: {
+          id?: number
+          last_sequence?: number
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
