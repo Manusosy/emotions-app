@@ -8,11 +8,14 @@ import {
   Appointment
 } from '@/types/database.types';
 
+// Type for valid profile tables
+type ProfileTable = 'patient_profiles' | 'ambassador_profiles' | 'therapist_profiles' | 'admin_users';
+
 // Function to get user profile based on role
 export const getUserProfile = async (userId: string, role: string) => {
   try {
     // Define the table name based on role
-    let table: string;
+    let table: ProfileTable;
     switch (role) {
       case 'patient':
         table = 'patient_profiles';
@@ -24,15 +27,15 @@ export const getUserProfile = async (userId: string, role: string) => {
         table = 'therapist_profiles';
         break;
       case 'admin':
-        table = 'admin_users'; // Changed from admin_profiles to admin_users which exists
+        table = 'admin_users';
         break;
       default:
         throw new Error('Invalid role');
     }
 
-    // Use type assertion with 'as const' to fix the type error
+    // Use a type assertion for the specific table
     const { data, error } = await supabase
-      .from(table as 'patient_profiles' | 'ambassador_profiles' | 'therapist_profiles' | 'admin_users')
+      .from(table)
       .select('*')
       .eq('id', userId)
       .single();
@@ -49,7 +52,7 @@ export const getUserProfile = async (userId: string, role: string) => {
 export const updateUserProfile = async (userId: string, role: string, profileData: any) => {
   try {
     // Define the table name based on role
-    let table: string;
+    let table: ProfileTable;
     switch (role) {
       case 'patient':
         table = 'patient_profiles';
@@ -61,15 +64,15 @@ export const updateUserProfile = async (userId: string, role: string, profileDat
         table = 'therapist_profiles';
         break;
       case 'admin':
-        table = 'admin_users'; // Changed from admin_profiles to admin_users
+        table = 'admin_users';
         break;
       default:
         throw new Error('Invalid role');
     }
 
-    // Use type assertion with 'as const' to fix the type error
+    // Use a type assertion for the specific table
     const { data, error } = await supabase
-      .from(table as 'patient_profiles' | 'ambassador_profiles' | 'therapist_profiles' | 'admin_users')
+      .from(table)
       .update(profileData)
       .eq('id', userId)
       .select();

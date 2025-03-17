@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -83,10 +84,12 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
-      const { data, error: userCheckError } = await supabase.auth.admin.listUsers();
+      // Check if user already exists - use a type assertion since we know the structure
+      const { data: usersData, error: userCheckError } = await supabase.auth.admin.listUsers();
       
-      if (!userCheckError && data?.users) {
-        const existingUser = data.users.find(user => {
+      if (!userCheckError && usersData?.users) {
+        // Safely check each user for the email property
+        const existingUser = usersData.users.find(user => {
           return user && typeof user === 'object' && 'email' in user && user.email === formData.email;
         });
         
@@ -99,6 +102,7 @@ export default function Signup() {
         console.warn("Could not check for existing user:", userCheckError);
       }
 
+      // Continue with signup if no existing user found
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -130,57 +134,55 @@ export default function Signup() {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
-
-      let tableName: 'admin_users' | 'patient_profiles' | 'therapist_profiles' | 'ambassador_profiles';
-      switch (formData.role) {
-        case 'admin':
-          tableName = 'admin_users';
-          break;
-        case 'patient':
-          tableName = 'patient_profiles';
-          break;
-        case 'therapist':
-          tableName = 'therapist_profiles';
-          break;
-        case 'ambassador':
-          tableName = 'ambassador_profiles';
-          break;
-        default:
-          tableName = 'patient_profiles';
-      }
       
+      // Set the table name based on role
+      const tableMap = {
+        admin: 'admin_users',
+        patient: 'patient_profiles',
+        therapist: 'therapist_profiles',
+        ambassador: 'ambassador_profiles'
+      } as const;
+      
+      const tableName = tableMap[formData.role];
+      
+      // Each table has specific extra fields based on role
+      const roleSpecificData = formData.role === 'patient' 
+        ? {
+            medical_history: '',
+            emergency_contact: '',
+            preferred_language: 'English',
+            date_of_birth: null,
+            gender: '',
+            blood_type: ''
+          }
+        : formData.role === 'therapist'
+        ? {
+            speciality: 'General',
+            availability_status: 'Available',
+            bio: '',
+            hourly_rate: 0,
+            years_of_experience: 0,
+            license_number: '',
+            education: ''
+          }
+        : formData.role === 'ambassador'
+        ? {
+            speciality: 'Mental Health',
+            availability_status: 'Available',
+            bio: '',
+            hourly_rate: 0,
+            total_referrals: 0,
+            rating: 0
+          }
+        : {};
+      
+      // Use a type assertion for the specific table
       const { error: profileError } = await supabase
         .from(tableName)
-        .insert([
-          {
-            ...profileData,
-            ...(formData.role === 'patient' && {
-              medical_history: '',
-              emergency_contact: '',
-              preferred_language: 'English',
-              date_of_birth: null,
-              gender: '',
-              blood_type: ''
-            }),
-            ...(formData.role === 'therapist' && {
-              speciality: 'General',
-              availability_status: 'Available',
-              bio: '',
-              hourly_rate: 0,
-              years_of_experience: 0,
-              license_number: '',
-              education: ''
-            }),
-            ...(formData.role === 'ambassador' && {
-              speciality: 'Mental Health',
-              availability_status: 'Available',
-              bio: '',
-              hourly_rate: 0,
-              total_referrals: 0,
-              rating: 0
-            })
-          }
-        ]);
+        .insert([{
+          ...profileData,
+          ...roleSpecificData
+        }]);
 
       if (profileError) throw profileError;
 
