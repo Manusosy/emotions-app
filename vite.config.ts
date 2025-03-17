@@ -11,11 +11,23 @@ export default defineConfig({
     },
   },
   build: {
+    outDir: 'dist',
+    sourcemap: true,
     rollupOptions: {
       external: [
         '@supabase/ssr',
         '@supabase/supabase-js'
       ]
     }
+  },
+  server: {
+    port: 3000,
+    host: true,
+    strictPort: true,
+  },
+  preview: {
+    port: 3000,
+    host: true,
+    strictPort: true,
   }
 }) 
