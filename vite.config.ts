@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => ({
   base: "/",
   server: {
     host: "localhost",
-    port: 4000,
+    port: 8080,
     strictPort: true,
   },
   build: {

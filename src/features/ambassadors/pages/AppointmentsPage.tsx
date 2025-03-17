@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { DashboardLayout } from "../components/DashboardLayout";
 import { Card } from "@/components/ui/card";
@@ -15,13 +16,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface Appointment {
+interface AppointmentDisplay {
   id: string;
   patient_id: string;
   date: string;
   time: string;
   type: string;
-  status: 'upcoming' | 'completed' | 'cancelled';
+  status: string;
   patient: {
     name: string;
     avatar: string;
@@ -30,7 +31,7 @@ interface Appointment {
 
 const AppointmentsPage = () => {
   const { user } = useAuth();
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [appointments, setAppointments] = useState<AppointmentDisplay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState("upcoming");
 
@@ -44,23 +45,23 @@ const AppointmentsPage = () => {
       const { data, error } = await supabase
         .from('appointments')
         .select(`
-          *,
-          patient:patient_id (
-            id,
-            full_name,
-            avatar_url
-          ),
-          ambassador:ambassador_id (
-            id,
-            full_name,
-            avatar_url
-          )
+          *
         `)
         .eq('ambassador_id', user?.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setAppointments(data || []);
+      
+      // Transform the data to fit our display interface
+      const transformedData = (data || []).map(appointment => ({
+        ...appointment,
+        patient: {
+          name: "Patient", // Placeholder
+          avatar: ""
+        }
+      }));
+      
+      setAppointments(transformedData);
     } catch (error: any) {
       toast.error(error.message || 'Error fetching appointments');
     } finally {
@@ -215,4 +216,4 @@ const AppointmentsPage = () => {
   );
 };
 
-export default AppointmentsPage; 
+export default AppointmentsPage;

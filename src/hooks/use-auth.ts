@@ -1,15 +1,29 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { UserRole } from '@/types/database.types';
 
-export interface User {
+// Define User interface locally to avoid circular dependencies
+interface User {
   id: string;
   email: string;
+  created_at?: string;
   user_metadata: {
     first_name?: string;
     last_name?: string;
-    role?: 'patient' | 'therapist' | 'ambassador' | 'admin';
+    role?: UserRole;
+    full_name?: string;
+    avatar_url?: string;
+    phone_number?: string;
+    date_of_birth?: string;
+    country?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    pincode?: string;
+    patient_id?: string;
   };
 }
 
@@ -24,8 +38,15 @@ export const useAuth = () => {
     const checkSession = async () => {
       try {
         const { data } = await supabase.auth.getSession();
-        setUser(data.session?.user || null);
-        setUserRole(data.session?.user?.user_metadata?.role || null);
+        if (data.session?.user) {
+          // Cast to our User type since Supabase user types don't exactly match our custom User type
+          const supabaseUser = data.session.user as unknown as User;
+          setUser(supabaseUser);
+          setUserRole(supabaseUser.user_metadata?.role || null);
+        } else {
+          setUser(null);
+          setUserRole(null);
+        }
       } catch (error) {
         console.error('Error checking session:', error);
       } finally {
@@ -38,8 +59,15 @@ export const useAuth = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        setUser(session?.user || null);
-        setUserRole(session?.user?.user_metadata?.role || null);
+        if (session?.user) {
+          // Cast to our User type
+          const supabaseUser = session.user as unknown as User;
+          setUser(supabaseUser);
+          setUserRole(supabaseUser.user_metadata?.role || null);
+        } else {
+          setUser(null);
+          setUserRole(null);
+        }
       }
     );
 
@@ -79,12 +107,31 @@ export const useAuth = () => {
     }
   };
 
+  // Helper to get the full name from user metadata
+  const getFullName = () => {
+    if (!user) return '';
+    
+    if (user.user_metadata?.full_name) {
+      return user.user_metadata.full_name;
+    }
+    
+    const firstName = user.user_metadata?.first_name || '';
+    const lastName = user.user_metadata?.last_name || '';
+    
+    if (firstName || lastName) {
+      return `${firstName} ${lastName}`.trim();
+    }
+    
+    return 'User';
+  };
+
   return {
     user,
     userRole,
     isLoading,
     isAuthenticated: !!user,
     getDashboardUrl,
-    logout
+    logout,
+    getFullName
   };
-}; 
+};

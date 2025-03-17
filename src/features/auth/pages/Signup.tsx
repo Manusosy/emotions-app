@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -83,23 +84,29 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
-      // First check if user exists
-      const { data: { users }, error: checkError } = await supabase.auth.admin.listUsers({
-        filters: {
-          email: formData.email
+      // Check if user already exists
+      const { data: usersData, error: userCheckError } = await supabase.auth.admin.listUsers();
+      
+      if (!userCheckError && usersData?.users) {
+        // Type check for the user object and safely access email property
+        const existingUser = usersData.users.find(user => {
+          return user && 
+                 typeof user === 'object' && 
+                 'email' in user && 
+                 typeof user.email === 'string' && 
+                 user.email === formData.email;
+        });
+        
+        if (existingUser) {
+          toast.error("An account with this email already exists. Please login instead.");
+          navigate("/login");
+          return;
         }
-      });
-
-      if (checkError) {
-        // If we can't check (which is likely in production), proceed with signup
-        console.warn("Could not check for existing user:", checkError);
-      } else if (users?.length > 0) {
-        toast.error("An account with this email already exists. Please login instead.");
-        navigate("/login");
-        return;
+      } else if (userCheckError) {
+        console.warn("Could not check for existing user:", userCheckError);
       }
 
-      // 1. Create the user account
+      // Continue with signup if no existing user found
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -124,7 +131,6 @@ export default function Signup() {
 
       if (!signUpData.user?.id) throw new Error("Failed to create account. Please try again.");
 
-      // 2. Create role-specific profile
       const profileData = {
         id: signUpData.user.id,
         first_name: formData.firstName,
@@ -132,46 +138,60 @@ export default function Signup() {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
-
-      const { error: profileError } = await supabase
-        .from(`${formData.role}_profiles`)
-        .insert([
-          {
-            ...profileData,
-            ...(formData.role === 'patient' && {
-              medical_history: '',
-              emergency_contact: '',
-              preferred_language: 'English',
-              date_of_birth: null,
-              gender: '',
-              blood_type: ''
-            }),
-            ...(formData.role === 'therapist' && {
-              speciality: 'General',
-              availability_status: 'Available',
-              bio: '',
-              hourly_rate: 0,
-              years_of_experience: 0,
-              license_number: '',
-              education: ''
-            }),
-            ...(formData.role === 'ambassador' && {
-              speciality: 'Mental Health',
-              availability_status: 'Available',
-              bio: '',
-              hourly_rate: 0,
-              total_referrals: 0,
-              rating: 0
-            })
+      
+      // Set the table name based on role
+      const tableMap: Record<string, string> = {
+        admin: 'admin_users',
+        patient: 'patient_profiles',
+        therapist: 'therapist_profiles',
+        ambassador: 'ambassador_profiles'
+      };
+      
+      const tableName = tableMap[formData.role];
+      
+      // Each table has specific extra fields based on role
+      const roleSpecificData = formData.role === 'patient' 
+        ? {
+            medical_history: '',
+            emergency_contact: '',
+            preferred_language: 'English',
+            date_of_birth: null,
+            gender: '',
+            blood_type: ''
           }
-        ]);
+        : formData.role === 'therapist'
+        ? {
+            speciality: 'General',
+            availability_status: 'Available',
+            bio: '',
+            hourly_rate: 0,
+            years_of_experience: 0,
+            license_number: '',
+            education: ''
+          }
+        : formData.role === 'ambassador'
+        ? {
+            speciality: 'Mental Health',
+            availability_status: 'Available',
+            bio: '',
+            hourly_rate: 0,
+            total_referrals: 0,
+            rating: 0
+          }
+        : {};
+      
+      // Use type assertion to avoid complex type resolution
+      const { error: profileError } = await supabase
+        .from(tableName as any)
+        .insert([{
+          ...profileData,
+          ...roleSpecificData
+        }]);
 
       if (profileError) throw profileError;
 
-      // 3. Show success message and redirect
       toast.success("Your account has been created successfully!");
       
-      // 4. Redirect based on role
       switch (formData.role) {
         case "patient":
           navigate("/patient-dashboard");
@@ -196,7 +216,6 @@ export default function Signup() {
       
       toast.error(error.message || "Failed to create account. Please try again.");
       
-      // If we have a user ID but profile creation failed, sign out
       if (error.message?.includes('profile')) {
         await supabase.auth.signOut();
       }
@@ -233,27 +252,27 @@ export default function Signup() {
             />
           </div>
           <div className="grid gap-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
               placeholder="Enter your email"
-            value={formData.email}
+              value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            required
-          />
-        </div>
+              required
+            />
+          </div>
           <div className="grid gap-2">
-          <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">Password</Label>
             <div className="relative">
-          <Input
-            id="password"
+              <Input
+                id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="Create a password"
-            value={formData.password}
+                value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            required
-          />
+                required
+              />
               <Button
                 type="button"
                 variant="ghost"
@@ -271,25 +290,25 @@ export default function Signup() {
                 </span>
               </Button>
             </div>
-        </div>
+          </div>
           <div className="grid gap-2">
-          <Label htmlFor="country">Country</Label>
-          <Select
-            value={formData.country}
+            <Label htmlFor="country">Country</Label>
+            <Select
+              value={formData.country}
               onValueChange={(value) => setFormData({ ...formData, country: value })}
-          >
+            >
               <SelectTrigger id="country">
-              <SelectValue placeholder="Select your country" />
-            </SelectTrigger>
-            <SelectContent>
-              {countries.map((country) => (
-                <SelectItem key={country.code} value={country.code}>
-                  {country.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+                <SelectValue placeholder="Select your country" />
+              </SelectTrigger>
+              <SelectContent>
+                {countries.map((country) => (
+                  <SelectItem key={country.code} value={country.code}>
+                    {country.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="space-y-4">

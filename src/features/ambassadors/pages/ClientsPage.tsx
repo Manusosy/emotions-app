@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { DashboardLayout } from "../components/DashboardLayout";
 import { Card } from "@/components/ui/card";
@@ -18,20 +19,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Search, MoreVertical, MessageSquare, Calendar, FileText } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
-
-interface Client {
-  id: string;
-  full_name: string;
-  email: string;
-  avatar_url: string;
-  phone_number: string;
-  last_session: string;
-  total_sessions: number;
-  status: 'active' | 'inactive';
-}
+import { Client } from "@/types/database.types";
 
 const ClientsPage = () => {
   const { user } = useAuth();
@@ -43,27 +33,59 @@ const ClientsPage = () => {
     fetchClients();
   }, [user]);
 
+  // Mock client data since the patient_profiles table doesn't exist yet
   const fetchClients = async () => {
     if (!user) return;
 
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from("patient_profiles")
-        .select(`
-          id,
-          full_name,
-          email,
-          avatar_url,
-          phone_number,
-          last_session,
-          total_sessions,
-          status
-        `)
-        .eq("ambassador_id", user.id);
-
-      if (error) throw error;
-      setClients(data || []);
+      
+      // Mock data
+      const mockClients: Client[] = [
+        {
+          id: "1",
+          full_name: "Sophie Miller",
+          email: "sophie.miller@example.com",
+          avatar_url: "/lovable-uploads/47ac3dae-2498-4dd3-a729-73086f5c34f8.png",
+          phone_number: "+1 (555) 123-4567",
+          last_session: "2023-03-15",
+          total_sessions: 8,
+          status: 'active',
+          last_appointment: "Mar 15, 2023",
+          next_appointment: "Mar 22, 2023"
+        },
+        {
+          id: "2",
+          full_name: "Michael Johnson",
+          email: "michael.j@example.com",
+          avatar_url: "",
+          phone_number: "+1 (555) 987-6543",
+          last_session: "2023-03-10",
+          total_sessions: 5,
+          status: 'active',
+          last_appointment: "Mar 10, 2023",
+          next_appointment: "Mar 24, 2023"
+        },
+        {
+          id: "3",
+          full_name: "Emily Chen",
+          email: "emily.chen@example.com",
+          avatar_url: "",
+          phone_number: "+1 (555) 456-7890",
+          last_session: "2023-03-08",
+          total_sessions: 12,
+          status: 'inactive',
+          last_appointment: "Mar 8, 2023",
+          next_appointment: ""
+        }
+      ];
+      
+      setClients(mockClients);
+      
+      toast.info("Note: Using mock data for client examples", {
+        description: "The patient_profiles table has not been created in the database yet"
+      });
+      
     } catch (error: any) {
       console.error("Error fetching clients:", error);
       toast.error(error.message || "Failed to load clients");
@@ -167,7 +189,7 @@ const ClientsPage = () => {
                       </TableCell>
                       <TableCell>{client.email}</TableCell>
                       <TableCell>{client.phone_number}</TableCell>
-                      <TableCell>{client.last_session}</TableCell>
+                      <TableCell>{client.last_appointment}</TableCell>
                       <TableCell>{client.total_sessions}</TableCell>
                       <TableCell>
                         <span className={`px-2 py-1 rounded-full text-xs ${
@@ -213,4 +235,4 @@ const ClientsPage = () => {
   );
 };
 
-export default ClientsPage; 
+export default ClientsPage;

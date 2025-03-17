@@ -12,28 +12,37 @@ export type Database = {
       ambassador_profiles: {
         Row: {
           availability_status: string | null
+          avatar_url: string | null
           bio: string | null
           created_at: string
+          full_name: string | null
           hourly_rate: number | null
           id: string
+          phone_number: string | null
           speciality: string | null
           updated_at: string
         }
         Insert: {
           availability_status?: string | null
+          avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          full_name?: string | null
           hourly_rate?: number | null
           id: string
+          phone_number?: string | null
           speciality?: string | null
           updated_at?: string
         }
         Update: {
           availability_status?: string | null
+          avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          full_name?: string | null
           hourly_rate?: number | null
           id?: string
+          phone_number?: string | null
           speciality?: string | null
           updated_at?: string
         }
@@ -42,6 +51,63 @@ export type Database = {
             foreignKeyName: "ambassador_profiles_id_fkey"
             columns: ["id"]
             isOneToOne: true
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      appointments: {
+        Row: {
+          ambassador_id: string | null
+          created_at: string | null
+          date: string
+          duration: string
+          id: string
+          notes: string | null
+          patient_id: string | null
+          status: string | null
+          time: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          ambassador_id?: string | null
+          created_at?: string | null
+          date: string
+          duration: string
+          id?: string
+          notes?: string | null
+          patient_id?: string | null
+          status?: string | null
+          time: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          ambassador_id?: string | null
+          created_at?: string | null
+          date?: string
+          duration?: string
+          id?: string
+          notes?: string | null
+          patient_id?: string | null
+          status?: string | null
+          time?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_ambassador_id_fkey"
+            columns: ["ambassador_id"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
             referencedRelation: "admin_users"
             referencedColumns: ["id"]
           },
@@ -168,6 +234,247 @@ export type Database = {
           },
         ]
       }
+      mental_health_resources: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          downloads: number | null
+          file_url: string | null
+          id: string
+          shares: number | null
+          title: string
+          type: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          downloads?: number | null
+          file_url?: string | null
+          id?: string
+          shares?: number | null
+          title: string
+          type: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          downloads?: number | null
+          file_url?: string | null
+          id?: string
+          shares?: number | null
+          title?: string
+          type?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          recipient_id: string
+          sender_id: string
+          unread: boolean | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          recipient_id: string
+          sender_id: string
+          unread?: boolean | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          recipient_id?: string
+          sender_id?: string
+          unread?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mood_entries: {
+        Row: {
+          assessment_details: Json | null
+          assessment_result: string
+          created_at: string
+          id: string
+          journal_entry_id: string | null
+          mood_score: number
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          assessment_details?: Json | null
+          assessment_result: string
+          created_at?: string
+          id?: string
+          journal_entry_id?: string | null
+          mood_score: number
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          assessment_details?: Json | null
+          assessment_result?: string
+          created_at?: string
+          id?: string
+          journal_entry_id?: string | null
+          mood_score?: number
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mood_entries_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mood_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          read: boolean | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          read?: boolean | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          read?: boolean | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patient_profiles: {
+        Row: {
+          address: string | null
+          avatar_url: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          date_of_birth: string | null
+          email: string | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          phone_number: string | null
+          pincode: string | null
+          state: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          avatar_url?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          email?: string | null
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          phone_number?: string | null
+          pincode?: string | null
+          state?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          avatar_url?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          phone_number?: string | null
+          pincode?: string | null
+          state?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_profiles_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patient_sequence: {
+        Row: {
+          id: number
+          last_sequence: number
+        }
+        Insert: {
+          id: number
+          last_sequence?: number
+        }
+        Update: {
+          id?: number
+          last_sequence?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           country: string
@@ -200,6 +507,42 @@ export type Database = {
           },
         ]
       }
+      support_groups: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          max_participants: number
+          name: string
+          participants: number | null
+          price: number
+          schedule: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          max_participants: number
+          name: string
+          participants?: number | null
+          price: number
+          schedule: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          max_participants?: number
+          name?: string
+          participants?: number | null
+          price?: number
+          schedule?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tags: {
         Row: {
           id: string
@@ -214,6 +557,53 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      therapist_profiles: {
+        Row: {
+          bio: string | null
+          created_at: string
+          education: string[] | null
+          full_name: string
+          id: string
+          languages: string[] | null
+          profile_image: string | null
+          specialty: string
+          updated_at: string
+          years_of_experience: number | null
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          education?: string[] | null
+          full_name: string
+          id: string
+          languages?: string[] | null
+          profile_image?: string | null
+          specialty: string
+          updated_at?: string
+          years_of_experience?: number | null
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          education?: string[] | null
+          full_name?: string
+          id?: string
+          languages?: string[] | null
+          profile_image?: string | null
+          specialty?: string
+          updated_at?: string
+          years_of_experience?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "therapist_profiles_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

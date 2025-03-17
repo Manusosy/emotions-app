@@ -1,131 +1,144 @@
-import { supabase } from "@/integrations/supabase/client";
-import type { 
+
+import { supabase } from '@/integrations/supabase/client';
+import { 
+  PatientHealthMetric, 
   PatientProfile, 
-  TherapistProfile, 
-  AmbassadorProfile, 
-  PatientHealthMetric,
-  Appointment,
-  UserRole 
-} from "@/types/database.types";
+  AmbassadorProfile,
+  TherapistProfile,
+  Appointment
+} from '@/types/database.types';
 
-// Profile Management
-export const getProfile = async (userId: string, role: UserRole) => {
-  const { data, error } = await supabase
-    .from(`${role}_profiles`)
-    .select('*')
-    .eq('id', userId)
-    .single();
-  
-  if (error) throw error;
-  return data;
+// Instead of using a union type for table names, use specific literal strings
+// to avoid excessive type instantiation
+export const getUserProfile = async (userId: string, role: string) => {
+  try {
+    let tableName = '';
+    
+    // Define the table name based on role
+    switch (role) {
+      case 'patient':
+        tableName = 'patient_profiles';
+        break;
+      case 'ambassador':
+        tableName = 'ambassador_profiles';
+        break;
+      case 'therapist':
+        tableName = 'therapist_profiles';
+        break;
+      case 'admin':
+        tableName = 'admin_users';
+        break;
+      default:
+        throw new Error('Invalid role');
+    }
+
+    // Use a more direct approach with type assertion to avoid complex type resolution
+    const { data, error } = await supabase
+      .from(tableName as any)
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    throw error;
+  }
 };
 
-export const createProfile = async (
-  userId: string, 
-  role: UserRole, 
-  profileData: Partial<PatientProfile | TherapistProfile | AmbassadorProfile>
-) => {
-  const { data, error } = await supabase
-    .from(`${role}_profiles`)
-    .insert({ id: userId, ...profileData })
-    .select()
-    .single();
-  
-  if (error) throw error;
-  return data;
+// Function to update user profile based on role
+export const updateUserProfile = async (userId: string, role: string, profileData: any) => {
+  try {
+    let tableName = '';
+    
+    // Define the table name based on role
+    switch (role) {
+      case 'patient':
+        tableName = 'patient_profiles';
+        break;
+      case 'ambassador':
+        tableName = 'ambassador_profiles';
+        break;
+      case 'therapist':
+        tableName = 'therapist_profiles';
+        break;
+      case 'admin':
+        tableName = 'admin_users';
+        break;
+      default:
+        throw new Error('Invalid role');
+    }
+
+    // Use a more direct approach with type assertion
+    const { data, error } = await supabase
+      .from(tableName as any)
+      .update(profileData)
+      .eq('id', userId)
+      .select();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    throw error;
+  }
 };
 
-export const updateProfile = async (
-  userId: string, 
-  role: UserRole, 
-  profileData: Partial<PatientProfile | TherapistProfile | AmbassadorProfile>
-) => {
-  const { data, error } = await supabase
-    .from(`${role}_profiles`)
-    .update(profileData)
-    .eq('id', userId)
-    .select()
-    .single();
-  
-  if (error) throw error;
-  return data;
+// Appointment functions
+export const createAppointment = async (appointment: Omit<Appointment, 'id'>) => {
+  try {
+    // Convert the appointment data to match the table structure
+    const formattedAppointment = {
+      patient_id: appointment.patient_id,
+      ambassador_id: appointment.ambassador_id,
+      date: appointment.date,
+      time: appointment.time,
+      type: appointment.type,
+      status: appointment.status || 'pending',
+      notes: appointment.notes,
+      duration: appointment.duration || '60 minutes' // Default duration
+    };
+
+    const { data, error } = await supabase
+      .from('appointments')
+      .insert(formattedAppointment)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error creating appointment:', error);
+    throw error;
+  }
 };
 
-// Patient-specific operations
-export const getPatientHealthMetrics = async (patientId: string) => {
-  const { data, error } = await supabase
-    .from('patient_health_metrics')
-    .select('*')
-    .eq('patient_id', patientId)
-    .order('recorded_at', { ascending: false })
-    .limit(10);
-  
-  if (error) throw error;
-  return data;
-};
+export const getAppointments = async (userId: string, role: string) => {
+  try {
+    let column;
+    switch (role) {
+      case 'patient':
+        column = 'patient_id';
+        break;
+      case 'ambassador':
+        column = 'ambassador_id';
+        break;
+      default:
+        throw new Error('Invalid role');
+    }
 
-export const addHealthMetric = async (metric: Omit<PatientHealthMetric, 'id' | 'recorded_at'>) => {
-  const { data, error } = await supabase
-    .from('patient_health_metrics')
-    .insert(metric)
-    .select()
-    .single();
-  
-  if (error) throw error;
-  return data;
-};
+    const { data, error } = await supabase
+      .from('appointments')
+      .select('*')
+      .eq(column, userId)
+      .order('date', { ascending: false })
+      .order('time', { ascending: false });
 
-// Appointment Management
-export const getAppointments = async (userId: string, role: UserRole) => {
-  const field = role === 'patient' ? 'patient_id' : 'therapist_id';
-  
-  const { data, error } = await supabase
-    .from('appointments')
-    .select(`
-      *,
-      patient:patient_profiles(*),
-      therapist:therapist_profiles(*)
-    `)
-    .eq(field, userId)
-    .order('date', { ascending: true });
-  
-  if (error) throw error;
-  return data;
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error fetching appointments:', error);
+    throw error;
+  }
 };
-
-export const createAppointment = async (appointment: Omit<Appointment, 'id' | 'created_at' | 'updated_at'>) => {
-  const { data, error } = await supabase
-    .from('appointments')
-    .insert(appointment)
-    .select()
-    .single();
-  
-  if (error) throw error;
-  return data;
-};
-
-// Ambassador-specific operations
-export const getAmbassadorStats = async (ambassadorId: string) => {
-  const { data, error } = await supabase
-    .from('ambassador_profiles')
-    .select('total_referrals, rating')
-    .eq('id', ambassadorId)
-    .single();
-  
-  if (error) throw error;
-  return data;
-};
-
-// Therapist-specific operations
-export const getTherapistPatients = async (therapistId: string) => {
-  const { data, error } = await supabase
-    .from('appointments')
-    .select(`
-      distinct on (patient_id) *,
-      patient:patient_profiles(*)
-    `)
-    .eq('therapist_id', therapistId);
-  
-  if (error) throw error;
-  return data;
-}; 

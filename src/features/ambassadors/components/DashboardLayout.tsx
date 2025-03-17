@@ -1,333 +1,264 @@
-import React, { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  LayoutDashboard,
-  FileText,
-  Calendar,
-  Clock,
-  Users,
-  Brain,
-  HeartHandshake,
-  Star,
-  User,
-  Mail,
-  Settings,
-  Lock,
-  LogOut,
-  DollarSign,
-  Bell,
-  X,
-} from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
-import { useMediaQuery } from "@/hooks/use-media-query";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  Home,
+  Calendar,
+  Heart,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  MessageSquare,
+  FileText,
+  Users,
+  Bell,
+  BookOpen,
+  Activity,
+  User,
+  Clock,
+  Shield,
+  BadgeHelp
+} from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
-export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
-  const { user } = useAuth();
-  const location = useLocation();
+export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const navigate = useNavigate();
-  const [availabilityStatus, setAvailabilityStatus] = useState("Available");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isMobile = useIsMobile();
+  const { user, logout, getFullName } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [unreadMessages, setUnreadMessages] = useState(0);
 
-  const handleAvailabilityChange = async (value: string) => {
-    try {
-      const { error } = await supabase
-        .from("ambassador_profiles")
-        .update({ availability_status: value })
-        .eq("id", user?.id);
+  useEffect(() => {
+    setCurrentPath(window.location.pathname);
+  }, [window.location.pathname]);
 
-      if (error) throw error;
+  useEffect(() => {
+    setSidebarOpen(!isMobile);
+  }, [isMobile]);
 
-      setAvailabilityStatus(value);
-      toast.success("Availability status updated");
-    } catch (error: any) {
-      console.error("Error updating availability:", error);
-      toast.error(error.message || "Failed to update availability");
+  useEffect(() => {
+    // Fetch unread notifications and messages count
+    const fetchUnreadCounts = async () => {
+      if (!user?.id) return;
+      
+      try {
+        // Using Promise.all to make both requests simultaneously
+        const [notificationsResponse, messagesResponse] = await Promise.all([
+          supabase
+            .from('notifications')
+            .select('id', { count: 'exact' })
+            .eq('user_id', user.id)
+            .eq('read', false),
+          supabase
+            .from('messages')
+            .select('id', { count: 'exact' })
+            .eq('recipient_id', user.id)
+            .eq('unread', true)
+        ]);
+
+        setUnreadNotifications(notificationsResponse.count || 0);
+        setUnreadMessages(messagesResponse.count || 0);
+      } catch (error) {
+        console.error('Error fetching unread counts:', error);
+      }
+    };
+
+    if (user?.id) {
+      fetchUnreadCounts();
     }
-  };
+  }, [user?.id]);
 
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      navigate("/login");
-    } catch (error: any) {
-      toast.error("Failed to log out");
+  const ambassadorNavigation = [
+    { 
+      section: "Main",
+      items: [
+        { name: "Overview", href: "/ambassador-dashboard", icon: Home },
+        { name: "Appointments", href: "/ambassador-dashboard/appointments", icon: Calendar },
+        { name: "Messages", href: "/ambassador-dashboard/messages", icon: MessageSquare },
+        { name: "Clients", href: "/ambassador-dashboard/clients", icon: Users },
+      ]
+    },
+    {
+      section: "Content",
+      items: [
+        { name: "Resources", href: "/ambassador-dashboard/resources", icon: FileText },
+        { name: "Support Groups", href: "/ambassador-dashboard/groups", icon: BookOpen },
+      ]
+    },
+    {
+      section: "Account",
+      items: [
+        { name: "Profile", href: "/ambassador-dashboard/profile", icon: User },
+        { name: "Settings", href: "/ambassador-dashboard/settings", icon: Settings },
+        { name: "Get Help", href: "/contact", icon: BadgeHelp },
+      ]
     }
-  };
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
-  const isActiveRoute = (path: string) => {
-    return location.pathname === path;
-  };
+  ];
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-gradient-to-b from-[#D1E4FF] to-white">
-      {isMobile && (
-        <div className="fixed top-4 left-4 z-50">
-          <Button
-            variant="outline"
-            size="icon"
-            className="bg-white shadow-md"
-            onClick={toggleSidebar}
-          >
-            {isSidebarOpen ? <X className="h-5 w-5" /> : <LayoutDashboard className="h-5 w-5" />}
-          </Button>
+    <div className="min-h-screen bg-gray-50">
+      {/* Top Navigation Bar Container with Padding */}
+      <div className="px-4 py-4 sm:px-6">
+        {/* Header with rounded corners and contained width */}
+        <div className="sticky top-4 z-40 mx-auto rounded-2xl bg-blue-600 px-4 py-3 shadow-lg sm:px-6 max-w-[98%]">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="lg:hidden text-white hover:bg-blue-500/50"
+              >
+                <span className="sr-only">Toggle sidebar</span>
+                {sidebarOpen ? (
+                  <X className="h-6 w-6" aria-hidden="true" />
+                ) : (
+                  <Menu className="h-6 w-6" aria-hidden="true" />
+                )}
+              </Button>
+              <Link to="/" className="flex items-center">
+                <img
+                  src="/lovable-uploads/03038be2-2146-4f36-a685-7b7719df9caa.png"
+                  alt="Logo"
+                  className="h-8 w-auto"
+                />
+              </Link>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative text-white hover:bg-blue-500/50"
+                onClick={() => navigate('/ambassador-dashboard/notifications')}
+              >
+                <Bell className="h-5 w-5" />
+                {unreadNotifications > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                  >
+                    {unreadNotifications}
+                  </Badge>
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative text-white hover:bg-blue-500/50"
+                onClick={() => navigate('/ambassador-dashboard/messages')}
+              >
+                <MessageSquare className="h-5 w-5" />
+                {unreadMessages > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                  >
+                    {unreadMessages}
+                  </Badge>
+                )}
+              </Button>
+              <Avatar 
+                className="h-8 w-8 cursor-pointer border-2 border-white/25 hover:border-white/50 transition-colors" 
+                onClick={() => navigate('/ambassador-dashboard/profile')}
+              >
+                <AvatarImage src={user?.user_metadata?.avatar_url} />
+                <AvatarFallback className="bg-blue-700 text-white">
+                  {getFullName()[0]?.toUpperCase() || 'A'}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+          </div>
         </div>
-      )}
-      
-      <div 
-        className={`${
-          isMobile 
-            ? `fixed inset-y-0 left-0 z-40 w-64 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out`
-            : 'w-64 min-h-screen'
-        } bg-white shadow-sm flex flex-col border-r border-gray-200`}
+      </div>
+
+      {/* Sidebar and Main Content */}
+      <div
+        className={`fixed inset-y-0 z-30 flex w-72 flex-col transition-transform duration-300 lg:translate-x-0 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+        style={{ top: "88px" }}
       >
-        <div className="bg-[#0078FF] p-4 flex items-center justify-center">
-          <Link to="/">
-            <img 
-              src="/lovable-uploads/cdf0f73f-159c-4841-927b-09f1f086e7f9.png" 
-              alt="MindWell Logo" 
-              className="h-10 cursor-pointer"
-            />
-          </Link>
-        </div>
-        
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center space-x-3">
-            <div className="relative">
-              <img 
-                src="/lovable-uploads/47ac3dae-2498-4dd3-a729-73086f5c34f8.png" 
-                alt="Ambassador Profile" 
-                className="w-16 h-16 rounded-lg object-cover"
-              />
-              <div className="absolute -top-2 -left-2 bg-orange-500 text-white text-xs font-bold px-1.5 py-0.5 rounded flex items-center">
-                <Star className="h-3 w-3 mr-0.5" /> 5
-              </div>
-              <div className="absolute -bottom-1 -right-1 bg-white p-0.5 rounded-full shadow-md">
-                <div className="bg-green-500 w-2.5 h-2.5 rounded-full"></div>
-              </div>
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-gray-900">
-                {user?.user_metadata?.full_name || "Ambassador"}
-              </h3>
-              <div className="flex items-center mt-1">
-                <div className="w-1 h-5 bg-blue-600 mr-2"></div>
-                <span className="text-xs text-blue-600 font-medium">Mental Health Ambassador</span>
-              </div>
-              
-              <div className="mt-2">
-                <Select 
-                  value={availabilityStatus}
-                  onValueChange={handleAvailabilityChange}
+        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white px-6 pb-4 border-r">
+          <nav className="flex flex-1 flex-col pt-4">
+            <ul role="list" className="flex flex-1 flex-col gap-y-7">
+              {ambassadorNavigation.map((section) => (
+                <li key={section.section}>
+                  <div className="text-xs font-semibold text-blue-600 uppercase mb-2">
+                    {section.section}
+                  </div>
+                  <ul role="list" className="-mx-2 space-y-1">
+                    {section.items.map((item) => {
+                      const isActive = currentPath === item.href;
+                      return (
+                        <li key={item.name}>
+                          <Button
+                            variant={isActive ? "secondary" : "ghost"}
+                            className={`w-full justify-start gap-x-3 ${
+                              isActive 
+                                ? "bg-blue-100 text-blue-700 hover:bg-blue-200" 
+                                : "hover:bg-blue-50 hover:text-blue-600"
+                            }`}
+                            onClick={() => {
+                              navigate(item.href);
+                              if (isMobile) setSidebarOpen(false);
+                            }}
+                          >
+                            <item.icon 
+                              className={`h-5 w-5 ${isActive ? "text-blue-600" : ""}`} 
+                              aria-hidden="true" 
+                            />
+                            {item.name}
+                          </Button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </li>
+              ))}
+              <li className="mt-auto">
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-x-3 text-red-600 hover:bg-red-50 hover:text-red-700"
+                  onClick={logout}
                 >
-                  <SelectTrigger className="h-7 text-xs bg-white border-gray-200 w-full">
-                    <div className="flex items-center">
-                      <span className={`inline-block w-2 h-2 ${availabilityStatus === 'Available' ? 'bg-green-500' : availabilityStatus === 'Away' ? 'bg-amber-500' : 'bg-gray-500'} rounded-full mr-1.5`}></span>
-                      <SelectValue>{availabilityStatus}</SelectValue>
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem value="Available">
-                        <div className="flex items-center">
-                          <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-1.5"></span>
-                          Available
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="Away">
-                        <div className="flex items-center">
-                          <span className="inline-block w-2 h-2 bg-amber-500 rounded-full mr-1.5"></span>
-                          Away
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="Do Not Disturb">
-                        <div className="flex items-center">
-                          <span className="inline-block w-2 h-2 bg-red-500 rounded-full mr-1.5"></span>
-                          Do Not Disturb
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="Offline">
-                        <div className="flex items-center">
-                          <span className="inline-block w-2 h-2 bg-gray-500 rounded-full mr-1.5"></span>
-                          Offline
-                        </div>
-                      </SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
+                  <LogOut className="h-5 w-5" aria-hidden="true" />
+                  Logout
+                </Button>
+              </li>
+            </ul>
+          </nav>
         </div>
-        
-        <nav className="mt-4 flex-1 overflow-y-auto px-3">
-          <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-3">Main Menu</div>
-          <ul className="space-y-1">
-            <li>
-              <Link
-                to="/ambassador-dashboard"
-                className={`flex items-center gap-3 px-3 py-2 rounded-md ${
-                  isActiveRoute('/ambassador-dashboard')
-                    ? 'bg-[#0078FF] text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <LayoutDashboard className="h-5 w-5" />
-                Dashboard
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/ambassador-dashboard/appointments"
-                className={`flex items-center gap-3 px-3 py-2 rounded-md ${
-                  isActiveRoute('/ambassador-dashboard/appointments')
-                    ? 'bg-[#0078FF] text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <Calendar className="h-5 w-5" />
-                Appointments
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/ambassador-dashboard/clients"
-                className={`flex items-center gap-3 px-3 py-2 rounded-md ${
-                  isActiveRoute('/ambassador-dashboard/clients')
-                    ? 'bg-[#0078FF] text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <Users className="h-5 w-5" />
-                Clients
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/ambassador-dashboard/groups"
-                className={`flex items-center gap-3 px-3 py-2 rounded-md ${
-                  isActiveRoute('/ambassador-dashboard/groups')
-                    ? 'bg-[#0078FF] text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <HeartHandshake className="h-5 w-5" />
-                Support Groups
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/ambassador-dashboard/resources"
-                className={`flex items-center gap-3 px-3 py-2 rounded-md ${
-                  isActiveRoute('/ambassador-dashboard/resources')
-                    ? 'bg-[#0078FF] text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <Brain className="h-5 w-5" />
-                Resources
-              </Link>
-            </li>
-            
-            <div className="text-xs font-semibold text-gray-400 uppercase mt-6 mb-2 px-3">Management</div>
-            <li>
-              <Link
-                to="/ambassador-dashboard/messages"
-                className={`flex items-center gap-3 px-3 py-2 rounded-md ${
-                  isActiveRoute('/ambassador-dashboard/messages')
-                    ? 'bg-[#0078FF] text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <Mail className="h-5 w-5" />
-                Messages
-                <span className="ml-auto w-5 h-5 bg-amber-400 rounded-full flex items-center justify-center text-xs text-white">2</span>
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/ambassador-dashboard/profile"
-                className={`flex items-center gap-3 px-3 py-2 rounded-md ${
-                  isActiveRoute('/ambassador-dashboard/profile')
-                    ? 'bg-[#0078FF] text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <User className="h-5 w-5" />
-                Profile
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/ambassador-dashboard/settings"
-                className={`flex items-center gap-3 px-3 py-2 rounded-md ${
-                  isActiveRoute('/ambassador-dashboard/settings')
-                    ? 'bg-[#0078FF] text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <Settings className="h-5 w-5" />
-                Settings
-              </Link>
-            </li>
-            <li>
-              <button 
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
-              >
-                <LogOut className="h-5 w-5" />
-                Logout
-              </button>
-            </li>
-          </ul>
-        </nav>
       </div>
-      
-      <div className="flex-1 overflow-auto">
-        <div className="bg-white border-b border-gray-200 px-6 py-3 sticky top-0 z-10 flex justify-between items-center">
-          <div className="text-lg font-semibold text-gray-800">
-            {isMobile && isSidebarOpen ? null : "Welcome back, " + (user?.user_metadata?.full_name || "Ambassador")}
-          </div>
-          
-          <div className="flex items-center space-x-3">
-            <div className="relative">
-              <button className="p-2 rounded-full hover:bg-gray-100">
-                <Bell className="h-5 w-5 text-gray-600" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
-            </div>
-            <button className="p-2 rounded-full hover:bg-gray-100">
-              <Mail className="h-5 w-5 text-gray-600" />
-            </button>
-            <button className="p-2 rounded-full hover:bg-gray-100">
-              <Settings className="h-5 w-5 text-gray-600" />
-            </button>
-          </div>
-        </div>
-        
-        {children}
+
+      {/* Main content */}
+      <div className={`lg:pl-72`}>
+        <main className="min-h-screen bg-gray-50">
+          {children}
+        </main>
       </div>
+
+      {/* Mobile sidebar backdrop */}
+      {sidebarOpen && isMobile && (
+        <div
+          className="fixed inset-0 z-20 bg-gray-600 bg-opacity-75 transition-opacity lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
     </div>
   );
 };
 
-export default DashboardLayout; 
+export default DashboardLayout;
