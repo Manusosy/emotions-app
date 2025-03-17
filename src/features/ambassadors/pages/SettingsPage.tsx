@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -87,7 +86,8 @@ export default function SettingsPage() {
         email: user.email || '',
         bio: data?.bio || '',
         avatar: null,
-        avatar_url: data?.avatar_url || '',
+        avatar_url: data?.avatar_url || user.user_metadata?.avatar_url || '',
+        phone_number: data?.phone_number || user.user_metadata?.phone_number || '',
         available: data?.availability_status === 'Available'
       });
     } catch (error: any) {
@@ -155,6 +155,8 @@ export default function SettingsPage() {
           education: formData.education,
           availability_status: formData.available ? 'Available' : 'Unavailable',
           avatar_url: avatarUrl,
+          phone_number: formData.phone_number,
+          full_name: formData.full_name,
           updated_at: new Date().toISOString()
         })
         .eq("id", user.id);

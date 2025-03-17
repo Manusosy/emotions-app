@@ -13,6 +13,14 @@ export interface User {
     last_name?: string;
     role?: UserRole;
     full_name?: string;
+    avatar_url?: string;
+    phone_number?: string;
+    date_of_birth?: string;
+    country?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    pincode?: string;
   };
 }
 
@@ -30,7 +38,7 @@ export const useAuth = () => {
         if (data.session?.user) {
           const supabaseUser = data.session.user;
           // Ensure we set the user with the correct structure
-          setUser(supabaseUser as User);
+          setUser(supabaseUser as unknown as User);
           setUserRole(supabaseUser.user_metadata?.role || null);
         } else {
           setUser(null);
@@ -51,7 +59,7 @@ export const useAuth = () => {
         if (session?.user) {
           const supabaseUser = session.user;
           // Ensure we set the user with the correct structure
-          setUser(supabaseUser as User);
+          setUser(supabaseUser as unknown as User);
           setUserRole(supabaseUser.user_metadata?.role || null);
         } else {
           setUser(null);

@@ -43,10 +43,9 @@ export default function ProfilePage() {
           avatar_url: avatarUrl,
           phone_number: formData.phone_number,
           bio: formData.bio,
-          specialities: formData.specialties,
-          languages: formData.languages,
-          education: formData.education,
-          experience: formData.experience,
+          speciality: formData.specialties,
+          hourly_rate: formData.hourly_rate,
+          availability_status: formData.availability_status,
           updated_at: new Date().toISOString()
         })
         .eq('id', user?.id);
