@@ -15,7 +15,7 @@ interface Ambassador {
   availability_status: boolean;
 }
 
-export function Ambassadors() {
+export default function Ambassadors() {
   const [ambassadors, setAmbassadors] = useState<Ambassador[]>([]);
   const [loading, setLoading] = useState(true);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
