@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { DashboardLayout } from "../components/DashboardLayout";
 import { Card } from "@/components/ui/card";
@@ -26,6 +25,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { Resource } from "@/types/database.types";
+import { supabase } from "@/integrations/supabase/client";
 
 const ResourcesPage = () => {
   const { user } = useAuth();
@@ -38,14 +38,83 @@ const ResourcesPage = () => {
     fetchResources();
   }, [user]);
 
-  // Mock resource data as the mental_health_resources table doesn't exist yet
   const fetchResources = async () => {
     if (!user) return;
 
     try {
       setIsLoading(true);
       
-      // Mock data
+      // Try to fetch from the database
+      const { data, error } = await supabase
+        .from("mental_health_resources")
+        .select("*");
+        
+      if (error) {
+        throw error;
+      }
+      
+      if (data && data.length > 0) {
+        setResources(data as Resource[]);
+      } else {
+        // Use mock data if no resources found
+        const mockResources: Resource[] = [
+          {
+            id: "1",
+            title: "Managing Anxiety Guide",
+            description: "A comprehensive guide to understanding and managing anxiety",
+            type: "document",
+            category: "anxiety",
+            url: "https://example.com/anxiety-guide.pdf",
+            created_at: "2023-01-15",
+            downloads: 128,
+            shares: 45
+          },
+          {
+            id: "2",
+            title: "Mindfulness Meditation",
+            description: "10-minute guided meditation for stress relief",
+            type: "video",
+            category: "mindfulness",
+            url: "https://example.com/mindfulness-video.mp4",
+            created_at: "2023-02-10",
+            downloads: 253,
+            shares: 82
+          },
+          {
+            id: "3",
+            title: "Depression Infographic",
+            description: "Visual guide to understanding depression symptoms and treatment",
+            type: "image",
+            category: "depression",
+            url: "https://example.com/depression-infographic.png",
+            created_at: "2023-03-05",
+            downloads: 156,
+            shares: 67
+          },
+          {
+            id: "4",
+            title: "Self-Care Checklist",
+            description: "Daily practices for mental health maintenance",
+            type: "document",
+            category: "self-care",
+            url: "https://example.com/self-care-checklist.pdf",
+            created_at: "2023-03-20",
+            downloads: 98,
+            shares: 34
+          }
+        ];
+        
+        setResources(mockResources);
+        
+        toast.info("Note: Using mock data for resources", {
+          description: "Creating sample resources for demonstration"
+        });
+      }
+    } catch (error: any) {
+      console.error("Error fetching resources:", error);
+      toast.error(error.message || "Failed to load resources");
+      
+      // Use mock data as fallback
       const mockResources: Resource[] = [
         {
           id: "1",
@@ -68,40 +137,10 @@ const ResourcesPage = () => {
           created_at: "2023-02-10",
           downloads: 253,
           shares: 82
-        },
-        {
-          id: "3",
-          title: "Depression Infographic",
-          description: "Visual guide to understanding depression symptoms and treatment",
-          type: "image",
-          category: "depression",
-          url: "https://example.com/depression-infographic.png",
-          created_at: "2023-03-05",
-          downloads: 156,
-          shares: 67
-        },
-        {
-          id: "4",
-          title: "Self-Care Checklist",
-          description: "Daily practices for mental health maintenance",
-          type: "document",
-          category: "self-care",
-          url: "https://example.com/self-care-checklist.pdf",
-          created_at: "2023-03-20",
-          downloads: 98,
-          shares: 34
         }
       ];
       
       setResources(mockResources);
-      
-      toast.info("Note: Using mock data for resources", {
-        description: "The mental_health_resources table has not been created in the database yet"
-      });
-      
-    } catch (error: any) {
-      console.error("Error fetching resources:", error);
-      toast.error(error.message || "Failed to load resources");
     } finally {
       setIsLoading(false);
     }

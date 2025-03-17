@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
@@ -24,16 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-interface Appointment {
-  id: string;
-  therapist_name: string;
-  therapist_specialty: string;
-  therapist_avatar: string;
-  date: string;
-  time: string;
-  status: "upcoming" | "completed" | "cancelled";
-}
+import { Appointment } from "@/types/database.types";
 
 export default function AppointmentsPage() {
   const navigate = useNavigate();
@@ -49,15 +41,36 @@ export default function AppointmentsPage() {
   const fetchAppointments = async () => {
     try {
       setLoading(true);
+      
+      if (!user?.id) {
+        return;
+      }
+      
       const { data, error } = await supabase
         .from("appointments")
         .select("*")
-        .eq("patient_id", user?.id)
+        .eq("patient_id", user.id)
         .order("date", { ascending: true });
 
       if (error) throw error;
 
-      const filteredData = data.filter((appointment) => {
+      // Convert database appointments to our Appointment interface
+      const mappedAppointments: Appointment[] = data.map(appt => ({
+        id: appt.id,
+        date: appt.date,
+        time: appt.time,
+        type: appt.type,
+        status: appt.status || "pending",
+        patient_id: appt.patient_id,
+        ambassador_id: appt.ambassador_id,
+        notes: appt.notes,
+        therapist_name: "Dr. Example", // Placeholder
+        therapist_specialty: "General", // Placeholder
+        therapist_avatar: "", // Placeholder
+        duration: appt.duration
+      }));
+
+      const filteredData = mappedAppointments.filter((appointment) => {
         if (filter === "all") return true;
         return appointment.status === filter;
       });

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -83,17 +84,16 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
-      // First check if user exists
-      const { data: { users }, error: checkError } = await supabase.auth.admin.listUsers({
-        filters: {
-          email: formData.email
-        }
-      });
-
-      if (checkError) {
+      // First check if user exists - removed filters approach which doesn't exist
+      const { data, error } = await supabase.auth.admin.listUsers();
+      
+      // Check if email already exists in the returned users
+      const existingUser = data?.users?.find(user => user.email === formData.email);
+      
+      if (error) {
         // If we can't check (which is likely in production), proceed with signup
-        console.warn("Could not check for existing user:", checkError);
-      } else if (users?.length > 0) {
+        console.warn("Could not check for existing user:", error);
+      } else if (existingUser) {
         toast.error("An account with this email already exists. Please login instead.");
         navigate("/login");
         return;
@@ -124,7 +124,7 @@ export default function Signup() {
 
       if (!signUpData.user?.id) throw new Error("Failed to create account. Please try again.");
 
-      // 2. Create role-specific profile
+      // 2. Create role-specific profile - fixing table reference issue
       const profileData = {
         id: signUpData.user.id,
         first_name: formData.firstName,
@@ -133,8 +133,11 @@ export default function Signup() {
         updated_at: new Date().toISOString(),
       };
 
+      // Use the correct table name based on role
+      const tableName = formData.role === 'admin' ? 'admin_users' : `${formData.role}_profiles`;
+      
       const { error: profileError } = await supabase
-        .from(`${formData.role}_profiles`)
+        .from(tableName)
         .insert([
           {
             ...profileData,

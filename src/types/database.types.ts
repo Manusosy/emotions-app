@@ -1,3 +1,4 @@
+
 export type UserRole = 'patient' | 'therapist' | 'ambassador' | 'admin';
 
 export interface PatientHealthMetric {
@@ -60,17 +61,38 @@ export interface Client {
   full_name: string;
   email: string;
   avatar_url?: string;
-  phone_number: string; // Adding this to match ClientsPage usage
+  phone_number: string;
   last_appointment?: string;
   next_appointment?: string;
   status: 'active' | 'inactive';
-  total_sessions: number; // Adding this to match ClientsPage usage
+  total_sessions: number;
   last_session?: string;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  created_at?: string;
+  user_metadata: {
+    first_name?: string;
+    last_name?: string;
+    role?: UserRole;
+    full_name?: string;
+    avatar_url?: string;
+    phone_number?: string;
+    date_of_birth?: string;
+    country?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    pincode?: string;
+    patient_id?: string;
+  };
 }
 
 export interface UserProfile {
   id: string;
-  patient_id?: string; // Making this optional to match actual data
+  patient_id?: string;
   first_name: string;
   last_name: string;
   email: string;
@@ -93,8 +115,8 @@ export interface Message {
     avatar_url?: string;
   };
   content: string;
-  created_at: string; // Adding this to match the database
-  timestamp: string; // For backward compatibility
+  created_at: string;
+  timestamp: string;
   unread: boolean;
 }
 
@@ -102,8 +124,8 @@ export interface Appointment {
   id: string;
   date: string;
   time: string;
-  type: string; // Changed to string to accommodate database values
-  status: string; // Changed to string to accommodate database values
+  type: string;
+  status: string;
   patient_id?: string;
   ambassador_id?: string;
   notes?: string;
@@ -111,4 +133,17 @@ export interface Appointment {
   therapist_specialty?: string;
   therapist_avatar?: string;
   duration?: string;
+}
+
+export interface Resource {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  category: string;
+  url: string;
+  file_url?: string;
+  created_at: string;
+  downloads?: number;
+  shares?: number;
 }

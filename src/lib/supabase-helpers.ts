@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { 
   PatientHealthMetric, 
@@ -67,8 +68,7 @@ export const updateUserProfile = async (userId: string, role: string, profileDat
       .from(table)
       .update(profileData)
       .eq('id', userId)
-      .select()
-      .single();
+      .select();
 
     if (error) throw error;
     return data;
@@ -78,44 +78,8 @@ export const updateUserProfile = async (userId: string, role: string, profileDat
   }
 };
 
-// Patient health metrics functions - will need to create this table if we implement this feature
-// For now, let's comment out these functions to avoid TypeScript errors
-/*
-export const getPatientHealthMetrics = async (patientId: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('patient_health_metrics')
-      .select('*')
-      .eq('patient_id', patientId)
-      .order('recorded_at', { ascending: false });
-
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error fetching patient health metrics:', error);
-    throw error;
-  }
-};
-
-export const addPatientHealthMetric = async (metric: Omit<PatientHealthMetric, 'id' | 'recorded_at'>) => {
-  try {
-    const { data, error } = await supabase
-      .from('patient_health_metrics')
-      .insert(metric)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error adding patient health metric:', error);
-    throw error;
-  }
-};
-*/
-
 // Appointment functions
-export const createAppointment = async (appointment: Omit<Appointment, 'id' | 'created_at' | 'updated_at'>) => {
+export const createAppointment = async (appointment: Omit<Appointment, 'id'>) => {
   try {
     // Convert the appointment data to match the table structure
     const formattedAppointment = {

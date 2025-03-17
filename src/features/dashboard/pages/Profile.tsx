@@ -20,23 +20,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/use-auth";
 import { format } from "date-fns";
-
-interface UserProfile {
-  id: string;
-  patient_id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone_number: string;
-  date_of_birth: string;
-  country: string;
-  address: string;
-  city: string;
-  state: string;
-  pincode: string;
-  avatar_url: string;
-  created_at: string;
-}
+import { UserProfile } from "@/types/database.types";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -242,4 +226,4 @@ export default function Profile() {
       </div>
     </DashboardLayout>
   );
-} 
+}

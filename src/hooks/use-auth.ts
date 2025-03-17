@@ -3,26 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { User as UserType, UserRole } from '@/types/database.types';
-
-export interface User {
-  id: string;
-  email: string;
-  user_metadata: {
-    first_name?: string;
-    last_name?: string;
-    role?: UserRole;
-    full_name?: string;
-    avatar_url?: string;
-    phone_number?: string;
-    date_of_birth?: string;
-    country?: string;
-    address?: string;
-    city?: string;
-    state?: string;
-    pincode?: string;
-  };
-}
+import { UserRole, User } from '@/types/database.types';
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
