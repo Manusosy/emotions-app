@@ -128,21 +128,22 @@ export const getAppointments = async (userId: string, role: string) => {
         throw new Error('Invalid role');
     }
 
-    // Use a more direct approach to avoid recursive type inference
-    // First execute the query and get the response without relying on type inference
-    const response = await supabase
+    // Execute query without type inference
+    const query = supabase
       .from('appointments')
       .select('*')
       .eq(column, userId)
       .order('date', { ascending: false })
       .order('time', { ascending: false });
+      
+    // Execute the query and get raw response
+    const rawResponse = await query;
     
-    // Then handle the response manually
-    if (response.error) throw response.error;
+    // Handle errors manually
+    if (rawResponse.error) throw rawResponse.error;
     
-    // Explicitly type the data as Appointment[]
-    const data = response.data as Appointment[];
-    return data;
+    // Cast data to the known type
+    return rawResponse.data as Appointment[];
   } catch (error) {
     console.error('Error fetching appointments:', error);
     throw error;
