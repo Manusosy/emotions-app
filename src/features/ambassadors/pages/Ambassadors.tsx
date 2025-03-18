@@ -1,7 +1,8 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSupabaseClient } from '@supabase/supabase-js';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 import { AmbassadorCard } from '../components/AmbassadorCard';
 import { AmbassadorOnboarding } from '../components/AmbassadorOnboarding';
@@ -21,7 +22,6 @@ export default function Ambassadors() {
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
   const navigate = useNavigate();
-  const supabase = useSupabaseClient();
 
   useEffect(() => {
     checkOnboardingStatus();

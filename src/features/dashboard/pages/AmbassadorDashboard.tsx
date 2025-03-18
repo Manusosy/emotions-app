@@ -1,7 +1,8 @@
+
 import { useEffect, useState } from 'react';
-import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -30,7 +31,7 @@ export function AmbassadorDashboard() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAvailable, setIsAvailable] = useState(false);
-  const supabase = useSupabaseClient();
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -44,6 +45,8 @@ export function AmbassadorDashboard() {
       } = await supabase.auth.getUser();
 
       if (userError) throw userError;
+      
+      setUserId(user.id);
 
       // Load availability status
       const { data: profile, error: profileError } = await supabase
@@ -86,19 +89,14 @@ export function AmbassadorDashboard() {
 
   const handleAvailabilityChange = async () => {
     try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError) throw userError;
+      if (!userId) return;
 
       const newStatus = !isAvailable;
 
       const { error } = await supabase
         .from('profiles')
         .update({ availability_status: newStatus })
-        .eq('id', user.id);
+        .eq('id', userId);
 
       if (error) throw error;
 
@@ -238,9 +236,9 @@ export function AmbassadorDashboard() {
 
         <div>
           <h2 className="text-2xl font-semibold mb-4">Your Reviews</h2>
-          <ReviewList ambassadorId={supabase.auth.user()?.id || ''} />
+          {userId && <ReviewList ambassadorId={userId} />}
         </div>
       </div>
     </div>
   );
-} 
+}

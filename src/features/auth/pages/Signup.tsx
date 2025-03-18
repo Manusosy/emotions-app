@@ -84,29 +84,10 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
-      // Check if user already exists
-      const { data: usersData, error: userCheckError } = await supabase.auth.admin.listUsers();
+      // Check if user already exists - removed as this isn't available without admin access
+      // Removed admin user check since it's causing type errors
       
-      if (!userCheckError && usersData?.users) {
-        // Type check for the user object and safely access email property
-        const existingUser = usersData.users.find(user => {
-          return user && 
-                 typeof user === 'object' && 
-                 'email' in user && 
-                 typeof user.email === 'string' && 
-                 user.email === formData.email;
-        });
-        
-        if (existingUser) {
-          toast.error("An account with this email already exists. Please login instead.");
-          navigate("/login");
-          return;
-        }
-      } else if (userCheckError) {
-        console.warn("Could not check for existing user:", userCheckError);
-      }
-
-      // Continue with signup if no existing user found
+      // Continue with signup 
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,

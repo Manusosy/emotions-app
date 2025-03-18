@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -38,10 +39,6 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       staleTime: 30000,
-      // Add error handling for queries
-      onError: (error) => {
-        console.error('Query error:', error);
-      }
     },
   },
 });

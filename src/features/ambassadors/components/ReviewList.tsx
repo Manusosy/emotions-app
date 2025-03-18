@@ -1,7 +1,8 @@
+
 import { useEffect, useState } from 'react';
-import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { Star } from 'lucide-react';
 import { format } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
 
 import {
   Card,
@@ -29,7 +30,6 @@ interface ReviewListProps {
 export function ReviewList({ ambassadorId }: ReviewListProps) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
-  const supabase = useSupabaseClient();
 
   useEffect(() => {
     loadReviews();
@@ -54,7 +54,8 @@ export function ReviewList({ ambassadorId }: ReviewListProps) {
 
       if (error) throw error;
 
-      setReviews(data || []);
+      // Use type assertion to safely set the reviews
+      setReviews((data || []) as Review[]);
     } catch (error) {
       console.error('Error loading reviews:', error);
     } finally {
@@ -120,4 +121,4 @@ export function ReviewList({ ambassadorId }: ReviewListProps) {
       ))}
     </div>
   );
-} 
+}

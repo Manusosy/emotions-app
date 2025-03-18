@@ -8,8 +8,7 @@ import {
   Appointment
 } from '@/types/database.types';
 
-// Instead of using a union type for table names, use specific literal strings
-// to avoid excessive type instantiation
+// Use string literals directly and type assertions to resolve type issues
 export const getUserProfile = async (userId: string, role: string) => {
   try {
     let tableName = '';
@@ -32,7 +31,7 @@ export const getUserProfile = async (userId: string, role: string) => {
         throw new Error('Invalid role');
     }
 
-    // Use a more direct approach with type assertion to avoid complex type resolution
+    // Use type assertion to avoid complex type resolution
     const { data, error } = await supabase
       .from(tableName as any)
       .select('*')
@@ -70,7 +69,7 @@ export const updateUserProfile = async (userId: string, role: string, profileDat
         throw new Error('Invalid role');
     }
 
-    // Use a more direct approach with type assertion
+    // Use type assertion to avoid complex type resolution
     const { data, error } = await supabase
       .from(tableName as any)
       .update(profileData)

@@ -1,7 +1,8 @@
+
 import { useEffect, useState } from 'react';
-import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -31,7 +32,6 @@ export function UserDashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-  const supabase = useSupabaseClient();
 
   useEffect(() => {
     loadBookings();
@@ -159,4 +159,4 @@ export function UserDashboard() {
       )}
     </div>
   );
-} 
+}

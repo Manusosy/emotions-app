@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -184,19 +183,19 @@ const BookingPage = () => {
         return;
       }
       
-      // Create the booking entry
+      // Create the booking entry using the correct field names
+      const bookingData = {
+        user_id: user.id,
+        ambassador_id: ambassadorId,
+        session_date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : new Date().toISOString().split('T')[0],
+        session_time: selectedTime,
+        notes: formData.concerns,
+        status: "pending" as const
+      };
+      
       const { data, error } = await supabase
         .from("bookings")
-        .insert({
-          user_id: user.id,
-          ambassador_id: parseInt(ambassadorId),
-          specialty: selectedSpecialty,
-          appointment_type: selectedAppointmentType,
-          date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : null,
-          time: selectedTime,
-          concerns: formData.concerns,
-          status: "scheduled"
-        })
+        .insert(bookingData)
         .select();
         
       if (error) throw error;
