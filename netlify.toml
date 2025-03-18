@@ -1,6 +1,5 @@
-
 [build]
-  command = "npx pnpm install --no-frozen-lockfile && npx pnpm build"
+  command = "pnpm install && pnpm build"
   publish = "dist"
 
 [[redirects]]
@@ -14,11 +13,19 @@
     [headers.values]
     Access-Control-Allow-Origin = "*"
     Cache-Control = "public, max-age=3600"
-    Content-Security-Policy = "frame-ancestors 'self' https://*.lovable.ai https://*.lovable.app https://*.lovable.dev"
+    Content-Security-Policy = """
+      default-src 'self' https://*.supabase.co;
+      script-src 'self' 'unsafe-inline' 'unsafe-eval';
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      img-src 'self' data: blob: https://*;
+      font-src 'self' https://fonts.gstatic.com;
+      connect-src 'self' https://*.supabase.co https://api.openai.com;
+      frame-ancestors 'self';
+      object-src 'none';
+      base-uri 'self';
+    """
 
 [build.environment]
-  NODE_VERSION = "18.17.0"
-  NPM_FLAGS = "--no-optional"
-  CI = "true"
-  USE_NPM_INSTALL = "true"
-  ROLLUP_SKIP_NODE_RESOLUTION = "true" 
+  NODE_VERSION = "20.11.1"
+  VITE_SUPABASE_URL = "https://ekpiqiatfwozmepkgbbe.supabase.co"
+  VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVrcGlxaWF0Zndvem1lcGtnYmJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk2OTc3MzYsImV4cCI6MjA1NTI3MzczNn0.qPD707Lp5FiAjlQwfC1bbG-O2WuNUe_ZYRjox6Dmb-Y" 
