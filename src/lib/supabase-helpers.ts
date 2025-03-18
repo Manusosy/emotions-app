@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { 
   PatientHealthMetric, 
@@ -113,7 +114,7 @@ export const createAppointment = async (appointment: Omit<Appointment, 'id'>) =>
   }
 };
 
-export const getAppointments = async (userId: string, role: string): Promise<Appointment[]> => {
+export const getAppointments = async (userId: string, role: string) => {
   try {
     let column;
     switch (role) {
@@ -127,16 +128,16 @@ export const getAppointments = async (userId: string, role: string): Promise<App
         throw new Error('Invalid role');
     }
 
-    // Break down the query and use type assertions to avoid deep type inference
-    const { data, error } = await supabase
+    // Using a simpler approach to avoid excessive type inference
+    const result = await supabase
       .from('appointments')
       .select('*')
-      .eq(column, userId) as unknown as { data: Appointment[] | null, error: any };
-
-    if (error) throw error;
+      .eq(column, userId);
+      
+    if (result.error) throw result.error;
     
     // Sort the data in memory after fetching
-    const sortedData = data ? [...data].sort((a, b) => {
+    const sortedData = result.data ? [...result.data].sort((a, b) => {
       // First sort by date (descending)
       const dateComparison = new Date(b.date).getTime() - new Date(a.date).getTime();
       if (dateComparison !== 0) return dateComparison;
@@ -145,7 +146,7 @@ export const getAppointments = async (userId: string, role: string): Promise<App
       return b.time.localeCompare(a.time);
     }) : [];
     
-    return sortedData;
+    return sortedData as Appointment[];
   } catch (error) {
     console.error('Error fetching appointments:', error);
     throw error;
