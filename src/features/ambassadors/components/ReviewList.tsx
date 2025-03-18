@@ -62,12 +62,11 @@ export function ReviewList({ ambassadorId }: ReviewListProps) {
           rating: review.rating,
           comment: review.comment,
           created_at: review.created_at,
-          users: review.users && typeof review.users === 'object' && 'full_name' in review.users 
-            ? {
-                full_name: review.users.full_name || 'Anonymous User',
-                avatar_url: review.users.avatar_url || '/default-avatar.png'
-              }
-            : null
+          users: review.users && typeof review.users === 'object' ? 
+            {
+              full_name: (review.users as any)?.full_name || 'Anonymous User',
+              avatar_url: (review.users as any)?.avatar_url || '/default-avatar.png'
+            } : null
         })) as Review[];
         
         setReviews(safeReviews);

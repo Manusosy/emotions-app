@@ -68,9 +68,16 @@ export function UserDashboard() {
 
       // Transform the data to match our interface with proper error handling
       const processedBookings = (data || []).map(booking => {
-        // Default values in case of join errors
+        // Safely extract ambassador info, defaulting if there's an error
         const ambassadorInfo = booking.ambassador_info && typeof booking.ambassador_info === 'object' ? 
-          booking.ambassador_info : { id: booking.ambassador_id || '', full_name: 'Unknown Ambassador' };
+          { 
+            id: (booking.ambassador_info as any).id || '',
+            full_name: (booking.ambassador_info as any).full_name || 'Unknown Ambassador'
+          } : 
+          { 
+            id: booking.ambassador_id || '', 
+            full_name: 'Unknown Ambassador' 
+          };
         
         return {
           id: booking.id,
@@ -78,10 +85,7 @@ export function UserDashboard() {
           session_time: booking.session_time,
           status: (booking.status || 'pending') as 'pending' | 'confirmed' | 'cancelled' | 'completed',
           notes: booking.notes || '',
-          ambassador: {
-            id: ambassadorInfo.id || '',
-            full_name: ambassadorInfo.full_name || 'Unknown Ambassador'
-          },
+          ambassador: ambassadorInfo,
           has_review: Array.isArray(booking.has_review) && booking.has_review.length > 0
         };
       });
