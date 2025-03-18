@@ -127,8 +127,9 @@ export const getAppointments = async (userId: string, role: string) => {
         throw new Error('Invalid role');
     }
 
+    // Use explicit column type to avoid excessive type instantiation
     const { data, error } = await supabase
-      .from('appointments')
+      .from('appointments' as any)
       .select('*')
       .eq(column, userId)
       .order('date', { ascending: false })
