@@ -127,15 +127,11 @@ export const getAppointments = async (userId: string, role: string): Promise<App
         throw new Error('Invalid role');
     }
 
-    // Use a simple query structure to avoid deep type instantiation
-    // Let TypeScript infer the most basic type to avoid recursion issues
-    const query = supabase
+    // Break down the query and use type assertions to avoid deep type inference
+    const { data, error } = await supabase
       .from('appointments')
       .select('*')
-      .eq(column, userId);
-      
-    const result = await query;
-    const { data, error } = result;
+      .eq(column, userId) as unknown as { data: Appointment[] | null, error: any };
 
     if (error) throw error;
     
@@ -149,7 +145,7 @@ export const getAppointments = async (userId: string, role: string): Promise<App
       return b.time.localeCompare(a.time);
     }) : [];
     
-    return sortedData as Appointment[];
+    return sortedData;
   } catch (error) {
     console.error('Error fetching appointments:', error);
     throw error;
