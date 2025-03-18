@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   PatientHealthMetric, 
@@ -114,7 +113,7 @@ export const createAppointment = async (appointment: Omit<Appointment, 'id'>) =>
   }
 };
 
-export const getAppointments = async (userId: string, role: string) => {
+export const getAppointments = async (userId: string, role: string): Promise<Appointment[]> => {
   try {
     let column;
     switch (role) {
@@ -128,19 +127,18 @@ export const getAppointments = async (userId: string, role: string) => {
         throw new Error('Invalid role');
     }
 
-    // Use type assertion to avoid excessive type inference
-    const { data, error } = await supabase
+    // Use any to avoid type inference issues
+    const response: any = await supabase
       .from('appointments')
       .select('*')
       .eq(column, userId)
       .order('date', { ascending: false })
-      .order('time', { ascending: false }) as unknown as { data: Appointment[] | null, error: any };
+      .order('time', { ascending: false });
 
-    // Handle errors
-    if (error) throw error;
+    if (response.error) throw response.error;
     
-    // Return the data with explicit typing
-    return data as Appointment[];
+    // Explicitly cast the response data to the Appointment[] type
+    return response.data as Appointment[];
   } catch (error) {
     console.error('Error fetching appointments:', error);
     throw error;
