@@ -56,58 +56,6 @@ export type Database = {
           },
         ]
       }
-      ambassador_reviews: {
-        Row: {
-          ambassador_id: string
-          booking_id: string
-          comment: string | null
-          created_at: string | null
-          id: string
-          rating: number | null
-          user_id: string
-        }
-        Insert: {
-          ambassador_id: string
-          booking_id: string
-          comment?: string | null
-          created_at?: string | null
-          id?: string
-          rating?: number | null
-          user_id: string
-        }
-        Update: {
-          ambassador_id?: string
-          booking_id?: string
-          comment?: string | null
-          created_at?: string | null
-          id?: string
-          rating?: number | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_ambassador"
-            columns: ["ambassador_id"]
-            isOneToOne: false
-            referencedRelation: "admin_users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_booking"
-            columns: ["booking_id"]
-            isOneToOne: true
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "admin_users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       appointments: {
         Row: {
           ambassador_id: string | null
@@ -167,84 +115,47 @@ export type Database = {
       }
       bookings: {
         Row: {
-          ambassador_id: string
+          ambassador_id: number
+          appointment_type: string
+          concerns: string | null
           created_at: string | null
+          date: string
           id: string
-          notes: string | null
-          session_date: string
-          session_time: string
-          status: Database["public"]["Enums"]["booking_status"] | null
+          specialty: string
+          status: string | null
+          time: string
           updated_at: string | null
           user_id: string
         }
         Insert: {
-          ambassador_id: string
+          ambassador_id: number
+          appointment_type: string
+          concerns?: string | null
           created_at?: string | null
+          date: string
           id?: string
-          notes?: string | null
-          session_date: string
-          session_time: string
-          status?: Database["public"]["Enums"]["booking_status"] | null
+          specialty: string
+          status?: string | null
+          time: string
           updated_at?: string | null
           user_id: string
         }
         Update: {
-          ambassador_id?: string
+          ambassador_id?: number
+          appointment_type?: string
+          concerns?: string | null
           created_at?: string | null
+          date?: string
           id?: string
-          notes?: string | null
-          session_date?: string
-          session_time?: string
-          status?: Database["public"]["Enums"]["booking_status"] | null
+          specialty?: string
+          status?: string | null
+          time?: string
           updated_at?: string | null
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "fk_ambassador"
-            columns: ["ambassador_id"]
-            isOneToOne: false
-            referencedRelation: "admin_users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "admin_users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      favorite_ambassadors: {
-        Row: {
-          ambassador_id: string
-          created_at: string | null
-          id: string
-          user_id: string
-        }
-        Insert: {
-          ambassador_id: string
-          created_at?: string | null
-          id?: string
-          user_id: string
-        }
-        Update: {
-          ambassador_id?: string
-          created_at?: string | null
-          id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_ambassador"
-            columns: ["ambassador_id"]
-            isOneToOne: false
-            referencedRelation: "admin_users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user"
+            foreignKeyName: "bookings_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
@@ -566,37 +477,25 @@ export type Database = {
       }
       profiles: {
         Row: {
-          availability_status: boolean | null
           country: string
           created_at: string
           first_name: string
           id: string
           last_name: string
-          location: string | null
-          onboarding_completed: boolean | null
-          rating: number | null
         }
         Insert: {
-          availability_status?: boolean | null
           country: string
           created_at?: string
           first_name: string
           id: string
           last_name: string
-          location?: string | null
-          onboarding_completed?: boolean | null
-          rating?: number | null
         }
         Update: {
-          availability_status?: boolean | null
           country?: string
           created_at?: string
           first_name?: string
           id?: string
           last_name?: string
-          location?: string | null
-          onboarding_completed?: boolean | null
-          rating?: number | null
         }
         Relationships: [
           {
@@ -739,7 +638,6 @@ export type Database = {
       }
     }
     Enums: {
-      booking_status: "pending" | "confirmed" | "cancelled" | "completed"
       mood_type: "Happy" | "Calm" | "Sad" | "Angry" | "Worried"
     }
     CompositeTypes: {

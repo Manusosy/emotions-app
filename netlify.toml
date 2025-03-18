@@ -1,5 +1,5 @@
 [build]
-  command = "pnpm install --no-frozen-lockfile && pnpm build"
+  command = "npx pnpm install --no-frozen-lockfile && npx pnpm build"
   publish = "dist"
 
 [[redirects]]
@@ -14,14 +14,10 @@
     Access-Control-Allow-Origin = "*"
     Cache-Control = "public, max-age=3600"
     Content-Security-Policy = "frame-ancestors 'self' https://*.lovable.ai https://*.lovable.app https://*.lovable.dev"
-    X-Frame-Options = "DENY"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
 
 [build.environment]
   NODE_VERSION = "18.17.0"
   NPM_FLAGS = "--no-optional"
   CI = "true"
-  PNPM_VERSION = "8.15.4"
-  VITE_ENVIRONMENT = "production"
+  USE_NPM_INSTALL = "true"
   ROLLUP_SKIP_NODE_RESOLUTION = "true" 

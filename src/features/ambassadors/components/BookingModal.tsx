@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { createBrowserClient } from '@supabase/ssr';
 import { toast } from 'sonner';
 import * as z from 'zod';
 
@@ -68,6 +68,7 @@ export function BookingModal({
   ambassadorName,
 }: BookingModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const supabase = createBrowserClient();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -219,4 +220,4 @@ export function BookingModal({
       </DialogContent>
     </Dialog>
   );
-}
+} 

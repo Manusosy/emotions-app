@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { Star } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -29,6 +29,7 @@ interface ReviewListProps {
 export function ReviewList({ ambassadorId }: ReviewListProps) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  const supabase = useSupabaseClient();
 
   useEffect(() => {
     loadReviews();
@@ -119,4 +120,4 @@ export function ReviewList({ ambassadorId }: ReviewListProps) {
       ))}
     </div>
   );
-}
+} 

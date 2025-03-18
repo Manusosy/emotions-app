@@ -38,43 +38,34 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       staleTime: 30000,
-      refetchOnWindowFocus: false,
+      // Add error handling for queries
+      onError: (error) => {
+        console.error('Query error:', error);
+      }
     },
-    mutations: {
-      retry: 1,
-    }
   },
 });
 
-const renderApp = () => {
-  const rootElement = document.getElementById('root');
+const rootElement = document.getElementById('root');
 
-  if (!rootElement) {
-    throw new Error('Failed to find the root element');
-  }
+if (!rootElement) {
+  throw new Error('Failed to find the root element');
+}
 
-  try {
-    const root = createRoot(rootElement);
-    root.render(
-      <React.StrictMode>
-        <ErrorBoundary fallback={<div>Something went wrong. Please refresh the page.</div>}>
-          <QueryClientProvider client={queryClient}>
-            <App />
-          </QueryClientProvider>
-        </ErrorBoundary>
-      </React.StrictMode>
-    );
-    console.log('Application rendered successfully');
-  } catch (error) {
-    console.error('Failed to render application:', error);
-    // Show a user-friendly error message
-    document.body.innerHTML = '<div style="text-align: center; padding: 20px;">Something went wrong. Please refresh the page.</div>';
-  }
-};
+const root = createRoot(rootElement);
 
-// Ensure the DOM is fully loaded before rendering
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', renderApp);
-} else {
-  renderApp();
+// Wrap the render in a try-catch for better error handling
+try {
+  root.render(
+    <React.StrictMode>
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <App />
+        </QueryClientProvider>
+      </ErrorBoundary>
+    </React.StrictMode>
+  );
+  console.log('Application rendered successfully');
+} catch (error) {
+  console.error('Failed to render application:', error);
 }

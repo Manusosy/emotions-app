@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { 
   PatientHealthMetric, 
@@ -7,7 +8,8 @@ import {
   Appointment
 } from '@/types/database.types';
 
-// Use simple string type instead of complex unions
+// Instead of using a union type for table names, use specific literal strings
+// to avoid excessive type instantiation
 export const getUserProfile = async (userId: string, role: string) => {
   try {
     let tableName = '';
@@ -30,9 +32,9 @@ export const getUserProfile = async (userId: string, role: string) => {
         throw new Error('Invalid role');
     }
 
-    // Use type assertion to bypass type checking
+    // Use a more direct approach with type assertion to avoid complex type resolution
     const { data, error } = await supabase
-      .from(tableName)
+      .from(tableName as any)
       .select('*')
       .eq('id', userId)
       .single();
@@ -68,9 +70,9 @@ export const updateUserProfile = async (userId: string, role: string, profileDat
         throw new Error('Invalid role');
     }
 
-    // Use type assertion
+    // Use a more direct approach with type assertion
     const { data, error } = await supabase
-      .from(tableName)
+      .from(tableName as any)
       .update(profileData)
       .eq('id', userId)
       .select();
