@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { 
   PatientHealthMetric, 
@@ -127,20 +128,19 @@ export const getAppointments = async (userId: string, role: string): Promise<App
         throw new Error('Invalid role');
     }
 
-    // Break up the query into separate operations to avoid deep type instantiation
-    const query = supabase
+    // Use type assertion to bypass TypeScript's deep type instantiation
+    // This avoids the TS2589 error while maintaining type safety for the result
+    const response = await supabase
       .from('appointments')
       .select('*')
       .eq(column, userId)
-      .order('date', { ascending: false });
-      
-    // Execute the query
-    const { data, error } = await query.order('time', { ascending: false });
+      .order('date', { ascending: false })
+      .order('time', { ascending: false }) as unknown as { data: Appointment[] | null, error: any };
 
-    if (error) throw error;
+    if (response.error) throw response.error;
     
-    // Explicitly cast the result to Appointment[]
-    return (data || []) as Appointment[];
+    // Return empty array if no data is found
+    return response.data || [];
   } catch (error) {
     console.error('Error fetching appointments:', error);
     throw error;
