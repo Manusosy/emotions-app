@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   PatientHealthMetric, 
@@ -128,11 +127,15 @@ export const getAppointments = async (userId: string, role: string): Promise<App
         throw new Error('Invalid role');
     }
 
-    // Create a raw SQL query without chaining methods to avoid deep type instantiation
-    const { data, error } = await supabase
+    // Use a simple query structure to avoid deep type instantiation
+    // Let TypeScript infer the most basic type to avoid recursion issues
+    const query = supabase
       .from('appointments')
       .select('*')
       .eq(column, userId);
+      
+    const result = await query;
+    const { data, error } = result;
 
     if (error) throw error;
     
