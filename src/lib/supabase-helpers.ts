@@ -128,22 +128,19 @@ export const getAppointments = async (userId: string, role: string) => {
         throw new Error('Invalid role');
     }
 
-    // Build the query
-    const query = supabase
+    // First perform the query without type inference
+    const { data, error } = await supabase
       .from('appointments')
       .select('*')
       .eq(column, userId)
       .order('date', { ascending: false })
       .order('time', { ascending: false });
-      
-    // Execute the query without type inference
-    const { data, error } = await query as unknown as { data: Appointment[]; error: any };
-    
+
     // Handle errors
     if (error) throw error;
     
-    // Return the appointments
-    return data;
+    // Cast the result to the expected type
+    return data as Appointment[];
   } catch (error) {
     console.error('Error fetching appointments:', error);
     throw error;
