@@ -128,19 +128,20 @@ export const getAppointments = async (userId: string, role: string) => {
         throw new Error('Invalid role');
     }
 
-    // Use a type assertion that does not rely on type inference
-    // This prevents TypeScript from trying to infer deeply nested types
-    const { data, error } = await supabase
+    // Use a more direct approach to avoid recursive type inference
+    // First execute the query and get the response without relying on type inference
+    const response = await supabase
       .from('appointments')
       .select('*')
       .eq(column, userId)
       .order('date', { ascending: false })
-      .order('time', { ascending: false }) as unknown as { 
-        data: Appointment[]; 
-        error: any 
-      };
-
-    if (error) throw error;
+      .order('time', { ascending: false });
+    
+    // Then handle the response manually
+    if (response.error) throw response.error;
+    
+    // Explicitly type the data as Appointment[]
+    const data = response.data as Appointment[];
     return data;
   } catch (error) {
     console.error('Error fetching appointments:', error);
