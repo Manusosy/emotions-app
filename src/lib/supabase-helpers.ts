@@ -128,10 +128,10 @@ export const getAppointments = async (userId: string, role: string) => {
         throw new Error('Invalid role');
     }
 
-    // Use concrete table name to avoid TS2589 error
+    // Break the type recursion with a more explicit type assertion
     const { data, error } = await supabase
-      .from('appointments')
-      .select('*')
+      .from('appointments' as const)
+      .select('*' as const)
       .eq(column, userId)
       .order('date', { ascending: false })
       .order('time', { ascending: false });
