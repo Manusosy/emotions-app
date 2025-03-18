@@ -33,7 +33,7 @@ export const getUserProfile = async (userId: string, role: string) => {
 
     // Use type assertion to avoid complex type resolution
     const { data, error } = await supabase
-      .from(tableName as any)
+      .from(tableName)
       .select('*')
       .eq('id', userId)
       .single();
@@ -71,7 +71,7 @@ export const updateUserProfile = async (userId: string, role: string, profileDat
 
     // Use type assertion to avoid complex type resolution
     const { data, error } = await supabase
-      .from(tableName as any)
+      .from(tableName)
       .update(profileData)
       .eq('id', userId)
       .select();

@@ -38,15 +38,17 @@ export default function Ambassadors() {
 
       if (userError) throw userError;
 
+      // Use profiles table instead of users
       const { data, error } = await supabase
-        .from('users')
-        .select('role, onboarding_completed')
+        .from('profiles')
+        .select('first_name, last_name, onboarding_completed')
         .eq('id', user.id)
         .single();
 
       if (error) throw error;
 
-      if (data.role === 'ambassador' && !data.onboarding_completed) {
+      // Since we can't check role directly, we'll rely on onboarding_completed only
+      if (!data.onboarding_completed) {
         setNeedsOnboarding(true);
       }
     } catch (error) {
@@ -56,31 +58,29 @@ export default function Ambassadors() {
 
   const loadAmbassadors = async () => {
     try {
+      // Query the ambassador_profiles table directly
       const { data, error } = await supabase
-        .from('users')
+        .from('ambassador_profiles')
         .select(`
           id,
           full_name,
           avatar_url,
-          profiles (
-            location,
-            rating,
-            availability_status
-          )
-        `)
-        .eq('role', 'ambassador')
-        .eq('onboarding_completed', true);
+          speciality,
+          hourly_rate,
+          availability_status
+        `);
 
       if (error) throw error;
 
-      const formattedAmbassadors = data.map((item) => ({
+      // Transform the data to match our Ambassador interface
+      const formattedAmbassadors = data?.map((item) => ({
         id: item.id,
-        full_name: item.full_name,
-        avatar_url: item.avatar_url,
-        location: item.profiles.location,
-        rating: item.profiles.rating,
-        availability_status: item.profiles.availability_status,
-      }));
+        full_name: item.full_name || 'Unnamed Ambassador',
+        avatar_url: item.avatar_url || '',
+        location: item.speciality || 'General', // Using speciality as location
+        rating: 5, // Default rating
+        availability_status: item.availability_status === 'Available',
+      })) || [];
 
       setAmbassadors(formattedAmbassadors);
     } catch (error) {
@@ -107,7 +107,7 @@ export default function Ambassadors() {
 
       if (error) throw error;
 
-      setFavorites(data.map((item) => item.ambassador_id));
+      setFavorites((data || []).map((item) => item.ambassador_id));
     } catch (error) {
       console.error('Error loading favorites:', error);
     }

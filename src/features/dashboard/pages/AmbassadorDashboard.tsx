@@ -57,9 +57,9 @@ export function AmbassadorDashboard() {
 
       if (profileError) throw profileError;
 
-      setIsAvailable(profile.availability_status);
+      setIsAvailable(profile.availability_status || false);
 
-      // Load bookings
+      // Load bookings with explicit column specification for the join
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
         .select(`
@@ -68,9 +68,9 @@ export function AmbassadorDashboard() {
           session_time,
           status,
           notes,
-          user:user_id (
-            full_name,
-            avatar_url
+          user_info:user_id (
+            full_name:full_name,
+            avatar_url:avatar_url
           )
         `)
         .eq('ambassador_id', user.id)
@@ -78,7 +78,26 @@ export function AmbassadorDashboard() {
 
       if (bookingsError) throw bookingsError;
 
-      setBookings(bookingsData || []);
+      // Transform data to match our Booking interface
+      const processedBookings = (bookingsData || []).map(booking => {
+        // Handle potential errors in the joined data
+        const userInfo = booking.user_info && typeof booking.user_info === 'object' ? 
+          booking.user_info : { full_name: 'Unknown User', avatar_url: '/default-avatar.png' };
+
+        return {
+          id: booking.id,
+          session_date: booking.session_date,
+          session_time: booking.session_time,
+          status: (booking.status || 'pending') as 'pending' | 'confirmed' | 'cancelled' | 'completed',
+          notes: booking.notes || '',
+          user: {
+            full_name: 'full_name' in userInfo ? userInfo.full_name : 'Unknown User',
+            avatar_url: 'avatar_url' in userInfo ? userInfo.avatar_url : '/default-avatar.png'
+          }
+        };
+      });
+
+      setBookings(processedBookings);
     } catch (error) {
       toast.error('Failed to load dashboard data');
       console.error('Error loading dashboard data:', error);
@@ -110,7 +129,7 @@ export function AmbassadorDashboard() {
     }
   };
 
-  const handleStatusUpdate = async (bookingId: string, newStatus: string) => {
+  const handleStatusUpdate = async (bookingId: string, newStatus: 'pending' | 'confirmed' | 'cancelled' | 'completed') => {
     try {
       const { error } = await supabase
         .from('bookings')

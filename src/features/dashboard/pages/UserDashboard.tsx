@@ -46,6 +46,7 @@ export function UserDashboard() {
 
       if (userError) throw userError;
 
+      // Modified query to be more explicit with column names
       const { data, error } = await supabase
         .from('bookings')
         .select(`
@@ -54,18 +55,38 @@ export function UserDashboard() {
           session_time,
           status,
           notes,
-          ambassador:ambassador_id (
+          ambassador_info:ambassador_id (
             id,
             full_name
           ),
-          has_review:ambassador_reviews!inner(id)
+          has_review:ambassador_reviews!left(id)
         `)
         .eq('user_id', user.id)
         .order('session_date', { ascending: false });
 
       if (error) throw error;
 
-      setBookings(data || []);
+      // Transform the data to match our interface with proper error handling
+      const processedBookings = (data || []).map(booking => {
+        // Default values in case of join errors
+        const ambassadorInfo = booking.ambassador_info && typeof booking.ambassador_info === 'object' ? 
+          booking.ambassador_info : { id: booking.ambassador_id || '', full_name: 'Unknown Ambassador' };
+        
+        return {
+          id: booking.id,
+          session_date: booking.session_date,
+          session_time: booking.session_time,
+          status: (booking.status || 'pending') as 'pending' | 'confirmed' | 'cancelled' | 'completed',
+          notes: booking.notes || '',
+          ambassador: {
+            id: 'id' in ambassadorInfo ? ambassadorInfo.id : '',
+            full_name: 'full_name' in ambassadorInfo ? ambassadorInfo.full_name : 'Unknown Ambassador'
+          },
+          has_review: Array.isArray(booking.has_review) && booking.has_review.length > 0
+        };
+      });
+      
+      setBookings(processedBookings);
     } catch (error) {
       toast.error('Failed to load bookings');
       console.error('Error loading bookings:', error);

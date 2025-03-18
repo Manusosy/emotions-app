@@ -1,9 +1,9 @@
+
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
-import { createBrowserClient } from '@supabase/ssr';
 import { toast } from 'sonner';
 import * as z from 'zod';
 
@@ -38,6 +38,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
 
 const formSchema = z.object({
   date: z.date({
@@ -68,10 +69,12 @@ export function BookingModal({
   ambassadorName,
 }: BookingModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const supabase = createBrowserClient();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+      notes: ''
+    }
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
@@ -220,4 +223,4 @@ export function BookingModal({
       </DialogContent>
     </Dialog>
   );
-} 
+}
