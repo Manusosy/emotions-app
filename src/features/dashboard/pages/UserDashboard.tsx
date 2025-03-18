@@ -79,8 +79,8 @@ export function UserDashboard() {
           status: (booking.status || 'pending') as 'pending' | 'confirmed' | 'cancelled' | 'completed',
           notes: booking.notes || '',
           ambassador: {
-            id: 'id' in ambassadorInfo ? ambassadorInfo.id : '',
-            full_name: 'full_name' in ambassadorInfo ? ambassadorInfo.full_name : 'Unknown Ambassador'
+            id: ambassadorInfo.id || '',
+            full_name: ambassadorInfo.full_name || 'Unknown Ambassador'
           },
           has_review: Array.isArray(booking.has_review) && booking.has_review.length > 0
         };

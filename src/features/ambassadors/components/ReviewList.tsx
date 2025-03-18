@@ -107,13 +107,13 @@ export function ReviewList({ ambassadorId }: ReviewListProps) {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <img
-                  src={review.users.avatar_url || '/default-avatar.png'}
-                  alt={`${review.users.full_name}'s avatar`}
+                  src={review.users?.avatar_url || '/default-avatar.png'}
+                  alt={`${review.users?.full_name || 'Anonymous User'}'s avatar`}
                   className="h-10 w-10 rounded-full"
                 />
                 <div>
                   <CardTitle className="text-sm font-medium">
-                    {review.users.full_name}
+                    {review.users?.full_name || 'Anonymous User'}
                   </CardTitle>
                   <CardDescription>
                     {format(new Date(review.created_at), 'PPP')}

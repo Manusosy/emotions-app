@@ -8,7 +8,7 @@ import {
   Appointment
 } from '@/types/database.types';
 
-// Use string literals directly and type assertions to resolve type issues
+// Use explicit type assertions to resolve type issues
 export const getUserProfile = async (userId: string, role: string) => {
   try {
     let tableName = '';
@@ -31,9 +31,9 @@ export const getUserProfile = async (userId: string, role: string) => {
         throw new Error('Invalid role');
     }
 
-    // Use type assertion to avoid complex type resolution
+    // Use type assertion to resolve type issues with string literals
     const { data, error } = await supabase
-      .from(tableName)
+      .from(tableName as any)
       .select('*')
       .eq('id', userId)
       .single();
@@ -69,9 +69,9 @@ export const updateUserProfile = async (userId: string, role: string, profileDat
         throw new Error('Invalid role');
     }
 
-    // Use type assertion to avoid complex type resolution
+    // Use type assertion to resolve type issues with string literals
     const { data, error } = await supabase
-      .from(tableName)
+      .from(tableName as any)
       .update(profileData)
       .eq('id', userId)
       .select();
