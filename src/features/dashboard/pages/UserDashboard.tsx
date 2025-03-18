@@ -75,7 +75,7 @@ export function UserDashboard() {
             full_name: (booking.ambassador_info as any).full_name || 'Unknown Ambassador'
           } : 
           { 
-            id: booking.ambassador_id || '', 
+            id: '', // Remove reference to ambassador_id
             full_name: 'Unknown Ambassador' 
           };
         

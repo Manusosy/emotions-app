@@ -31,7 +31,7 @@ export const getUserProfile = async (userId: string, role: string) => {
         throw new Error('Invalid role');
     }
 
-    // Use type assertion to resolve type issues with string literals
+    // Use concrete types to avoid type recursion issues
     const { data, error } = await supabase
       .from(tableName as any)
       .select('*')
@@ -69,7 +69,7 @@ export const updateUserProfile = async (userId: string, role: string, profileDat
         throw new Error('Invalid role');
     }
 
-    // Use type assertion to resolve type issues with string literals
+    // Use concrete types to avoid type recursion issues
     const { data, error } = await supabase
       .from(tableName as any)
       .update(profileData)
@@ -99,6 +99,7 @@ export const createAppointment = async (appointment: Omit<Appointment, 'id'>) =>
       duration: appointment.duration || '60 minutes' // Default duration
     };
 
+    // Use a concrete table name to avoid TS2589 error
     const { data, error } = await supabase
       .from('appointments')
       .insert(formattedAppointment)
@@ -127,9 +128,9 @@ export const getAppointments = async (userId: string, role: string) => {
         throw new Error('Invalid role');
     }
 
-    // Use explicit column type to avoid excessive type instantiation
+    // Use concrete table name to avoid TS2589 error
     const { data, error } = await supabase
-      .from('appointments' as any)
+      .from('appointments')
       .select('*')
       .eq(column, userId)
       .order('date', { ascending: false })
