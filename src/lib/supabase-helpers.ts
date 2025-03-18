@@ -128,13 +128,15 @@ export const getAppointments = async (userId: string, role: string) => {
         throw new Error('Invalid role');
     }
 
-    // Break the type recursion with a more explicit type assertion
-    const { data, error } = await supabase
-      .from('appointments' as const)
-      .select('*' as const)
+    // Completely avoid type inference by using a type assertion to `any`
+    const result = await supabase
+      .from('appointments')
+      .select('*')
       .eq(column, userId)
       .order('date', { ascending: false })
       .order('time', { ascending: false });
+      
+    const { data, error } = result as { data: Appointment[]; error: any };
 
     if (error) throw error;
     return data;
