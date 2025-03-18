@@ -128,15 +128,17 @@ export const getAppointments = async (userId: string, role: string) => {
         throw new Error('Invalid role');
     }
 
-    // Completely avoid type inference by using a type assertion to `any`
-    const result = await supabase
+    // Use a type assertion that does not rely on type inference
+    // This prevents TypeScript from trying to infer deeply nested types
+    const { data, error } = await supabase
       .from('appointments')
       .select('*')
       .eq(column, userId)
       .order('date', { ascending: false })
-      .order('time', { ascending: false });
-      
-    const { data, error } = result as { data: Appointment[]; error: any };
+      .order('time', { ascending: false }) as unknown as { 
+        data: Appointment[]; 
+        error: any 
+      };
 
     if (error) throw error;
     return data;
