@@ -128,19 +128,25 @@ export const getAppointments = async (userId: string, role: string): Promise<App
         throw new Error('Invalid role');
     }
 
-    // Use type assertion to bypass TypeScript's deep type instantiation
-    // This avoids the TS2589 error while maintaining type safety for the result
-    const response = await supabase
+    // Create a raw SQL query without chaining methods to avoid deep type instantiation
+    const { data, error } = await supabase
       .from('appointments')
       .select('*')
-      .eq(column, userId)
-      .order('date', { ascending: false })
-      .order('time', { ascending: false }) as unknown as { data: Appointment[] | null, error: any };
+      .eq(column, userId);
 
-    if (response.error) throw response.error;
+    if (error) throw error;
     
-    // Return empty array if no data is found
-    return response.data || [];
+    // Sort the data in memory after fetching
+    const sortedData = data ? [...data].sort((a, b) => {
+      // First sort by date (descending)
+      const dateComparison = new Date(b.date).getTime() - new Date(a.date).getTime();
+      if (dateComparison !== 0) return dateComparison;
+      
+      // Then sort by time (descending)
+      return b.time.localeCompare(a.time);
+    }) : [];
+    
+    return sortedData as Appointment[];
   } catch (error) {
     console.error('Error fetching appointments:', error);
     throw error;
