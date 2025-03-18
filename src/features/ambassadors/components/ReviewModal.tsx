@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Star } from 'lucide-react';
-import { useSupabaseClient } from '@supabase/auth-helpers-react';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import * as z from 'zod';
 
@@ -48,7 +48,6 @@ export function ReviewModal({
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const supabase = useSupabaseClient();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -177,4 +176,4 @@ export function ReviewModal({
       </DialogContent>
     </Dialog>
   );
-} 
+}

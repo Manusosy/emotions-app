@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useSupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 import {
@@ -57,7 +57,6 @@ const steps = [
 export function AmbassadorOnboarding() {
   const [currentStep, setCurrentStep] = useState(0);
   const navigate = useNavigate();
-  const supabase = useSupabaseClient();
 
   const form = useForm({
     resolver: zodResolver(onboardingSchema),
@@ -248,4 +247,4 @@ export function AmbassadorOnboarding() {
       </CardContent>
     </Card>
   );
-} 
+}
