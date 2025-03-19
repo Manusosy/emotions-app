@@ -97,6 +97,7 @@ export default function Signup() {
             last_name: formData.lastName,
             role: formData.role,
             full_name: `${formData.firstName} ${formData.lastName}`,
+            country: formData.country
           },
         },
       });
@@ -121,6 +122,7 @@ export default function Signup() {
             first_name: formData.firstName,
             last_name: formData.lastName,
             email: formData.email,
+            country: formData.country
           });
 
         if (profileError) {
@@ -133,6 +135,8 @@ export default function Signup() {
           .insert({
             id: authData.user.id,
             full_name: `${formData.firstName} ${formData.lastName}`,
+            email: formData.email,
+            availability_status: 'available'
           });
 
         if (profileError) {
@@ -141,7 +145,7 @@ export default function Signup() {
         }
       }
 
-      toast.success("Account created successfully!");
+      toast.success("Account created successfully! Please check your email to verify your account.");
       
       // Redirect based on role
       if (formData.role === 'patient') {
