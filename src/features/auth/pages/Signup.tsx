@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -65,6 +64,7 @@ export default function Signup() {
     lastName: "",
     email: "",
     password: "",
+    confirmPassword: "",
     country: "",
     role: "patient" as UserRole,
   });
@@ -75,117 +75,83 @@ export default function Signup() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!agreedToTerms) {
-      toast.error("Please agree to the terms and conditions to continue.");
-      return;
-    }
-
     setIsLoading(true);
-
+    
     try {
-      // Check if user already exists - removed as this isn't available without admin access
-      // Removed admin user check since it's causing type errors
+      console.log('Starting signup process...');
       
-      // Continue with signup 
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      // Validate password
+      if (formData.password !== formData.confirmPassword) {
+        toast.error("Passwords do not match");
+        return;
+      }
+
+      // Sign up with Supabase
+      console.log('Calling Supabase auth.signUp...');
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
           data: {
             first_name: formData.firstName,
             last_name: formData.lastName,
-            country: formData.country,
             role: formData.role,
+            full_name: `${formData.firstName} ${formData.lastName}`,
           },
         },
       });
 
       if (signUpError) {
-        if (signUpError.message.includes("already registered")) {
-          toast.error("An account with this email already exists. Please login instead.");
-          navigate("/login");
-          return;
-        }
+        console.error('Signup error:', signUpError);
         throw signUpError;
       }
 
-      if (!signUpData.user?.id) throw new Error("Failed to create account. Please try again.");
-
-      const profileData = {
-        id: signUpData.user.id,
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      
-      // Set the table name based on role
-      const tableMap: Record<string, string> = {
-        admin: 'admin_users',
-        patient: 'patient_profiles',
-        therapist: 'therapist_profiles',
-        ambassador: 'ambassador_profiles'
-      };
-      
-      const tableName = tableMap[formData.role];
-      
-      // Each table has specific extra fields based on role
-      const roleSpecificData = formData.role === 'patient' 
-        ? {
-            medical_history: '',
-            emergency_contact: '',
-            preferred_language: 'English',
-            date_of_birth: null,
-            gender: '',
-            blood_type: ''
-          }
-        : formData.role === 'therapist'
-        ? {
-            speciality: 'General',
-            availability_status: 'Available',
-            bio: '',
-            hourly_rate: 0,
-            years_of_experience: 0,
-            license_number: '',
-            education: ''
-          }
-        : formData.role === 'ambassador'
-        ? {
-            speciality: 'Mental Health',
-            availability_status: 'Available',
-            bio: '',
-            hourly_rate: 0,
-            total_referrals: 0,
-            rating: 0
-          }
-        : {};
-      
-      // Use type assertion to avoid complex type resolution
-      const { error: profileError } = await supabase
-        .from(tableName as any)
-        .insert([{
-          ...profileData,
-          ...roleSpecificData
-        }]);
-
-      if (profileError) throw profileError;
-
-      toast.success("Your account has been created successfully!");
-      
-      switch (formData.role) {
-        case "patient":
-          navigate("/patient-dashboard");
-          break;
-        case "therapist":
-          navigate("/therapist-dashboard");
-          break;
-        case "ambassador":
-          navigate("/ambassador-dashboard");
-          break;
-        default:
-          navigate("/");
+      if (!authData.user) {
+        throw new Error('No user data returned from signup');
       }
+
+      console.log('Signup successful, creating profile...');
+
+      // Create profile based on role
+      if (formData.role === 'patient') {
+        const { error: profileError } = await supabase
+          .from('patient_profiles')
+          .insert({
+            id: authData.user.id,
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            email: formData.email,
+          });
+
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+          throw profileError;
+        }
+      } else if (formData.role === 'ambassador') {
+        const { error: profileError } = await supabase
+          .from('ambassador_profiles')
+          .insert({
+            id: authData.user.id,
+            full_name: `${formData.firstName} ${formData.lastName}`,
+          });
+
+        if (profileError) {
+          console.error('Ambassador profile creation error:', profileError);
+          throw profileError;
+        }
+      }
+
+      toast.success("Account created successfully!");
+      
+      // Redirect based on role
+      if (formData.role === 'patient') {
+        navigate('/patient-dashboard');
+      } else if (formData.role === 'ambassador') {
+        navigate('/ambassador-dashboard');
+      } else {
+        navigate('/');
+      }
+
     } catch (error: any) {
       console.error("Signup process error:", error);
       
@@ -252,6 +218,35 @@ export default function Signup() {
                 placeholder="Create a password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                required
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4 text-gray-400" />
+                ) : (
+                  <Eye className="h-4 w-4 text-gray-400" />
+                )}
+                <span className="sr-only">
+                  {showPassword ? "Hide password" : "Show password"}
+                </span>
+              </Button>
+            </div>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <div className="relative">
+              <Input
+                id="confirmPassword"
+                type={showPassword ? "text" : "password"}
+                placeholder="Confirm your password"
+                value={formData.confirmPassword}
+                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 required
               />
               <Button
