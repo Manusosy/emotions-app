@@ -24,6 +24,8 @@ import Settings from "@/features/dashboard/pages/Settings";
 import Profile from "@/features/dashboard/pages/Profile";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { AmbassadorOnboardingDialog } from "@/features/ambassadors/components/AmbassadorOnboardingDialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 const App = () => {
   console.log('App component mounting...');
@@ -31,24 +33,200 @@ const App = () => {
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Add logging to clearly display onboarding decision process
+  const decideOnboardingStatus = (userData, profile) => {
+    // Check metadata flags first
+    if (userData?.user_metadata?.onboarded === true) {
+      console.log('User marked as onboarded in metadata');
+      return false;
+    }
+    
+    if (userData?.user_metadata?.has_completed_profile === true) {
+      console.log('User has completed profile according to metadata');
+      return false;
+    }
+    
+    // If no flags in metadata, check profile data
+    if (!profile) {
+      console.log('No profile data found');
+      return true;
+    }
+    
+    const isIncomplete = !profile.full_name || 
+      !profile.bio || 
+      !profile.speciality || 
+      !profile.avatar_url;
+      
+    console.log('Profile completeness check:', 
+      {
+        'Has full_name': !!profile.full_name,
+        'Has bio': !!profile.bio,
+        'Has speciality': !!profile.speciality,
+        'Has avatar': !!profile.avatar_url
+      }
+    );
+    
+    return isIncomplete;
+  }
+
+  const checkAmbassadorProfile = async (userId: string) => {
+    try {
+      console.log('Checking profile for ambassador:', userId);
+      
+      // First, check user metadata to see if already onboarded
+      const { data: { user: userData } } = await supabase.auth.getUser();
+      console.log('User metadata check:', userData?.user_metadata);
+      
+      // Get profile data regardless of metadata state for better logging
+      const { data: profile, error } = await supabase
+        .from('ambassador_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // Not found is expected for new users
+        console.error('Error checking ambassador profile:', error);
+      }
+
+      console.log('Ambassador profile data:', profile);
+      
+      // Make decision based on all available data
+      const needsOnboarding = decideOnboardingStatus(userData, profile);
+      console.log('Final onboarding decision:', needsOnboarding ? 'NEEDS ONBOARDING' : 'ALREADY ONBOARDED');
+      
+      return needsOnboarding;
+    } catch (error) {
+      console.error('Error in checkAmbassadorProfile:', error);
+      return true; // Return true to show onboarding if there's an error
+    }
+  };
+
+  // Add a refreshAmbassadorStatus function to reload when needed
+  const refreshAmbassadorStatus = async (userId) => {
+    if (!userId) return;
+    console.log('Refreshing ambassador onboarding status...');
+    
+    try {
+      // Force refresh the user data from Supabase to get latest metadata
+      const { data, error } = await supabase.auth.refreshSession();
+      if (error) {
+        console.error('Error refreshing session:', error);
+        return;
+      }
+      
+      if (data?.user?.user_metadata?.onboarded === true || 
+          data?.user?.user_metadata?.has_completed_profile === true) {
+        console.log('User is marked as onboarded in refreshed metadata');
+        setShowOnboarding(false);
+        return;
+      }
+      
+      const needsOnboarding = await checkAmbassadorProfile(userId);
+      console.log('Updated onboarding status:', needsOnboarding ? 'needs onboarding' : 'already onboarded');
+      setShowOnboarding(needsOnboarding);
+    } catch (error) {
+      console.error('Error refreshing ambassador status:', error);
+    }
+  };
+
+  // Update the checkUserMetadataDirectly function to be more efficient
+  const checkUserMetadataDirectly = async () => {
+    if (userRole !== 'ambassador') return;
+    
+    try {
+      console.log('Performing direct metadata check...');
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.log('No authenticated user found in direct check');
+        return;
+      }
+      
+      // Check both metadata flags and profile completion
+      const isOnboarded = user.user_metadata?.onboarded === true || 
+                         user.user_metadata?.has_completed_profile === true;
+                         
+      if (isOnboarded) {
+        console.log('User is marked as onboarded in metadata, hiding onboarding');
+        setShowOnboarding(false);
+        return;
+      }
+      
+      // Only check profile if metadata doesn't indicate completion
+      const { data: profile } = await supabase
+        .from('ambassador_profiles')
+        .select('full_name, bio, speciality, avatar_url')
+        .eq('id', user.id)
+        .single();
+        
+      const hasCompleteProfile = profile && 
+                               profile.full_name && 
+                               profile.bio && 
+                               profile.speciality;
+                               
+      if (hasCompleteProfile) {
+        console.log('Profile is complete, hiding onboarding');
+        setShowOnboarding(false);
+      }
+    } catch (error) {
+      console.error('Error in direct metadata check:', error);
+    }
+  };
+
+  // Add a function to load ambassador dashboard data
+  const loadAmbassadorDashboardData = async (userId) => {
+    if (!userId) return null;
+    
+    try {
+      console.log('Loading ambassador dashboard data for:', userId);
+      
+      // Force refresh the session to get latest metadata
+      await supabase.auth.refreshSession();
+      
+      // Get profile data with a fresh query
+      const { data: profile, error } = await supabase
+        .from('ambassador_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+        
+      if (error) {
+        console.error('Error loading ambassador profile:', error);
+        return null;
+      }
+      
+      console.log('Loaded fresh ambassador profile:', profile);
+      return profile;
+    } catch (error) {
+      console.error('Error in loadAmbassadorDashboardData:', error);
+      return null;
+    }
+  };
 
   useEffect(() => {
     console.log('App useEffect running...');
+    let isMounted = true;
     
-    // Initial session check
     const checkInitialSession = async () => {
       try {
         console.log('Checking initial Supabase session...');
         const { data: { session } } = await supabase.auth.getSession();
         console.log('Initial session check result:', session);
         
-        if (session?.user) {
+        if (session?.user && isMounted) {
           console.log('User found in session:', session.user);
           setUser(session.user);
           
           const userRole = session.user.user_metadata?.role;
           console.log('User role from metadata:', userRole);
           setUserRole(userRole);
+
+          // If user is an ambassador, check their profile
+          if (userRole === 'ambassador') {
+            await refreshAmbassadorStatus(session.user.id);
+          }
           
           toast.success(`Welcome back!`);
         } else {
@@ -58,18 +236,17 @@ const App = () => {
         console.error('Error getting initial session:', error);
         toast.error('Authentication error. Please try again.');
       } finally {
-        console.log('Setting initialization complete');
-        setIsInitialized(true);
+        if (isMounted) {
+          setIsInitialized(true);
+        }
       }
     };
 
     checkInitialSession();
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session);
       
-      // Update state based on auth change
       if (session?.user) {
         console.log('User from auth change:', session.user);
         setUser(session.user);
@@ -77,6 +254,13 @@ const App = () => {
         const userRole = session.user.user_metadata?.role;
         console.log('User role from auth change:', userRole);
         setUserRole(userRole);
+
+        // Check ambassador profile on login or metadata update
+        if (userRole === 'ambassador' && 
+            (event === 'SIGNED_IN' || event === 'USER_UPDATED')) {
+          console.log('Checking ambassador status after', event);
+          await refreshAmbassadorStatus(session.user.id);
+        }
         
         if (event === 'SIGNED_IN') {
           toast.success('Successfully signed in!');
@@ -85,6 +269,7 @@ const App = () => {
         console.log('No user after auth change');
         setUser(null);
         setUserRole(null);
+        setShowOnboarding(false);
         
         if (event === 'SIGNED_OUT') {
           toast.success('Successfully signed out');
@@ -92,26 +277,87 @@ const App = () => {
       }
     });
 
+    // Cleanup function for any potential memory leaks
+    const beforeUnloadHandler = () => {
+      console.log('Cleaning up before page unload');
+      isMounted = false;
+    };
+
+    window.addEventListener('beforeunload', beforeUnloadHandler);
+
     return () => {
       console.log('Cleaning up auth subscription');
+      isMounted = false;
       subscription.unsubscribe();
+      window.removeEventListener('beforeunload', beforeUnloadHandler);
     };
   }, []);
 
+  // Update the useEffect for metadata checking
+  useEffect(() => {
+    if (userRole !== 'ambassador' || !showOnboarding) return;
+    
+    // Initial check
+    checkUserMetadataDirectly();
+    
+    // Set up interval for periodic checks
+    const intervalId = setInterval(checkUserMetadataDirectly, 1000);
+    
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [userRole, showOnboarding]);
+
+  // Add an event handler for storage events to catch auth changes across tabs
+  useEffect(() => {
+    const handleStorageChange = (event) => {
+      if (event.key?.includes('supabase.auth') && userRole === 'ambassador' && showOnboarding) {
+        console.log('Auth data changed in storage, checking onboarding status');
+        checkUserMetadataDirectly();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [userRole, showOnboarding]);
+
+  // Show loading state only during initial load
   if (!isInitialized) {
     console.log('App still initializing...');
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em]" role="status">
-            <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
-              Loading...
-            </span>
-          </div>
-          <p className="mt-2 text-sm text-muted-foreground">Initializing application...</p>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="bg-white shadow-sm rounded-lg p-4 flex items-center space-x-3">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-solid border-[#0078FF] border-r-transparent"></div>
+          <p className="text-sm text-gray-600 font-medium">Loading application...</p>
         </div>
       </div>
     );
+  }
+
+  // Show onboarding dialog for ambassadors with incomplete profiles
+  if (userRole === 'ambassador') {
+    // Always ensure we've made the right decision about whether to show onboarding
+    console.log('Ambassador detected, showing onboarding status:', showOnboarding ? 'NEEDS ONBOARDING' : 'ALREADY ONBOARDED');
+    
+    if (showOnboarding) {
+      return (
+        <BrowserRouter>
+          <Routes>
+            <Route path="*" element={
+              <>
+                <AmbassadorOnboardingDialog />
+                <div style={{ display: 'none' }}>
+                  <AmbassadorDashboard /> {/* Preloaded but hidden */}
+                </div>
+              </>
+            } />
+          </Routes>
+        </BrowserRouter>
+      );
+    }
   }
 
   console.log('App rendering with user:', user, 'and role:', userRole);
@@ -135,9 +381,10 @@ const App = () => {
 
   // Check if current path is a dashboard route
   const isDashboardRoute = (pathname: string) => {
-    return pathname.includes('/dashboard') || 
-           pathname.includes('/ambassador') || 
-           pathname.includes('/admin');
+    return pathname.includes('dashboard') || 
+           pathname.includes('ambassador') || 
+           pathname.includes('admin') ||
+           pathname.includes('booking');
   };
 
   const showFooter = !isDashboardRoute(window.location.pathname);
@@ -209,7 +456,13 @@ const App = () => {
                 path="/ambassador-dashboard" 
                 element={
                   <ProtectedRoute 
-                    element={<AmbassadorDashboard />} 
+                    element={
+                      <AmbassadorDashboard 
+                        key={`ambassador-dashboard-${Date.now()}`}
+                        refreshData={() => loadAmbassadorDashboardData(user?.id)}
+                        forceRefresh={true}
+                      />
+                    } 
                     allowedRoles={["ambassador"]} 
                   />
                 } 
