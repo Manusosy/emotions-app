@@ -111,40 +111,6 @@ export default function Signup() {
         throw new Error('No user data returned from signup');
       }
 
-      console.log('Signup successful, creating profile...');
-
-      // Create profile based on role
-      if (formData.role === 'patient') {
-        const { error: profileError } = await supabase
-          .from('patient_profiles')
-          .insert({
-            id: authData.user.id,
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            email: formData.email,
-            country: formData.country
-          });
-
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
-          throw profileError;
-        }
-      } else if (formData.role === 'ambassador') {
-        const { error: profileError } = await supabase
-          .from('ambassador_profiles')
-          .insert({
-            id: authData.user.id,
-            full_name: `${formData.firstName} ${formData.lastName}`,
-            email: formData.email,
-            availability_status: 'available'
-          });
-
-        if (profileError) {
-          console.error('Ambassador profile creation error:', profileError);
-          throw profileError;
-        }
-      }
-
       toast.success("Account created successfully! Please check your email to verify your account.");
       
       // Redirect based on role
@@ -166,13 +132,8 @@ export default function Signup() {
       }
       
       toast.error(error.message || "Failed to create account. Please try again.");
-      
-      if (error.message?.includes('profile')) {
-        await supabase.auth.signOut();
-      }
-    } finally {
-      setIsLoading(false);
     }
+    setIsLoading(false);
   };
 
   return (

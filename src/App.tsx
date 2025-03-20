@@ -26,6 +26,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AmbassadorOnboardingDialog } from "@/features/ambassadors/components/AmbassadorOnboardingDialog";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import Navbar from "@/components/layout/Navbar";
+import ComingSoon from '@/components/ComingSoon';
 
 const App = () => {
   console.log('App component mounting...');
@@ -395,6 +397,7 @@ const App = () => {
       <Sonner />
       <BrowserRouter>
         <div className="flex flex-col min-h-screen max-w-[100vw] overflow-x-hidden">
+          <Navbar />
           <div className="flex-grow">
             <Routes>
               <Route path="/" element={<MoodTracker />} />
@@ -404,120 +407,42 @@ const App = () => {
               <Route path="/ambassadors" element={<Ambassadors />} />
               <Route path="/booking" element={<BookingPage />} />
               
-              {/* Patient Dashboard Routes */}
+              {/* Coming Soon Pages */}
               <Route 
-                path="/patient-dashboard" 
+                path="/therapists" 
                 element={
-                  <ProtectedRoute 
-                    element={<PatientDashboard />} 
-                    allowedRoles={["patient"]} 
+                  <ComingSoon 
+                    title="Find Your Perfect Therapist" 
+                    description="We're building a network of qualified therapists to provide you with professional mental health support. This feature will be available soon!"
                   />
                 } 
               />
               <Route 
-                path="/patient-dashboard/profile" 
+                path="/resources" 
                 element={
-                  <ProtectedRoute 
-                    element={<Profile />} 
-                    allowedRoles={["patient"]} 
+                  <ComingSoon 
+                    title="Mental Health Resources" 
+                    description="A comprehensive library of mental health resources, articles, and self-help materials is coming soon to support your well-being journey."
                   />
                 } 
               />
               <Route 
-                path="/patient-dashboard/appointments" 
+                path="/help-groups" 
                 element={
-                  <ProtectedRoute 
-                    element={<PatientAppointmentsPage />} 
-                    allowedRoles={["patient"]} 
-                  />
-                } 
-              />
-              <Route 
-                path="/patient-dashboard/favorites" 
-                element={
-                  <ProtectedRoute 
-                    element={<FavoritesPage />} 
-                    allowedRoles={["patient"]} 
-                  />
-                } 
-              />
-              <Route 
-                path="/patient-dashboard/settings" 
-                element={
-                  <ProtectedRoute 
-                    element={<Settings />} 
-                    allowedRoles={["patient"]} 
+                  <ComingSoon 
+                    title="Support Groups" 
+                    description="Connect with others who share similar experiences in our moderated support groups. Join the waiting list to be notified when this feature launches!"
                   />
                 } 
               />
               
-              {/* Ambassador Dashboard Routes */}
+              {/* Protected Dashboard Routes */}
               <Route 
-                path="/ambassador-dashboard" 
+                path="/dashboard/*" 
                 element={
                   <ProtectedRoute 
-                    element={
-                      <AmbassadorDashboard 
-                        key={`ambassador-dashboard-${Date.now()}`}
-                        refreshData={() => loadAmbassadorDashboardData(user?.id)}
-                        forceRefresh={true}
-                      />
-                    } 
-                    allowedRoles={["ambassador"]} 
-                  />
-                } 
-              />
-              <Route 
-                path="/ambassador-dashboard/appointments" 
-                element={
-                  <ProtectedRoute 
-                    element={<AppointmentsPage />} 
-                    allowedRoles={["ambassador"]} 
-                  />
-                } 
-              />
-              <Route 
-                path="/ambassador-dashboard/clients" 
-                element={
-                  <ProtectedRoute 
-                    element={<ClientsPage />} 
-                    allowedRoles={["ambassador"]} 
-                  />
-                } 
-              />
-              <Route 
-                path="/ambassador-dashboard/groups" 
-                element={
-                  <ProtectedRoute 
-                    element={<GroupsPage />} 
-                    allowedRoles={["ambassador"]} 
-                  />
-                } 
-              />
-              <Route 
-                path="/ambassador-dashboard/resources" 
-                element={
-                  <ProtectedRoute 
-                    element={<ResourcesPage />} 
-                    allowedRoles={["ambassador"]} 
-                  />
-                } 
-              />
-              <Route 
-                path="/ambassador-dashboard/profile" 
-                element={
-                  <ProtectedRoute 
-                    element={<Profile />} 
-                    allowedRoles={["ambassador"]} 
-                  />
-                } 
-              />
-              <Route 
-                path="/ambassador-dashboard/settings" 
-                element={
-                  <ProtectedRoute 
-                    element={<Settings />} 
-                    allowedRoles={["ambassador"]} 
+                    element={<PatientDashboard />}
+                    allowedRoles={["patient", "ambassador"]}
                   />
                 } 
               />

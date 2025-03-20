@@ -2,8 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import Header from "@/app/layout/Header";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -19,6 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useRef } from "react";
+import HeroSection from "../components/HeroSection";
 
 const steps = [
   { id: 1, name: "Specialty" },
@@ -479,9 +479,7 @@ const BookingPage = () => {
   }
   
   return (
-    <div className="min-h-screen bg-white">
-      <Header />
-      
+    <div className="min-h-screen bg-gradient-to-br from-brand-purple-light via-white to-brand-blue-light">
       <div className="pt-20 pb-16">
         <div className="container mx-auto px-4">
           {/* Progress Steps */}

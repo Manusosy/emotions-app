@@ -1,15 +1,17 @@
--- Add email column to ambassador_profiles if it doesn't exist
-DO $$ 
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 
-        FROM information_schema.columns 
-        WHERE table_name = 'ambassador_profiles' 
-        AND column_name = 'email'
-    ) THEN
-        ALTER TABLE public.ambassador_profiles ADD COLUMN email TEXT;
-    END IF;
-END $$;
+-- Ensure the ambassador_profiles table exists
+CREATE TABLE IF NOT EXISTS public.ambassador_profiles (
+  id UUID PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,
+  full_name TEXT,
+  bio TEXT,
+  speciality TEXT,
+  hourly_rate DECIMAL,
+  availability_status TEXT DEFAULT 'available',
+  phone_number TEXT,
+  avatar_url TEXT,
+  email TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
 
 -- Update the handle_new_user function
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -26,8 +28,7 @@ BEGIN
                 COALESCE(NEW.raw_user_metadata->>'first_name', ''),
                 ' ',
                 COALESCE(NEW.raw_user_metadata->>'last_name', '')
-            ),
-            NEW.email
+            )
         ),
         COALESCE(NEW.raw_user_metadata->>'role', 'patient')
     );
@@ -38,29 +39,30 @@ BEGIN
             id,
             first_name,
             last_name,
-            email
+            email,
+            country
         ) VALUES (
             NEW.id,
             NEW.raw_user_metadata->>'first_name',
             NEW.raw_user_metadata->>'last_name',
-            NEW.email
+            NEW.email,
+            NEW.raw_user_metadata->>'country'
         );
     ELSIF NEW.raw_user_metadata->>'role' = 'ambassador' THEN
         INSERT INTO public.ambassador_profiles (
             id,
             full_name,
-            email
+            email,
+            availability_status
         ) VALUES (
             NEW.id,
-            COALESCE(
-                NEW.raw_user_metadata->>'full_name',
-                CONCAT(
-                    COALESCE(NEW.raw_user_metadata->>'first_name', ''),
-                    ' ',
-                    COALESCE(NEW.raw_user_metadata->>'last_name', '')
-                )
+            CONCAT(
+                COALESCE(NEW.raw_user_metadata->>'first_name', ''),
+                ' ',
+                COALESCE(NEW.raw_user_metadata->>'last_name', '')
             ),
-            NEW.email
+            NEW.email,
+            'available'
         );
     END IF;
 
@@ -68,8 +70,23 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Grant necessary permissions
-GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role;
-GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, service_role;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, anon, authenticated, service_role;
-GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO postgres, anon, authenticated, service_role; 
+-- Enable RLS on ambassador_profiles if not already enabled
+ALTER TABLE public.ambassador_profiles ENABLE ROW LEVEL SECURITY;
+
+-- Recreate RLS policies
+DROP POLICY IF EXISTS "Anyone can view ambassador profiles" ON public.ambassador_profiles;
+CREATE POLICY "Anyone can view ambassador profiles"
+  ON public.ambassador_profiles
+  FOR SELECT
+  USING (true);
+
+DROP POLICY IF EXISTS "Ambassadors can update their own profile" ON public.ambassador_profiles;
+CREATE POLICY "Ambassadors can update their own profile"
+  ON public.ambassador_profiles
+  FOR UPDATE
+  USING (auth.uid() = id);
+
+-- Grant minimal required permissions
+GRANT USAGE ON SCHEMA public TO authenticated;
+GRANT SELECT ON public.ambassador_profiles TO authenticated;
+GRANT UPDATE ON public.ambassador_profiles TO authenticated; 

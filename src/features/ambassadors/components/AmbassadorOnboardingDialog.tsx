@@ -265,66 +265,72 @@ export function AmbassadorOnboardingDialog() {
       
       // Get the current user
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No user found');
-      
-      // Get correct country value
-      const countryToUse = userCountry || data.country;
-      
-      // Create complete profile data object
-      const profileData = {
-        id: user.id,
-        full_name: data.full_name,
-        bio: data.bio,
-        speciality: data.speciality,
-        phone_number: data.phone_number,
-        country: countryToUse,
-        languages: data.languages,
-        education: data.education,
-        experience: data.experience,
-        avatar_url: data.avatar_url,
-        availability_status: 'Available',
-        rating: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      
-      // Update both profile and metadata in parallel
-      const [profileResult, userResult] = await Promise.all([
-        // Update ambassador profile
-        supabase.from('ambassador_profiles').upsert(profileData),
-        
-        // Update user metadata
-        supabase.auth.updateUser({
-          data: {
-            onboarded: true,
-            has_completed_profile: true,
-            profile_completed_at: new Date().toISOString(),
-            avatar_url: data.avatar_url,
-            full_name: data.full_name,
-            country: countryToUse,
-            phone: data.phone_number
-          }
-        })
-      ]);
+      if (!user) {
+        toast.error('No user found. Please try logging in again.');
+        return false;
+      }
 
-      if (profileResult.error) throw profileResult.error;
-      if (userResult.error) throw userResult.error;
+      // Update ambassador profile first
+      const { error: profileError } = await supabase
+        .from('ambassador_profiles')
+        .upsert({
+          id: user.id,
+          full_name: data.full_name,
+          bio: data.bio,
+          speciality: data.speciality,
+          phone_number: data.phone_number,
+          country: userCountry || data.country,
+          languages: data.languages,
+          education: data.education,
+          experience: data.experience,
+          avatar_url: data.avatar_url || '',
+          availability_status: 'Available',
+          updated_at: new Date().toISOString()
+        });
+
+      if (profileError) {
+        console.error('Profile update error:', profileError);
+        throw new Error('Failed to update profile');
+      }
+
+      // Update user metadata
+      const { error: userError } = await supabase.auth.updateUser({
+        data: { 
+          onboarded: true,
+          has_completed_profile: true,
+          profile_completed_at: new Date().toISOString(),
+          avatar_url: data.avatar_url,
+          full_name: data.full_name,
+          country: userCountry || data.country,
+          phone: data.phone_number,
+          role: 'ambassador'
+        }
+      });
+
+      if (userError) {
+        console.error('User metadata update error:', userError);
+        throw new Error('Failed to update user metadata');
+      }
       
       console.log('Profile and metadata updated successfully');
       
-      // Show success message and close dialog immediately
-      toast.success('Profile saved successfully!', { id: 'profile-save' });
+      // Show success message
+      toast.success('Profile saved successfully!');
+      
+      // Close dialog and show success state
       setOpen(false);
       setShowSuccessDialog(true);
       
       // Navigate to dashboard after a short delay
       setTimeout(() => {
         window.location.href = '/ambassador-dashboard';
-      }, 2000); // Reduced from 3000ms to 2000ms
+      }, 2000);
       
       return true;
     } catch (error) {
       console.error('Error saving profile:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to save profile');
+      setIsSubmitting(false);
       return false;
     }
   };
@@ -684,40 +690,22 @@ export function AmbassadorOnboardingDialog() {
                     </Button>
                   ) : (
                     <Button
-                      onClick={async () => {
+                      onClick={handleSubmit(async (formData) => {
+                        if (isSubmitting) return;
+                        
                         try {
-                          // Validate required fields
-                          const isValid = await trigger(['bio', 'languages']);
-                          if (!isValid) {
-                            toast.error('Please complete all required fields');
-                            return;
-                          }
-                          
-                          // Prevent multiple submissions
-                          if (isSubmitting) return;
-                          
-                          // Set submitting state
                           setIsSubmitting(true);
-                          
-                          // Get all form values
-                          const formData = getValues();
-                          
-                          // Show loading toast
-                          toast.loading('Saving profile...', { id: 'profile-save' });
-                          
-                          // Process submission
                           const success = await onSubmit(formData);
                           
                           if (!success) {
                             setIsSubmitting(false);
-                            toast.error('Failed to save profile', { id: 'profile-save' });
                           }
                         } catch (err) {
                           console.error('Error processing form submission:', err);
                           toast.error('Error submitting form');
                           setIsSubmitting(false);
                         }
-                      }}
+                      })}
                       disabled={isSubmitting}
                       className="bg-[#0078FF] hover:bg-blue-600 text-white px-5 shadow-md transition-all hover:shadow-lg min-w-[140px]"
                     >

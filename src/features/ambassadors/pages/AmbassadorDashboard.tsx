@@ -1,41 +1,49 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { DashboardLayout } from "../components/DashboardLayout";
+import { Card } from "@/components/ui/card";
+import { 
+  Calendar, 
+  MessageSquare, 
+  Users, 
+  Video, 
+  Plus, 
+  Star, 
+  CheckCircle2,
+  LayoutDashboard,
+  AlertCircle,
+  Bell,
+  UserPlus
+} from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Appointment } from "@/types/database.types"; 
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { AmbassadorOnboardingDialog } from "../components/AmbassadorOnboardingDialog";
+import { ClientCard } from "../components/ClientCard";
+import { AppointmentCard } from "../components/AppointmentCard";
+import { GroupCard } from "../components/GroupCard";
+import { DashboardAppointment } from "@/types/ambassadors.types";
+import { Group } from "@/types/groups";
+import { User } from "@/types/user";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import {
   AreaChart,
   Area,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
-  BarChart,
-  Bar,
+  CartesianGrid,
   ResponsiveContainer
 } from "recharts";
-import {
-  LayoutDashboard,
-  Calendar,
-  Users,
-  Star,
-  MessageSquare,
-  Video,
-} from "lucide-react";
-import { useMediaQuery } from "@/hooks/use-media-query";
-import { toast } from "sonner";
-import { DashboardLayout } from "../components/DashboardLayout";
 
 interface DashboardAppointment {
   id: string;
@@ -63,13 +71,23 @@ interface SupportGroup {
   max_participants: number;
 }
 
-const AmbassadorDashboard = () => {
-  const navigate = useNavigate();
+interface AmbassadorDashboardProps {
+  refreshData?: () => Promise<any>;
+}
+
+const AmbassadorDashboard = ({ refreshData }: AmbassadorDashboardProps) => {
   const { user } = useAuth();
   const [appointments, setAppointments] = useState<DashboardAppointment[]>([]);
   const [supportGroups, setSupportGroups] = useState<SupportGroup[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const isMobile = useMediaQuery("(max-width: 768px)");
+  const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
+  const [managedGroups, setManagedGroups] = useState<any[]>([]);
+  const [profileData, setProfileData] = useState(null);
+  const [recentClients, setRecentClients] = useState([
+    { name: "Adrian Marshall", clientId: "C0001", lastSession: "15 Mar 2025" },
+    { name: "Jamie Johnson", clientId: "C0002", lastSession: "13 Mar 2025" }
+  ]);
   
   const revenueData = [
     { name: 'Mon', amount: 1200 },
@@ -91,86 +109,63 @@ const AmbassadorDashboard = () => {
     { name: 'Sun', appointments: 4 },
   ];
   
-  const stats = {
-    totalClients: 78,
-    clientsToday: 12,
-    sessionsToday: 8,
-    clientIncrease: "15% From Last Week",
+  const [stats, setStats] = useState({
+    totalClients: "48",
+    clientIncrease: "12% This Month",
+    clientsToday: "5",
     clientTodayIncrease: "20% From Yesterday",
+    totalSessions: "128",
     sessionIncrease: "10% From Yesterday"
-  };
+  });
 
-  const recentClients = [
-    { name: "Adrian Marshall", clientId: "C0001", lastSession: "15 Mar 2025" },
-    { name: "Jamie Johnson", clientId: "C0002", lastSession: "13 Mar 2025" }
-  ];
-
+  // Load profile data and dashboard data
   useEffect(() => {
-    fetchDashboardData();
-  }, [user]);
-
-  const fetchDashboardData = async () => {
-    if (!user) return;
-
-    try {
-      setIsLoading(true);
-
-      // Fetch appointments
-      const { data: appointmentsData, error: appointmentsError } = await supabase
-        .from("appointments")
-        .select(`
-          id,
-          patient_id,
-          date,
-          time,
-          type,
-          status
-        `)
-        .eq("ambassador_id", user.id)
-        .order("date", { ascending: true });
-
-      if (appointmentsError) throw appointmentsError;
-
-      // For now, we'll use mock data for support groups
-      const mockSupportGroups: SupportGroup[] = [
-        {
-          id: "1",
-          name: "Anxiety Support",
-          description: "Weekly support group for anxiety management",
-          schedule: [{ day: "Monday", hours: "6:00 PM - 7:30 PM" }],
-          price: 15,
-          participants: 8,
-          max_participants: 12
-        },
-        {
-          id: "2",
-          name: "Depression Support",
-          description: "Bi-weekly support for depression management",
-          schedule: [{ day: "Thursday", hours: "7:00 PM - 8:30 PM" }],
-          price: 20,
-          participants: 5,
-          max_participants: 10
+    const loadData = async () => {
+      try {
+        // If refreshData prop is provided, use it to get profile data
+        if (refreshData) {
+          const profile = await refreshData();
+          setProfileData(profile);
         }
-      ];
+        
+        // Fetch upcoming appointments
+        const { data: appointmentsData, error: appointmentsError } = await supabase
+          .from("appointments")
+          .select("*, patient_profiles:patient_id(*)")
+          .eq("ambassador_id", user?.id)
+          .gte("date", new Date().toISOString())
+          .order("date", { ascending: true })
+          .limit(5);
 
-      // Transform appointments to match our interface
-      const formattedAppointments = (appointmentsData || []).map(appt => ({
-        ...appt,
-        patient: {
-          name: "Patient", // Placeholder since we don't have patient data
-          avatar: ""
+        if (appointmentsError) {
+          console.error("Error loading appointments:", appointmentsError);
+        } else {
+          setUpcomingAppointments(appointmentsData || []);
         }
-      }));
 
-      setAppointments(formattedAppointments);
-      setSupportGroups(mockSupportGroups);
-    } catch (error: any) {
-      console.error("Error fetching dashboard data:", error);
-      toast.error(error.message || "Failed to load dashboard data");
-    } finally {
-      setIsLoading(false);
+        // Fetch managed groups
+        const { data: groupsData, error: groupsError } = await supabase
+          .from("groups")
+          .select("*")
+          .eq("ambassador_id", user?.id)
+          .order("created_at", { ascending: false })
+          .limit(3);
+
+        if (groupsError) {
+          console.error("Error loading groups:", groupsError);
+        } else {
+          setManagedGroups(groupsData || []);
+        }
+      } catch (error) {
+        console.error("Failed to load dashboard data:", error);
+        // Don't show error toast to avoid disrupting UX
+      }
+    };
+
+    if (user?.id) {
+      loadData();
     }
-  };
+  }, [user, refreshData]);
 
   return (
     <DashboardLayout>
@@ -210,7 +205,7 @@ const AmbassadorDashboard = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-sm text-gray-600">Sessions Today</p>
-                  <h3 className="text-3xl font-bold mt-1">{stats.sessionsToday}</h3>
+                  <h3 className="text-3xl font-bold mt-1">{stats.totalSessions}</h3>
                   <p className="text-xs text-green-500 mt-1">
                     <span className="inline-block mr-1">↑</span> {stats.sessionIncrease}
                   </p>
@@ -275,20 +270,28 @@ const AmbassadorDashboard = () => {
                 
             <div className="p-4 h-64">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
+                    <AreaChart
                       data={appointmentData}
                       margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                     >
+                      <defs>
+                        <linearGradient id="colorAppointments" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#9b87f5" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#9b87f5" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                       <YAxis tick={{ fontSize: 12 }} />
                       <Tooltip />
-                      <Bar 
+                      <Area 
+                        type="monotone" 
                         dataKey="appointments" 
-                        fill="#9b87f5" 
-                        radius={[4, 4, 0, 0]}
+                        stroke="#9b87f5" 
+                        fillOpacity={1} 
+                        fill="url(#colorAppointments)" 
                       />
-                    </BarChart>
+                    </AreaChart>
                   </ResponsiveContainer>
                 </div>
               </Card>
@@ -324,36 +327,28 @@ const AmbassadorDashboard = () => {
                 <div className="bg-[#0078FF] text-white p-5 rounded-t-lg">
                   <h3 className="font-semibold text-xl mb-4">Upcoming Appointment</h3>
                   
-              {appointments[0] && (
-                <>
-                  <div className="flex items-center pb-4 border-b border-blue-400/30">
-                    <div className="flex-1">
-                      <div className="text-blue-200 text-sm">#{appointments[0].id}</div>
-                      <div className="text-xl font-medium">{appointments[0].patient.name}</div>
+              {upcomingAppointments.length > 0 ? (
+                <div className="space-y-4">
+                  {upcomingAppointments.map((appointment) => (
+                    <div key={appointment.id} className="flex flex-col p-4 bg-white rounded-lg text-gray-800">
+                      <p className="font-medium">{appointment.title || "Meeting"}</p>
+                      <p className="text-sm text-gray-600">
+                        {appointment.patient_profiles?.first_name 
+                          ? `with ${appointment.patient_profiles.first_name} ${appointment.patient_profiles.last_name || ''}`
+                          : appointment.client_name || "Client"}
+                      </p>
+                      <p className="text-sm text-gray-600 mb-3">
+                        {new Date(appointment.start_time || appointment.date).toLocaleString()}
+                      </p>
+                      {appointment.meeting_link && (
+                        <Button size="sm" variant="default" className="mt-2 w-full" onClick={() => window.open(appointment.meeting_link, '_blank')}>
+                          Join Meeting
+                        </Button>
+                      )}
                     </div>
-                    <div className="text-right">
-                      <div className="text-lg font-medium">{appointments[0].type}</div>
-                      <div className="text-blue-200">{appointments[0].date} at {appointments[0].time}</div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-wrap items-center gap-3 mt-4">
-                    <Button variant="outline" className="border-white/20 text-white bg-white/10 hover:bg-white/20">
-                      <Video className="mr-2 h-4 w-4" />
-                      <span className="hidden sm:inline">Video Session</span>
-                    </Button>
-                    <Button className="bg-white text-blue-600 hover:bg-gray-100">
-                      <MessageSquare className="mr-2 h-4 w-4" />
-                      <span className="hidden sm:inline">Chat Now</span>
-                    </Button>
-                    <Button className="bg-white text-blue-600 hover:bg-gray-100">
-                      Start Session
-                    </Button>
-                  </div>
-                </>
-              )}
-              
-              {!appointments[0] && (
+                  ))}
+                </div>
+              ) : (
                 <div className="text-center py-4 text-blue-200">
                   No upcoming appointments
                 </div>

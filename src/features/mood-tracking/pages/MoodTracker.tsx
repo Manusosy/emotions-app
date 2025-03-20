@@ -1,6 +1,4 @@
-
 import { useRef } from "react";
-import Header from "@/app/layout/Header";
 import HeroSection from "../components/HeroSection";
 import MoodAssessment from "../components/MoodAssessment";
 import SpecialtiesSection from "../components/SpecialtiesSection";
@@ -20,8 +18,6 @@ const MoodTracker = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-purple-light via-white to-brand-blue-light">
-      <Header />
-      
       <div className="fixed inset-0 z-0 opacity-30">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-brand-purple-light via-transparent to-brand-blue-light" />
         <div className="absolute inset-0" style={{
@@ -29,19 +25,17 @@ const MoodTracker = () => {
         }} />
       </div>
       
-      <div className="relative z-10">
-        <HeroSection scrollToEmotions={scrollToEmotions} emotionsRef={emotionsRef} />
-        <MoodAssessment emotionsRef={emotionsRef} />
-        <SpecialtiesSection />
-        <HighlightedDoctors />
-        
-        <div className="w-full">
-          <ScrollingInfoStrip />
-        </div>
-        
-        <WhyBookUs />
-        <PartnerLogos />
+      <HeroSection scrollToEmotions={scrollToEmotions} emotionsRef={emotionsRef} />
+      <MoodAssessment emotionsRef={emotionsRef} />
+      <SpecialtiesSection />
+      <HighlightedDoctors />
+      
+      <div className="w-full">
+        <ScrollingInfoStrip />
       </div>
+      
+      <WhyBookUs />
+      <PartnerLogos />
     </div>
   );
 };

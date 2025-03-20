@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -43,9 +42,11 @@ export default function ProfilePage() {
           avatar_url: avatarUrl,
           phone_number: formData.phone_number,
           bio: formData.bio,
-          speciality: formData.specialties,
-          hourly_rate: formData.hourly_rate,
-          availability_status: formData.availability_status,
+          speciality: formData.speciality,
+          country: formData.country,
+          languages: formData.languages,
+          education: formData.education,
+          experience: formData.experience,
           updated_at: new Date().toISOString()
         })
         .eq('id', user?.id);

@@ -38,6 +38,8 @@ export default function PatientDashboard() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
+  const [supportGroups, setSupportGroups] = useState<any[]>([]);
 
   useEffect(() => {
     let isMounted = true;
@@ -203,6 +205,54 @@ export default function PatientDashboard() {
             setMessages(mappedMessages);
           }
         }
+
+        // Fetch upcoming appointments
+        const { data: upcomingAppointmentsData, error: upcomingAppointmentsError } = await supabase
+          .from('appointments')
+          .select(`
+            *,
+            ambassador_profiles (
+              full_name,
+              avatar_url
+            )
+          `)
+          .eq('patient_id', session.user.id)
+          .gte('start_time', new Date().toISOString())
+          .order('start_time')
+          .limit(5);
+
+        if (upcomingAppointmentsError) {
+          console.error("Error fetching upcoming appointments:", upcomingAppointmentsError);
+          setUpcomingAppointments([]);
+        } else {
+          setUpcomingAppointments(upcomingAppointmentsData || []);
+        }
+
+        // Fetch support groups
+        const { data: supportGroupsData, error: supportGroupsError } = await supabase
+          .from('group_members')
+          .select(`
+            *,
+            support_groups (
+              id,
+              name,
+              description,
+              group_type,
+              meeting_schedule,
+              ambassador_profiles (
+                full_name
+              )
+            )
+          `)
+          .eq('user_id', session.user.id)
+          .eq('status', 'active');
+
+        if (supportGroupsError) {
+          console.error("Error fetching support groups:", supportGroupsError);
+          setSupportGroups([]);
+        } else {
+          setSupportGroups(supportGroupsData || []);
+        }
       } catch (error: any) {
         console.error("Error fetching dashboard data:", error);
         if (isMounted) {
@@ -263,257 +313,107 @@ export default function PatientDashboard() {
 
   return (
     <DashboardLayout>
-      <div className="flex h-full">
-        {/* Main Content */}
-        <div className="flex-1 overflow-auto">
-          <div className="container mx-auto p-6 space-y-8">
-            {/* Welcome Section */}
-            <div className="mb-8">
-              <div className="space-y-1">
-                <h1 className="text-2xl font-bold">
-                  Welcome back,{' '}
-                  {isLoading ? (
-                    <Skeleton className="h-6 w-32 inline-block" />
-                  ) : (
-                    profile?.first_name || 'Patient'
-                  )}
-                </h1>
-                <p className="text-sm text-gray-500">
-                  Your therapy journey continues
-                </p>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Button 
-                  variant="outline"
-                  className="h-[64px] w-full bg-[#fda901] border-2 border-[#fda901] text-white hover:bg-blue-600 hover:border-blue-600 hover:text-white transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-3"
-                  onClick={() => navigate('/patient-dashboard/appointments')}
-                >
-                  <Calendar className="h-5 w-5" />
-                  <div className="flex flex-col items-start">
-                    <span className="font-semibold">Book Session</span>
-                    <span className="text-xs opacity-90">Schedule therapy</span>
-                  </div>
-          </Button>
-
-                <Button
-                  variant="outline"
-                  className="h-[64px] w-full bg-[#fda901] border-2 border-[#fda901] text-white hover:bg-blue-600 hover:border-blue-600 hover:text-white transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-3"
-                  onClick={() => navigate('/patient-dashboard/therapists')}
-                >
-                  <Users className="h-5 w-5" />
-                  <div className="flex flex-col items-start">
-                    <span className="font-semibold">Therapists</span>
-                    <span className="text-xs opacity-90">Find your match</span>
-        </div>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  className="h-[64px] w-full bg-[#fda901] border-2 border-[#fda901] text-white hover:bg-blue-600 hover:border-blue-600 hover:text-white transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-3"
-                  onClick={() => navigate('/ambassadors')}
-                >
-                  <UserPlus className="h-5 w-5" />
-                  <div className="flex flex-col items-start">
-                    <span className="font-semibold">Ambassadors</span>
-                    <span className="text-xs opacity-90">Mental health guides</span>
-              </div>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  className="h-[64px] w-full bg-blue-600 border-2 border-blue-600 text-white hover:bg-blue-700 hover:border-blue-700 transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-3"
-                  onClick={() => navigate('/journal')}
-                >
-                  <Book className="h-5 w-5" />
-                  <div className="flex flex-col items-start">
-                    <span className="font-semibold">Log Mood</span>
-                    <span className="text-xs opacity-90">Track your progress</span>
-                </div>
-                </Button>
-              </div>
-
-              {/* Secondary Actions */}
-              <div className="mt-6 flex flex-wrap items-center gap-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-gray-600 hover:text-[#fda901] hover:bg-[#fda901]/10"
-                  onClick={() => navigate('/patient-dashboard/messages')}
-                >
-                  <Mail className="h-4 w-4 mr-2" />
-                  Messages
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-gray-600 hover:text-[#fda901] hover:bg-[#fda901]/10"
-                  onClick={() => navigate('/patient-dashboard/settings')}
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Settings
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-gray-600 hover:text-[#fda901] hover:bg-[#fda901]/10"
-                  onClick={() => navigate('/help')}
-                >
-                  <BadgeHelp className="h-4 w-4 mr-2" />
-                  Help Center
-                </Button>
-              </div>
-            </div>
-
-            {/* Mood Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <MoodAssessment />
-              <Card className="h-full">
-                <CardContent className="p-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card className="col-span-2">
+          <CardHeader>
+            <CardTitle>Your Mood Analytics</CardTitle>
+          </CardHeader>
+          <CardContent>
                   <MoodAnalytics />
             </CardContent>
           </Card>
-        </div>
-        
-            {/* Dashboard Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Upcoming Appointments */}
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Daily Check-in</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <MoodAssessment onComplete={() => toast.success('Mood logged successfully')} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Find an Ambassador</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground mb-4">Connect with mental health ambassadors for support and guidance.</p>
+            <Button className="w-full" onClick={() => navigate("/ambassadors")}>
+              Browse Ambassadors
+            </Button>
+          </CardContent>
+        </Card>
+
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader>
                   <CardTitle>Upcoming Appointments</CardTitle>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => navigate('/appointments')}
-                    className="border-[#fda901] text-[#fda901] hover:bg-[#fda901] hover:text-black transition-colors"
-                  >
-                    <Calendar className="w-4 h-4 mr-2" />
-                    View All
-                  </Button>
                 </CardHeader>
                 <CardContent>
-                  {isLoading ? (
-                    <div className="space-y-2">
-                      {[1, 2, 3].map((i) => (
-                        <Skeleton key={i} className="h-16 w-full" />
-                      ))}
+            {upcomingAppointments.length > 0 ? (
+              <div className="space-y-4">
+                {upcomingAppointments.map((appointment) => (
+                  <div key={appointment.id} className="flex items-center space-x-4 p-2 bg-muted rounded-lg">
+                    <div>
+                      <p className="font-medium">{appointment.title}</p>
+                      <p className="text-sm text-muted-foreground">
+                        with {appointment.ambassador_profiles.full_name}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(appointment.start_time).toLocaleString()}
+                      </p>
                     </div>
-                  ) : appointments.length > 0 ? (
-                    <div className="space-y-4">
-                      {appointments.map((appointment) => (
-                        <div
-                          key={appointment.id}
-                          className="flex items-center justify-between p-4 rounded-lg border hover:border-[#fda901] transition-colors"
-                        >
-                          <div className="flex items-center gap-4">
-                            <Avatar>
-                              <AvatarImage src={appointment.therapist_avatar} />
-                              <AvatarFallback className="bg-[#fda901] text-black">
-                                {appointment.therapist_name[0]}
-                              </AvatarFallback>
-                            </Avatar>
-        <div>
-                              <h4 className="font-medium">{appointment.therapist_name}</h4>
-                              <p className="text-sm text-gray-500">{appointment.therapist_specialty}</p>
-                              <div className="flex items-center gap-2 mt-1">
-                                <Clock className="w-4 h-4 text-[#fda901]" />
-                                <span className="text-sm">
-                                  {appointment.date} at {appointment.time}
-                                </span>
-                              </div>
-            </div>
-          </div>
-              <Button
-                            size="sm"
-                            className="bg-[#fda901] text-black hover:bg-[#fda901]/90"
-                          >
-                            Join Session
-              </Button>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8">
-                      <Calendar className="h-12 w-12 mx-auto text-[#fda901]" />
-                      <h3 className="mt-4 text-lg font-medium">No appointments</h3>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Schedule your first session with a therapist
-                      </p>
-                      <Button 
-                        onClick={() => navigate('/appointments/new')} 
-                        className="mt-4 bg-[#fda901] text-black hover:bg-[#fda901]/90"
-                      >
-                        Book Appointment
+              <p className="text-muted-foreground">No upcoming appointments</p>
+            )}
+            <Button className="w-full mt-4" variant="outline" onClick={() => window.location.href = '/booking'}>
+              Book New Session
                       </Button>
-                    </div>
-                  )}
                   </CardContent>
                 </Card>
 
-              {/* Recent Messages */}
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Recent Messages</CardTitle>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => navigate('/messages')}
-                    className="border-[#fda901] text-[#fda901] hover:bg-[#fda901] hover:text-black transition-colors"
-                  >
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    View All
-                  </Button>
+          <CardHeader>
+            <CardTitle>Your Support Groups</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ScrollArea className="h-[400px]">
-                    {isLoading ? (
-                      <div className="space-y-2">
-                        {[1, 2, 3].map((i) => (
-                          <Skeleton key={i} className="h-16 w-full" />
-                        ))}
-                      </div>
-                    ) : messages.length > 0 ? (
+            {supportGroups.length > 0 ? (
                       <div className="space-y-4">
-                        {messages.map((message) => (
-                          <div
-                            key={message.id}
-                            className="flex items-start gap-4 p-4 rounded-lg border hover:border-[#fda901] transition-colors"
-                          >
-                            <Avatar>
-                              <AvatarImage src={message.sender.avatar_url} />
-                              <AvatarFallback className="bg-[#fda901] text-black">
-                                {message.sender.full_name[0]}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between">
-                                <h4 className="font-medium">{message.sender.full_name}</h4>
-                                <span className="text-sm text-gray-500">
-                                  {message.timestamp}
-                                </span>
-                              </div>
-                              <p className="text-sm mt-1">{message.content}</p>
-                            </div>
-                            {message.unread && (
-                              <Badge className="bg-[#fda901] text-black">New</Badge>
-            )}
+                {supportGroups.map((membership) => (
+                  <div key={membership.id} className="p-4 bg-muted rounded-lg">
+                    <h3 className="font-medium">{membership.support_groups.name}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Type: {membership.support_groups.group_type}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Schedule: {membership.support_groups.meeting_schedule}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Led by: {membership.support_groups.ambassador_profiles.full_name}
+                    </p>
           </div>
                         ))}
           </div>
                     ) : (
-                      <div className="text-center py-8">
-                        <MessageSquare className="h-12 w-12 mx-auto text-[#fda901]" />
-                        <h3 className="mt-4 text-lg font-medium">No messages</h3>
-                        <p className="text-sm text-gray-500 mt-1">
-                          Start a conversation with your therapist
-                        </p>
-                      </div>
-                    )}
-                  </ScrollArea>
+              <p className="text-muted-foreground">You haven't been added to any support groups yet</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-2">
+          <CardHeader>
+            <CardTitle>Calendar</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Calendar
+              mode="single"
+              selected={new Date()}
+              className="rounded-md border"
+            />
             </CardContent>
           </Card>
-            </div>
-          </div>
-        </div>
       </div>
     </DashboardLayout>
   );

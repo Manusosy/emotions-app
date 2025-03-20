@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { DashboardLayout } from "../components/DashboardLayout";
 import { Card } from "@/components/ui/card";
@@ -41,11 +40,12 @@ const AppointmentsPage = () => {
 
   const fetchAppointments = async () => {
     try {
-      setIsLoading(true);
+      setIsLoading(false);
       const { data, error } = await supabase
         .from('appointments')
         .select(`
-          *
+          *,
+          patient_profiles:patient_id(*)
         `)
         .eq('ambassador_id', user?.id)
         .order('created_at', { ascending: false });
@@ -56,14 +56,14 @@ const AppointmentsPage = () => {
       const transformedData = (data || []).map(appointment => ({
         ...appointment,
         patient: {
-          name: "Patient", // Placeholder
-          avatar: ""
+          name: appointment.patient_profiles?.full_name || appointment.client_name || "Patient",
+          avatar: appointment.patient_profiles?.avatar_url || ""
         }
       }));
       
       setAppointments(transformedData);
     } catch (error: any) {
-      toast.error(error.message || 'Error fetching appointments');
+      console.error('Error fetching appointments:', error);
     } finally {
       setIsLoading(false);
     }
@@ -149,65 +149,67 @@ const AppointmentsPage = () => {
                 No {filter} appointments found
               </div>
             ) : (
-              appointments.map((appointment) => (
-                <div
-                  key={appointment.id}
-                  className="p-4 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
-                        {appointment.patient.avatar ? (
-                          <img
-                            src={appointment.patient.avatar}
-                            alt={appointment.patient.name}
-                            className="w-12 h-12 rounded-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-xl font-bold text-gray-600">
-                            {appointment.patient.name.charAt(0)}
-                          </span>
-                        )}
-                      </div>
-                      <div>
-                        <h3 className="font-medium">{appointment.patient.name}</h3>
-                        <div className="flex items-center text-sm text-gray-500">
-                          <Calendar className="w-4 h-4 mr-1" />
-                          {appointment.date} at {appointment.time}
+              <div className="divide-y">
+                {appointments.map((appointment) => (
+                  <div
+                    key={appointment.id}
+                    className="p-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                          {appointment.patient.avatar ? (
+                            <img
+                              src={appointment.patient.avatar}
+                              alt={appointment.patient.name}
+                              className="w-12 h-12 rounded-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-xl font-bold text-gray-600">
+                              {appointment.patient.name.charAt(0)}
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <h3 className="font-medium">{appointment.patient.name}</h3>
+                          <div className="flex items-center text-sm text-gray-500">
+                            <Calendar className="w-4 h-4 mr-1" />
+                            {appointment.date} at {appointment.time}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center space-x-2">
-                      {filter === "upcoming" && (
-                        <>
-                          <Button
-                            onClick={() => handleJoinSession(appointment.id)}
-                            className="bg-[#0078FF] text-white hover:bg-blue-700"
-                          >
-                            <Video className="w-4 h-4 mr-2" />
-                            Join Session
-                          </Button>
-                          <Button variant="outline">
-                            <MessageSquare className="w-4 h-4 mr-2" />
-                            Message
-                          </Button>
-                          <Button
-                            variant="outline"
-                            className="text-red-500 border-red-500 hover:bg-red-50"
-                            onClick={() => handleStatusChange(appointment.id, "cancelled")}
-                          >
-                            Cancel
-                          </Button>
-                        </>
-                      )}
-                      <Button variant="ghost">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center space-x-2">
+                        {filter === "upcoming" && (
+                          <>
+                            <Button
+                              onClick={() => handleJoinSession(appointment.id)}
+                              className="bg-[#0078FF] text-white hover:bg-blue-700"
+                            >
+                              <Video className="w-4 h-4 mr-2" />
+                              Join Session
+                            </Button>
+                            <Button variant="outline">
+                              <MessageSquare className="w-4 h-4 mr-2" />
+                              Message
+                            </Button>
+                            <Button
+                              variant="outline"
+                              className="text-red-500 border-red-500 hover:bg-red-50"
+                              onClick={() => handleStatusChange(appointment.id, "cancelled")}
+                            >
+                              Cancel
+                            </Button>
+                          </>
+                        )}
+                        <Button variant="ghost">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                ))}
+              </div>
             )}
           </div>
         </Card>

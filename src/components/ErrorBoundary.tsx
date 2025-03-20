@@ -1,4 +1,5 @@
 import React from 'react';
+import { toast } from 'sonner';
 
 interface Props {
   children: React.ReactNode;
@@ -7,66 +8,44 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
-  errorInfo: React.ErrorInfo | null;
 }
 
 class ErrorBoundary extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { 
-      hasError: false, 
-      error: null,
-      errorInfo: null
-    };
+    this.state = { hasError: false, error: null };
   }
 
-  static getDerivedStateFromError(error: Error): Partial<State> {
+  static getDerivedStateFromError(error: Error) {
     return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error);
-    console.error('Component stack:', errorInfo.componentStack);
+    console.error('Error caught by boundary:', error, errorInfo);
     
-    this.setState({
-      error,
-      errorInfo
-    });
+    // Check if it's a Supabase-related error
+    if (error.message.includes('supabase') || error.message.includes('fetch')) {
+      toast.error('Connection error. Please check your internet connection and try again.');
+    }
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-background p-4">
-          <div className="max-w-md w-full p-6 bg-card shadow-lg rounded-lg text-center">
-            <h2 className="text-2xl font-bold text-destructive mb-4">Something went wrong</h2>
-            <div className="text-card-foreground mb-6 overflow-auto max-h-64 text-left p-4 bg-muted rounded-md">
-              <p className="font-semibold">Error:</p>
-              <p className="text-sm mb-2">{this.state.error?.message || 'An unexpected error occurred'}</p>
-              
-              {this.state.error?.stack && (
-                <>
-                  <p className="font-semibold mt-4">Stack trace:</p>
-                  <pre className="text-xs whitespace-pre-wrap break-words">
-                    {this.state.error.stack}
-                  </pre>
-                </>
-              )}
-            </div>
-            <div className="flex space-x-4 justify-center">
-              <button
-                className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90"
-                onClick={() => window.location.reload()}
-              >
-                Reload Page
-              </button>
-              <button
-                className="bg-secondary text-secondary-foreground px-4 py-2 rounded-md hover:bg-secondary/90"
-                onClick={() => window.history.back()}
-              >
-                Go Back
-              </button>
-            </div>
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center p-8 rounded-lg bg-white shadow-lg max-w-md">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Something went wrong</h2>
+            <p className="text-gray-600 mb-6">
+              {this.state.error?.message.includes('supabase') || this.state.error?.message.includes('fetch')
+                ? 'Connection error. Please check your internet connection and try again.'
+                : 'An unexpected error occurred. Please try refreshing the page.'}
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 transition-colors"
+            >
+              Refresh Page
+            </button>
           </div>
         </div>
       );

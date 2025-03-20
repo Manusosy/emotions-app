@@ -106,8 +106,7 @@ BEGIN
                 COALESCE(NEW.raw_user_metadata->>'first_name', ''),
                 ' ',
                 COALESCE(NEW.raw_user_metadata->>'last_name', '')
-            ),
-            NEW.email
+            )
         ),
         COALESCE(NEW.raw_user_metadata->>'role', 'patient')
     );
@@ -118,29 +117,30 @@ BEGIN
             id,
             first_name,
             last_name,
-            email
+            email,
+            country
         ) VALUES (
             NEW.id,
             NEW.raw_user_metadata->>'first_name',
             NEW.raw_user_metadata->>'last_name',
-            NEW.email
+            NEW.email,
+            NEW.raw_user_metadata->>'country'
         );
     ELSIF NEW.raw_user_metadata->>'role' = 'ambassador' THEN
         INSERT INTO public.ambassador_profiles (
             id,
             full_name,
-            email
+            email,
+            availability_status
         ) VALUES (
             NEW.id,
-            COALESCE(
-                NEW.raw_user_metadata->>'full_name',
-                CONCAT(
-                    COALESCE(NEW.raw_user_metadata->>'first_name', ''),
-                    ' ',
-                    COALESCE(NEW.raw_user_metadata->>'last_name', '')
-                )
+            CONCAT(
+                COALESCE(NEW.raw_user_metadata->>'first_name', ''),
+                ' ',
+                COALESCE(NEW.raw_user_metadata->>'last_name', '')
             ),
-            NEW.email
+            NEW.email,
+            'available'
         );
     END IF;
 

@@ -1,9 +1,7 @@
-
 import { useCallback, useEffect, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Card } from "@/components/ui/card";
-import Header from "@/app/layout/Header";
 import JournalSidebar from "../components/JournalSidebar";
 import JournalToolbar from "../components/JournalToolbar";
 import { supabase } from "@/integrations/supabase/client";
@@ -88,7 +86,6 @@ const JournalPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
       <div className="container mx-auto px-4 pt-24 pb-8">
         <div className="flex flex-col md:flex-row gap-6">
           {isMobile && (
