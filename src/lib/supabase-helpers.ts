@@ -1,39 +1,38 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   PatientHealthMetric, 
   PatientProfile, 
   AmbassadorProfile,
   TherapistProfile,
-  Appointment
+  Appointment,
+  AdminUser
 } from '@/types/database.types';
 
-// Use explicit type assertions to resolve type issues
-export const getUserProfile = async (userId: string, role: string) => {
-  try {
-    let tableName = '';
-    
-    // Define the table name based on role
-    switch (role) {
-      case 'patient':
-        tableName = 'patient_profiles';
-        break;
-      case 'ambassador':
-        tableName = 'ambassador_profiles';
-        break;
-      case 'therapist':
-        tableName = 'therapist_profiles';
-        break;
-      case 'admin':
-        tableName = 'admin_users';
-        break;
-      default:
-        throw new Error('Invalid role');
-    }
+type UserProfileType = PatientProfile | AmbassadorProfile | TherapistProfile | AdminUser;
+type TableNames = 'patient_profiles' | 'ambassador_profiles' | 'therapist_profiles' | 'admin_users';
 
-    // Use concrete types to avoid type recursion issues
+const getRoleTable = (role: string): TableNames => {
+  switch (role) {
+    case 'patient':
+      return 'patient_profiles';
+    case 'ambassador':
+      return 'ambassador_profiles';
+    case 'therapist':
+      return 'therapist_profiles';
+    case 'admin':
+      return 'admin_users';
+    default:
+      throw new Error('Invalid role');
+  }
+};
+
+// Use explicit type assertions to resolve type issues
+export const getUserProfile = async (userId: string, role: string): Promise<UserProfileType | null> => {
+  try {
+    const tableName = getRoleTable(role);
+
     const { data, error } = await supabase
-      .from(tableName as any)
+      .from(tableName)
       .select('*')
       .eq('id', userId)
       .single();
@@ -47,34 +46,20 @@ export const getUserProfile = async (userId: string, role: string) => {
 };
 
 // Function to update user profile based on role
-export const updateUserProfile = async (userId: string, role: string, profileData: any) => {
+export const updateUserProfile = async <T extends UserProfileType>(
+  userId: string, 
+  role: string, 
+  profileData: Partial<T>
+): Promise<T | null> => {
   try {
-    let tableName = '';
-    
-    // Define the table name based on role
-    switch (role) {
-      case 'patient':
-        tableName = 'patient_profiles';
-        break;
-      case 'ambassador':
-        tableName = 'ambassador_profiles';
-        break;
-      case 'therapist':
-        tableName = 'therapist_profiles';
-        break;
-      case 'admin':
-        tableName = 'admin_users';
-        break;
-      default:
-        throw new Error('Invalid role');
-    }
+    const tableName = getRoleTable(role);
 
-    // Use concrete types to avoid type recursion issues
     const { data, error } = await supabase
-      .from(tableName as any)
+      .from(tableName)
       .update(profileData)
       .eq('id', userId)
-      .select();
+      .select()
+      .single();
 
     if (error) throw error;
     return data;
@@ -151,4 +136,26 @@ export const getAppointments = async (userId: string, role: string) => {
     console.error('Error fetching appointments:', error);
     throw error;
   }
+};
+
+export const uploadFile = async (
+  bucket: string,
+  path: string,
+  file: File
+): Promise<{ error: Error | null; url: string | null }> => {
+  // ... existing code ...
+};
+
+export const downloadFile = async (
+  bucket: string,
+  path: string
+): Promise<{ data: Uint8Array | null; error: Error | null }> => {
+  // ... existing code ...
+};
+
+export const deleteFile = async (
+  bucket: string,
+  path: string
+): Promise<{ error: Error | null }> => {
+  // ... existing code ...
 };

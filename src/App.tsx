@@ -249,82 +249,41 @@ const App = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session);
       
-      if (session?.user) {
-        console.log('User from auth change:', session.user);
+      if (session?.user && isMounted) {
         setUser(session.user);
-        
         const userRole = session.user.user_metadata?.role;
-        console.log('User role from auth change:', userRole);
         setUserRole(userRole);
-
-        // Check ambassador profile on login or metadata update
-        if (userRole === 'ambassador' && 
-            (event === 'SIGNED_IN' || event === 'USER_UPDATED')) {
-          console.log('Checking ambassador status after', event);
+        
+        if (userRole === 'ambassador') {
           await refreshAmbassadorStatus(session.user.id);
         }
-        
-        if (event === 'SIGNED_IN') {
-          toast.success('Successfully signed in!');
-        }
       } else {
-        console.log('No user after auth change');
         setUser(null);
         setUserRole(null);
-        setShowOnboarding(false);
-        
-        if (event === 'SIGNED_OUT') {
-          toast.success('Successfully signed out');
-        }
       }
     });
 
-    // Cleanup function for any potential memory leaks
-    const beforeUnloadHandler = () => {
-      console.log('Cleaning up before page unload');
-      isMounted = false;
-    };
-
-    window.addEventListener('beforeunload', beforeUnloadHandler);
-
     return () => {
-      console.log('Cleaning up auth subscription');
       isMounted = false;
       subscription.unsubscribe();
-      window.removeEventListener('beforeunload', beforeUnloadHandler);
     };
-  }, []);
+  }, [refreshAmbassadorStatus]);
 
-  // Update the useEffect for metadata checking
   useEffect(() => {
-    if (userRole !== 'ambassador' || !showOnboarding) return;
-    
-    // Initial check
-    checkUserMetadataDirectly();
-    
-    // Set up interval for periodic checks
-    const intervalId = setInterval(checkUserMetadataDirectly, 1000);
-    
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [userRole, showOnboarding]);
+    if (userRole === 'ambassador') {
+      checkUserMetadataDirectly();
+    }
+  }, [userRole, checkUserMetadataDirectly]);
 
-  // Add an event handler for storage events to catch auth changes across tabs
   useEffect(() => {
-    const handleStorageChange = (event) => {
-      if (event.key?.includes('supabase.auth') && userRole === 'ambassador' && showOnboarding) {
-        console.log('Auth data changed in storage, checking onboarding status');
+    const timer = setInterval(() => {
+      if (userRole === 'ambassador') {
         checkUserMetadataDirectly();
       }
-    };
+    }, 60000);
 
-    window.addEventListener('storage', handleStorageChange);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, [userRole, showOnboarding]);
+    return () => clearInterval(timer);
+  }, [userRole, checkUserMetadataDirectly]);
 
   // Show loading state only during initial load
   if (!isInitialized) {
