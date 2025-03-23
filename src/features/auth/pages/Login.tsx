@@ -13,21 +13,29 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { getDashboardUrlForRole, setIsAuthenticating, isAuthenticated, userRole } = useAuth();
 
   // Check if user is already authenticated and redirect them
   useEffect(() => {
-    if (isAuthenticated && userRole) {
+    if (isAuthenticated && userRole && !isRedirecting) {
+      setIsRedirecting(true); // Prevent multiple redirects
       const dashboardUrl = getDashboardUrlForRole(userRole);
       console.log(`User already authenticated as ${userRole}, redirecting to ${dashboardUrl}`);
-      navigate(dashboardUrl, { replace: true });
+      
+      // Use a slight delay to ensure state is stable
+      setTimeout(() => {
+        navigate(dashboardUrl, { replace: true });
+      }, 500);
     }
-  }, [isAuthenticated, userRole, navigate, getDashboardUrlForRole]);
+  }, [isAuthenticated, userRole, navigate, getDashboardUrlForRole, isRedirecting]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading || isRedirecting) return;
+    
     setIsLoading(true);
     setIsAuthenticating(true);
 
@@ -48,13 +56,15 @@ export default function Login() {
         
         toast.success(`Signed in successfully! Redirecting to dashboard...`);
         
+        // Prevent any redirection logic from running during this time
+        setIsRedirecting(true);
+        
         // Add a delay to ensure auth state is properly updated
         setTimeout(() => {
           console.log("Executing delayed navigation to:", dashboardUrl);
           navigate(dashboardUrl, { replace: true });
         }, 1000);
       }
-      
     } catch (error: any) {
       console.error('Login error:', error);
       toast.error(error.message || "Failed to sign in. Please check your credentials.");
@@ -95,7 +105,7 @@ export default function Login() {
         <Button 
           type="submit" 
           className="w-full" 
-          disabled={isLoading}
+          disabled={isLoading || isRedirecting}
           variant="brand"
         >
           {isLoading ? "Logging in..." : "Login"}

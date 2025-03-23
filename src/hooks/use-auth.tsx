@@ -15,11 +15,14 @@ export const useAuth = () => {
   
   useEffect(() => {
     console.log("Setting up auth state listener");
+    let isMounted = true;
     
     // Set up auth state change listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log(`Auth state changed: ${event}`, session?.user?.id);
+        
+        if (!isMounted) return;
         
         if (event === 'SIGNED_IN' && session) {
           setUser(session.user);
@@ -29,8 +32,6 @@ export const useAuth = () => {
           const role = session.user.user_metadata?.role || 'patient';
           setUserRole(role as UserRole);
           console.log(`User signed in with role: ${role}`);
-          
-          toast.success('Signed in successfully!');
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setIsAuthenticated(false);
@@ -53,6 +54,8 @@ export const useAuth = () => {
           return;
         }
         
+        if (!isMounted) return;
+        
         console.log("Initial session check result:", data.session?.user?.id);
         
         if (data.session) {
@@ -65,18 +68,25 @@ export const useAuth = () => {
           console.log(`User has existing session with role: ${role}`);
         } else {
           console.log("No authenticated user found");
+          // Ensure state is reset if no session
+          setUser(null);
+          setIsAuthenticated(false);
+          setUserRole('patient');
         }
       } catch (error) {
         console.error('Session check error:', error);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     checkSession();
     
-    // Cleanup subscription
+    // Cleanup subscription and prevent state updates after unmount
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, []);
