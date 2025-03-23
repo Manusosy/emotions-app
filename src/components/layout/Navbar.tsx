@@ -3,20 +3,29 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { LogOut, Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function Navbar() {
   const { user, isAuthenticated, isAuthenticating, logout, getDashboardUrl } = useAuth();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const handleSignOut = async () => {
+  const handleSignOut = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    console.log('Sign out button clicked');
     await logout();
   };
 
-  const handleDashboardClick = () => {
-    navigate(getDashboardUrl());
+  const handleDashboardClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const url = getDashboardUrl();
+    console.log('Dashboard button clicked, navigating to:', url);
+    navigate(url);
   };
+
+  useEffect(() => {
+    console.log('Navbar auth state:', { isAuthenticated, user });
+  }, [isAuthenticated, user]);
 
   return (
     <nav className="bg-[#0078FF] text-white relative z-50">

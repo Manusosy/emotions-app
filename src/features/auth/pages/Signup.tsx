@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -118,18 +117,11 @@ export default function Signup() {
       }
 
       setSignupSuccessful(true);
-      toast.success("Account created successfully! Please check your email to verify your account.");
+      toast.success("Account created successfully!");
       
-      // Redirect based on role with a slight delay to ensure state updates properly
-      setTimeout(() => {
-        if (formData.role === 'patient') {
-          navigate('/patient-dashboard');
-        } else if (formData.role === 'ambassador') {
-          navigate('/ambassador-dashboard');
-        } else {
-          navigate('/');
-        }
-      }, 500);
+      // We don't need to manually redirect here as the auth state change listener
+      // in useAuth will handle the redirection based on the user's role
+      console.log('Signup successful, auth state change listener will redirect');
 
     } catch (error: any) {
       console.error("Signup process error:", error);

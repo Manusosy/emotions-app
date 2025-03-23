@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ export default function Login() {
     setIsLoading(true);
 
     try {
+      console.log('Login process started');
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -25,41 +27,15 @@ export default function Login() {
 
       if (error) throw error;
 
+      console.log('Login successful, auth state change listener will redirect');
       toast.success("Welcome back!");
 
-      // Get user role from metadata
-      const userRole = data.user?.user_metadata?.role || "patient";
-      
-      // Check for booking intent
-      const bookingIntent = localStorage.getItem("bookingIntent");
-      if (bookingIntent) {
-        try {
-          const { ambassadorId } = JSON.parse(bookingIntent);
-          localStorage.removeItem("bookingIntent");
-          navigate(`/booking?ambassadorId=${ambassadorId}`);
-          return;
-        } catch (e) {
-          console.error("Error parsing booking intent", e);
-        }
-      }
+      // We don't need to manually redirect here as the auth state change listener
+      // in useAuth will handle the redirection based on the user's role
 
-      // Redirect based on role
-      switch (userRole) {
-        case "patient":
-          navigate("/patient-dashboard");
-          break;
-        case "therapist":
-          navigate("/therapist-dashboard");
-          break;
-        case "ambassador":
-          navigate("/ambassador-dashboard");
-          break;
-        default:
-          navigate("/");
-      }
     } catch (error: any) {
+      console.error('Login error:', error);
       toast.error(error.message || "Failed to login. Please try again.");
-    } finally {
       setIsLoading(false);
     }
   };

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -34,61 +34,8 @@ export const useAuth = () => {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Check for active session on mount
-    const checkSession = async () => {
-      try {
-        setIsLoading(true);
-        const { data } = await supabase.auth.getSession();
-        
-        if (data.session?.user) {
-          // Cast to our User type since Supabase user types don't exactly match our custom User type
-          const supabaseUser = data.session.user as unknown as User;
-          setUser(supabaseUser);
-          setUserRole(supabaseUser.user_metadata?.role || null);
-        } else {
-          setUser(null);
-          setUserRole(null);
-        }
-      } catch (error) {
-        console.error('Error checking session:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkSession();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event);
-        
-        if (event === 'SIGNED_IN' && session?.user) {
-          // Cast to our User type
-          const supabaseUser = session.user as unknown as User;
-          setUser(supabaseUser);
-          setUserRole(supabaseUser.user_metadata?.role || null);
-          setIsAuthenticating(false);
-          
-          // Redirect to dashboard after successful sign-in
-          const dashboardUrl = getDashboardUrlForRole(supabaseUser.user_metadata?.role);
-          navigate(dashboardUrl);
-        } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
-          setUser(null);
-          setUserRole(null);
-          setIsAuthenticating(false);
-        }
-      }
-    );
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [navigate]);
-
   // Helper function to get dashboard URL based on role
-  const getDashboardUrlForRole = (role?: string) => {
+  const getDashboardUrlForRole = useCallback((role?: string) => {
     switch (role) {
       case 'therapist':
         return '/therapist-dashboard';
@@ -99,19 +46,85 @@ export const useAuth = () => {
       case 'patient':
         return '/patient-dashboard';
       default:
-        return '/login';
+        return '/';
     }
-  };
+  }, []);
 
-  const getDashboardUrl = () => {
+  const getDashboardUrl = useCallback(() => {
     return getDashboardUrlForRole(userRole || undefined);
-  };
+  }, [userRole, getDashboardUrlForRole]);
+
+  useEffect(() => {
+    // Check for active session on mount
+    let isMounted = true;
+    const checkSession = async () => {
+      try {
+        setIsLoading(true);
+        const { data } = await supabase.auth.getSession();
+        
+        if (data.session?.user && isMounted) {
+          // Cast to our User type since Supabase user types don't exactly match our custom User type
+          const supabaseUser = data.session.user as unknown as User;
+          setUser(supabaseUser);
+          setUserRole(supabaseUser.user_metadata?.role || null);
+          console.log('Auth session found, user role:', supabaseUser.user_metadata?.role);
+        } else {
+          setUser(null);
+          setUserRole(null);
+          console.log('No auth session found');
+        }
+      } catch (error) {
+        console.error('Error checking session:', error);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    checkSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event);
+        
+        if (event === 'SIGNED_IN' && session?.user && isMounted) {
+          // Cast to our User type
+          const supabaseUser = session.user as unknown as User;
+          setUser(supabaseUser);
+          setUserRole(supabaseUser.user_metadata?.role || null);
+          setIsAuthenticating(false);
+          
+          // Redirect to dashboard after successful sign-in
+          const dashboardUrl = getDashboardUrlForRole(supabaseUser.user_metadata?.role);
+          console.log('Redirecting to dashboard:', dashboardUrl);
+          navigate(dashboardUrl);
+        } else if ((event === 'SIGNED_OUT' || event === 'USER_DELETED') && isMounted) {
+          setUser(null);
+          setUserRole(null);
+          setIsAuthenticating(false);
+          navigate('/');
+          console.log('User signed out, redirected to home');
+        }
+      }
+    );
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [navigate, getDashboardUrlForRole]);
 
   const logout = async () => {
     try {
+      console.log('Logout initiated');
       setIsAuthenticating(true);
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      if (error) {
+        console.error('Logout error:', error);
+        throw error;
+      }
 
       // Clear user data
       setUser(null);
@@ -119,7 +132,9 @@ export const useAuth = () => {
 
       toast.success('Logged out successfully');
       navigate('/');
+      console.log('Logout completed');
     } catch (error: any) {
+      console.error('Logout failed:', error);
       toast.error(error.message || 'Failed to log out');
     } finally {
       setIsAuthenticating(false);
