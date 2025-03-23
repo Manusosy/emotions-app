@@ -1,3 +1,4 @@
 
-// Re-export from useAuth.tsx to prevent import errors
-export { useAuth, useAuthState, default } from './useAuth';
+// Re-export the useAuth hook from useAuth.tsx
+export { useAuth, useAuthState } from './useAuth';
+export { default } from './useAuth';
