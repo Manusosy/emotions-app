@@ -2,7 +2,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import MoodTracker from "@/features/mood-tracking/pages/MoodTracker";
 import Login from "@/features/auth/pages/Login";
@@ -37,9 +37,10 @@ const AppContent = () => {
   const { user, userRole, isLoading, isAuthenticated, getDashboardUrl } = useAuth();
   const [showFooter, setShowFooter] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    const pathname = window.location.pathname;
+    const pathname = location.pathname;
     const shouldShowFooter = !pathname.includes('dashboard') && 
                             !pathname.includes('ambassador') && 
                             !pathname.includes('admin') &&
@@ -48,12 +49,29 @@ const AppContent = () => {
     
     // Debug log
     console.log('Current path:', pathname, 'User authenticated:', isAuthenticated, 'User role:', userRole);
-    
-    // Handle the case where user is authenticated but trying to access 404 page
-    if (isAuthenticated && (pathname === '/patient-dashboard' || pathname === '/ambassador-dashboard')) {
-      console.log('Authenticated user accessing dashboard at', pathname);
+  }, [location.pathname, isAuthenticated, userRole]);
+
+  // Effect to handle redirection after authentication is confirmed
+  useEffect(() => {
+    // Only run this when authentication state is fully loaded (not in loading state)
+    if (!isLoading) {
+      const pathname = location.pathname;
+      console.log('Auth state loaded, current path:', pathname);
+      
+      // If authenticated but on home/login/signup page, redirect to dashboard
+      if (isAuthenticated && ['/', '/login', '/signup', '/404'].includes(pathname)) {
+        const dashboardUrl = getDashboardUrl();
+        console.log('Redirecting authenticated user to dashboard:', dashboardUrl);
+        navigate(dashboardUrl);
+      }
+      
+      // If trying to access a protected route but not authenticated, redirect to login
+      if (!isAuthenticated && (pathname.includes('/patient-dashboard') || pathname.includes('/ambassador-dashboard'))) {
+        console.log('Unauthenticated user trying to access protected route, redirecting to login');
+        navigate('/login');
+      }
     }
-  }, [isAuthenticated, userRole]);
+  }, [isAuthenticated, isLoading, userRole, location.pathname, navigate, getDashboardUrl]);
 
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
