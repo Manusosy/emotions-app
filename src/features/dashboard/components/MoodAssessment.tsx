@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Smile, Meh, Frown, BookOpen } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -158,4 +159,4 @@ export default function MoodAssessment() {
       </CardContent>
     </Card>
   );
-} 
+}
