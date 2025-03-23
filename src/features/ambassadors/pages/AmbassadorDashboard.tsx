@@ -27,6 +27,7 @@ import { GroupCard } from "../components/GroupCard";
 import { DashboardAppointment } from "@/types/ambassadors.types";
 import { Group } from "@/types/groups";
 import { User } from "@/types/user";
+import { OnboardingDialog } from "../components/OnboardingDialog";
 import {
   Select,
   SelectContent,
@@ -118,17 +119,40 @@ const AmbassadorDashboard = ({ refreshData }: AmbassadorDashboardProps) => {
     sessionIncrease: "10% From Yesterday"
   });
 
-  // Load profile data and dashboard data
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    const checkProfileCompletion = async () => {
+      if (user?.id) {
+        try {
+          const { data: profile, error } = await supabase
+            .from('ambassador_profiles')
+            .select('bio, speciality')
+            .eq('id', user.id)
+            .single();
+            
+          const userMetadata = user.user_metadata || {};
+          
+          if ((error || !profile?.bio || !profile?.speciality) && !userMetadata.has_completed_profile) {
+            setShowOnboarding(true);
+          }
+        } catch (error) {
+          console.error("Error checking profile completion:", error);
+        }
+      }
+    };
+    
+    checkProfileCompletion();
+  }, [user]);
+
   useEffect(() => {
     const loadData = async () => {
       try {
-        // If refreshData prop is provided, use it to get profile data
         if (refreshData) {
           const profile = await refreshData();
           setProfileData(profile);
         }
         
-        // Fetch upcoming appointments
         const { data: appointmentsData, error: appointmentsError } = await supabase
           .from("appointments")
           .select("*, patient_profiles:patient_id(*)")
@@ -143,7 +167,6 @@ const AmbassadorDashboard = ({ refreshData }: AmbassadorDashboardProps) => {
           setUpcomingAppointments(appointmentsData || []);
         }
 
-        // Fetch managed groups
         const { data: groupsData, error: groupsError } = await supabase
           .from("groups")
           .select("*")
@@ -158,7 +181,6 @@ const AmbassadorDashboard = ({ refreshData }: AmbassadorDashboardProps) => {
         }
       } catch (error) {
         console.error("Failed to load dashboard data:", error);
-        // Don't show error toast to avoid disrupting UX
       }
     };
 
@@ -169,6 +191,8 @@ const AmbassadorDashboard = ({ refreshData }: AmbassadorDashboardProps) => {
 
   return (
     <DashboardLayout>
+      {showOnboarding && <OnboardingDialog />}
+      
       <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6">
             <Card className="p-4 hover:shadow-md transition-shadow">
