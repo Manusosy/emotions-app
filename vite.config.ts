@@ -30,5 +30,15 @@ export default defineConfig(({ mode }) => ({
         }
       }
     }
+  },
+  // Add TypeScript configuration
+  optimizeDeps: {
+    esbuildOptions: {
+      tsconfigRaw: {
+        compilerOptions: {
+          experimentalDecorators: true
+        }
+      }
+    }
   }
 }))
