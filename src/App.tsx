@@ -315,10 +315,10 @@ const App = () => {
   const showFooter = !isDashboardRoute(window.location.pathname);
 
   return (
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
+    <BrowserRouter>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
         <div className="flex flex-col min-h-screen max-w-[100vw] overflow-x-hidden">
           <Navbar />
           <div className="flex-grow">
@@ -463,8 +463,8 @@ const App = () => {
             </>
           )}
         </div>
-      </BrowserRouter>
-    </TooltipProvider>
+      </TooltipProvider>
+    </BrowserRouter>
   );
 };
 
