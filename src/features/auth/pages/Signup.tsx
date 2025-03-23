@@ -123,14 +123,17 @@ export default function Signup() {
       toast.success("Account created successfully!");
       setSignupSuccessful(true);
       
-      // Redirect to the appropriate dashboard
+      // Get the user's role and redirect to the appropriate dashboard
       const dashboardUrl = getDashboardUrlForRole(formData.role);
       console.log(`User signed up as ${formData.role}, redirecting to ${dashboardUrl}`);
       
-      // Slight delay to allow the toast to be seen
+      // Add a slightly longer delay to ensure auth state is properly updated
       setTimeout(() => {
-        navigate(dashboardUrl);
-      }, 1000);
+        // Force a fresh session check before navigation
+        supabase.auth.getSession().then(() => {
+          navigate(dashboardUrl);
+        });
+      }, 800);
       
     } catch (error: any) {
       console.error("Signup process error:", error);

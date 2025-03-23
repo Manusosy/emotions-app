@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +14,17 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { getDashboardUrlForRole, setIsAuthenticating } = useAuth();
+  const location = useLocation();
+  const { getDashboardUrlForRole, setIsAuthenticating, isAuthenticated, userRole } = useAuth();
+
+  // Check if user is already authenticated and redirect them
+  useEffect(() => {
+    if (isAuthenticated && userRole) {
+      const dashboardUrl = getDashboardUrlForRole(userRole);
+      console.log(`User already authenticated as ${userRole}, redirecting to ${dashboardUrl}`);
+      navigate(dashboardUrl);
+    }
+  }, [isAuthenticated, userRole, navigate, getDashboardUrlForRole]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +32,7 @@ export default function Login() {
     setIsAuthenticating(true);
 
     try {
+      console.log("Attempting login with email:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -35,10 +46,13 @@ export default function Login() {
         const dashboardUrl = getDashboardUrlForRole(role);
         console.log(`Logging in as ${role}, redirecting to ${dashboardUrl}`);
         
-        // Add a slight delay to ensure auth state is properly updated
+        toast.success(`Signed in successfully! Redirecting to dashboard...`);
+        
+        // Add a delay to ensure auth state is properly updated
         setTimeout(() => {
-          navigate(dashboardUrl);
-        }, 300);
+          console.log("Executing delayed navigation to:", dashboardUrl);
+          navigate(dashboardUrl, { replace: true });
+        }, 800);
       }
       
     } catch (error: any) {

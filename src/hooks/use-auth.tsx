@@ -18,7 +18,7 @@ export const useAuth = () => {
     
     // Set up auth state change listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log(`Auth state changed: ${event}`, session?.user?.id);
         
         if (event === 'SIGNED_IN' && session) {
@@ -35,7 +35,7 @@ export const useAuth = () => {
           setUser(null);
           setIsAuthenticated(false);
           setUserRole('patient');
-          toast.info('Signed out successfully');
+          console.log("User signed out, state reset");
         }
         setIsLoading(false);
       }
