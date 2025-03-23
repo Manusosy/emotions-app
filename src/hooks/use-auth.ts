@@ -1,22 +1,34 @@
 
-// Placeholder for authentication hooks
-// This file provides mock authentication methods and states
+// Authentication hooks with properly structured exports
+import { useState } from 'react';
 
 export const useAuth = () => {
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  
+  // Mock user data for development
+  const mockUser = {
+    id: 'mock-user-id',
+    email: 'user@example.com',
+    user_metadata: {
+      avatar_url: '',
+      full_name: 'Test User'
+    }
+  };
+  
   return {
-    user: null,
-    userRole: null,
+    user: mockUser,
+    userRole: 'ambassador',
     isLoading: false,
-    isAuthenticating: false,
-    isAuthenticated: false,
+    isAuthenticating: isAuthenticating,
+    isAuthenticated: true,
     logout: async () => {
       console.log('Logout called - placeholder implementation');
       return Promise.resolve();
     },
-    getFullName: () => '',
-    getDashboardUrl: () => '/',
-    getDashboardUrlForRole: () => '/',
-    setIsAuthenticating: () => {}
+    getFullName: () => mockUser.user_metadata.full_name || 'User',
+    getDashboardUrl: () => '/ambassador-dashboard',
+    getDashboardUrlForRole: () => '/ambassador-dashboard',
+    setIsAuthenticating: (value: boolean) => setIsAuthenticating(value)
   };
 };
 
