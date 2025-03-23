@@ -36,7 +36,10 @@ export default defineConfig(({ mode }) => ({
     esbuildOptions: {
       tsconfigRaw: {
         compilerOptions: {
-          experimentalDecorators: true
+          experimentalDecorators: true,
+          module: "ESNext",
+          moduleResolution: "node",
+          target: "ESNext"
         }
       }
     }
