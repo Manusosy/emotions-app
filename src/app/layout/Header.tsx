@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { Menu, X, LogOut } from "lucide-react";
@@ -15,7 +14,12 @@ const Header = () => {
   const handleSignOut = async (e: React.MouseEvent) => {
     e.preventDefault();
     console.log('Header: Sign out button clicked');
-    await logout();
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Error during logout in header:', error);
+    }
   };
 
   const handleDashboardClick = (e: React.MouseEvent) => {

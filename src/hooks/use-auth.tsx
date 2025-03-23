@@ -82,15 +82,27 @@ export const useAuth = () => {
   }, []);
 
   const logout = async () => {
+    console.log("Logout function called");
     setIsAuthenticating(true);
     try {
       const { error } = await supabase.auth.signOut();
       if (error) {
+        console.error("Error during sign out:", error.message);
         throw error;
       }
-    } catch (error) {
+      
+      // Force reset of auth state to ensure UI updates properly
+      setUser(null);
+      setIsAuthenticated(false);
+      setUserRole('patient');
+      
+      toast.success('Signed out successfully');
+      
+      // Small timeout to ensure state updates before any navigation
+      return new Promise(resolve => setTimeout(resolve, 300));
+    } catch (error: any) {
       console.error('Logout error:', error);
-      toast.error('Failed to sign out.');
+      toast.error('Failed to sign out: ' + (error.message || 'Unknown error'));
     } finally {
       setIsAuthenticating(false);
     }

@@ -34,7 +34,11 @@ export default function Login() {
         const role = data.user.user_metadata?.role || 'patient';
         const dashboardUrl = getDashboardUrlForRole(role);
         console.log(`Logging in as ${role}, redirecting to ${dashboardUrl}`);
-        navigate(dashboardUrl);
+        
+        // Add a slight delay to ensure auth state is properly updated
+        setTimeout(() => {
+          navigate(dashboardUrl);
+        }, 300);
       }
       
     } catch (error: any) {
