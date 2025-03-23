@@ -11,7 +11,6 @@ import JournalPage from "@/features/journal/pages/JournalPage";
 import Footer from "@/components/layout/Footer";
 import ContactBanner from "@/components/layout/ContactBanner";
 import Ambassadors from "@/features/ambassadors/pages/Ambassadors";
-import AmbassadorDashboard from "@/features/dashboard/pages/AmbassadorDashboard";
 import AppointmentsPage from "@/features/ambassadors/pages/AppointmentsPage";
 import ClientsPage from "@/features/ambassadors/pages/ClientsPage";
 import GroupsPage from "@/features/ambassadors/pages/GroupsPage";
@@ -28,6 +27,8 @@ import { AmbassadorOnboardingDialog } from "@/features/ambassadors/components/Am
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import Navbar from "@/components/layout/Navbar";
 import ComingSoon from '@/components/ComingSoon';
+import AmbassadorDashboard from "@/features/dashboard/pages/AmbassadorDashboard";
+import AmbassadorDashboardAlt from "@/features/ambassadors/pages/AmbassadorDashboard";
 
 const App = () => {
   console.log('App component mounting...');
@@ -276,7 +277,7 @@ const App = () => {
               <>
                 <AmbassadorOnboardingDialog />
                 <div style={{ display: 'none' }}>
-                  <AmbassadorDashboard />
+                  <AmbassadorDashboardAlt />
                 </div>
               </>
             } />
@@ -362,7 +363,7 @@ const App = () => {
                 path="/ambassador-dashboard" 
                 element={
                   <ProtectedRoute 
-                    element={<AmbassadorDashboard />}
+                    element={<AmbassadorDashboardAlt />}
                     allowedRoles={["ambassador"]}
                   />
                 } 
