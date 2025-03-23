@@ -120,6 +120,7 @@ export const useAuth = () => {
     return () => {
       isMountedRef.current = false;
       subscription.unsubscribe();
+      console.log("Auth state listener cleaned up");
     };
   }, []);
 
@@ -141,13 +142,15 @@ export const useAuth = () => {
       toast.success('Signed out successfully');
       
       // Small timeout to ensure state updates before any navigation
-      return new Promise(resolve => setTimeout(resolve, 500));
+      return new Promise(resolve => setTimeout(resolve, 300));
     } catch (error: any) {
       console.error('Logout error:', error);
       toast.error('Failed to sign out: ' + (error.message || 'Unknown error'));
       throw error; // Re-throw to allow handling in components
     } finally {
-      setIsAuthenticating(false);
+      if (isMountedRef.current) {
+        setIsAuthenticating(false);
+      }
     }
   };
 

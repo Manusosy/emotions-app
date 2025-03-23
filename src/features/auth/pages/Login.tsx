@@ -17,11 +17,26 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const { getDashboardUrlForRole, setIsAuthenticating, isAuthenticated, userRole } = useAuth();
+  
+  // Track redirect attempts to prevent infinite loops
   const redirectAttemptedRef = useRef(false);
+  // Track if component is mounted
+  const isMountedRef = useRef(true);
+  
+  // Set up mount/unmount tracking
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Check if user is already authenticated and redirect them
   useEffect(() => {
-    // Skip if we're already redirecting or if we've already tried to redirect
+    // Skip if component is unmounted
+    if (!isMountedRef.current) return;
+    
+    // If we're already redirecting or have already tried to redirect, don't try again
     if (isRedirecting || redirectAttemptedRef.current) return;
     
     if (isAuthenticated && userRole) {
@@ -34,8 +49,10 @@ export default function Login() {
       
       // Use a slight delay to ensure all state is stable before navigation
       const timer = setTimeout(() => {
-        navigate(dashboardUrl, { replace: true });
-      }, 300);
+        if (isMountedRef.current) {
+          navigate(dashboardUrl, { replace: true });
+        }
+      }, 500);
       
       return () => clearTimeout(timer);
     }
@@ -70,19 +87,22 @@ export default function Login() {
         setIsRedirecting(true);
         redirectAttemptedRef.current = true;
         
-        // Add a delay to ensure auth state is properly updated
-        setTimeout(() => {
-          console.log("Executing delayed navigation to:", dashboardUrl);
+        // Make sure we only redirect if the component is still mounted
+        if (isMountedRef.current) {
+          // Navigate immediately instead of with a timeout
           navigate(dashboardUrl, { replace: true });
-        }, 800);
+        }
       }
     } catch (error: any) {
       console.error('Login error:', error);
       toast.error(error.message || "Failed to sign in. Please check your credentials.");
+      setIsRedirecting(false);
       redirectAttemptedRef.current = false;
     } finally {
-      setIsLoading(false);
-      setIsAuthenticating(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+        setIsAuthenticating(false);
+      }
     }
   };
 
@@ -101,7 +121,7 @@ export default function Login() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            disabled={isRedirecting}
+            disabled={isRedirecting || isLoading}
           />
         </div>
         <div className="space-y-2">
@@ -113,7 +133,7 @@ export default function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            disabled={isRedirecting}
+            disabled={isRedirecting || isLoading}
           />
         </div>
         <Button 
