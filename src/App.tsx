@@ -27,6 +27,7 @@ import Navbar from "@/components/layout/Navbar";
 import ComingSoon from '@/components/ComingSoon';
 import AmbassadorDashboardAlt from "@/features/ambassadors/pages/AmbassadorDashboard";
 import { useAuth } from "@/hooks/use-auth";
+import Header from "@/app/layout/Header";
 
 const ProtectedRoute = ({ 
   children, 
@@ -68,18 +69,19 @@ const ProtectedRoute = ({
 };
 
 const AppContent = () => {
-  const [showFooter, setShowFooter] = useState(true);
+  const [showHeaderFooter, setShowHeaderFooter] = useState(true);
   const location = useLocation();
 
   useEffect(() => {
     const pathname = location.pathname;
-    const shouldShowFooter = !pathname.includes('dashboard') && 
-                            !pathname.includes('ambassador') && 
-                            !pathname.includes('admin') &&
-                            !pathname.includes('booking');
-    setShowFooter(shouldShowFooter);
+    // Don't show header/footer on dashboard pages
+    const isDashboardPage = pathname.includes('dashboard') || 
+                           pathname.includes('ambassador') || 
+                           pathname.includes('admin') ||
+                           pathname.includes('booking');
     
-    console.log('Current path:', pathname);
+    setShowHeaderFooter(!isDashboardPage);
+    console.log('Current path:', pathname, 'Show header/footer:', !isDashboardPage);
   }, [location.pathname]);
 
   return (
@@ -88,7 +90,7 @@ const AppContent = () => {
         <Toaster />
         <Sonner />
         <div className="flex flex-col min-h-screen max-w-[100vw] overflow-x-hidden">
-          <Navbar />
+          {showHeaderFooter && <Navbar />}
           <div className="flex-grow">
             <Routes>
               <Route path="/" element={<MoodTracker />} />
@@ -182,7 +184,7 @@ const AppContent = () => {
             </Routes>
           </div>
           
-          {showFooter && (
+          {showHeaderFooter && (
             <>
               <div className="mb-12">
                 <ContactBanner />

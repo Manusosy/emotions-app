@@ -22,7 +22,7 @@ export default function Login() {
     if (isAuthenticated && userRole) {
       const dashboardUrl = getDashboardUrlForRole(userRole);
       console.log(`User already authenticated as ${userRole}, redirecting to ${dashboardUrl}`);
-      navigate(dashboardUrl);
+      navigate(dashboardUrl, { replace: true });
     }
   }, [isAuthenticated, userRole, navigate, getDashboardUrlForRole]);
 
@@ -52,7 +52,7 @@ export default function Login() {
         setTimeout(() => {
           console.log("Executing delayed navigation to:", dashboardUrl);
           navigate(dashboardUrl, { replace: true });
-        }, 800);
+        }, 1000);
       }
       
     } catch (error: any) {

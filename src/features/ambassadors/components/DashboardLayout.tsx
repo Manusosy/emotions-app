@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-is-mobile";
-import { useAuth } from "@/hooks/use-auth"; // Fixed import path from useAuth to use-auth
+import { useAuth } from "@/hooks/use-auth";
 import {
   Home,
   Calendar,
@@ -35,15 +35,21 @@ interface DashboardLayoutProps {
 export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { user, logout, getFullName } = useAuth();
+  const { user, logout, getFullName, isAuthenticated } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
 
   useEffect(() => {
+    // Verify user is authenticated, if not redirect to login
+    if (!isAuthenticated) {
+      navigate('/login', { replace: true });
+      return;
+    }
+
     setCurrentPath(window.location.pathname);
-  }, [window.location.pathname]);
+  }, [window.location.pathname, isAuthenticated, navigate]);
 
   useEffect(() => {
     setSidebarOpen(!isMobile);
@@ -53,7 +59,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     console.log("DashboardLayout checking auth - User:", user?.id);
     if (!user?.id) {
       console.log("No authenticated user in DashboardLayout, redirecting to login");
-      navigate('/login');
+      navigate('/login', { replace: true });
       return;
     }
     
@@ -86,6 +92,16 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     fetchUnreadCounts();
   }, [user?.id, navigate]);
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('Error during logout:', error);
+      toast.error('Failed to sign out. Please try again.');
+    }
+  };
+
   const ambassadorNavigation = [
     { 
       section: "Main",
@@ -114,7 +130,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-hidden">
       {/* Top Navigation Bar Container with Padding */}
       <div className="px-4 py-4 sm:px-6">
         {/* Header with rounded corners and contained width */}
@@ -182,7 +198,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               >
                 <AvatarImage src={user?.user_metadata?.avatar_url} />
                 <AvatarFallback className="bg-blue-700 text-white">
-                  {getFullName()[0]?.toUpperCase() || 'A'}
+                  {user?.user_metadata?.first_name?.[0]?.toUpperCase() || 'A'}
                 </AvatarFallback>
               </Avatar>
             </div>
@@ -238,7 +254,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 <Button
                   variant="ghost"
                   className="w-full justify-start gap-x-3 text-red-600 hover:bg-red-50 hover:text-red-700"
-                  onClick={logout}
+                  onClick={handleLogout}
                 >
                   <LogOut className="h-5 w-5" aria-hidden="true" />
                   Logout
