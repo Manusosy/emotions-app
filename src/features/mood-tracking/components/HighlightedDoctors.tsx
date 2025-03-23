@@ -1,10 +1,11 @@
+
 import { useState, useEffect } from "react";
 import { Star, MapPin, Clock, Globe2, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Ambassador {
   id: string;
