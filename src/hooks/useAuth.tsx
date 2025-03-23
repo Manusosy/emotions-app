@@ -56,12 +56,40 @@ export const useAuthState = () => {
   }, [userRole, getDashboardUrlForRole]);
 
   useEffect(() => {
-    // Check for active session on mount
+    console.log('useAuthState: Setting up auth state listener');
     let isMounted = true;
-    setIsLoading(true);
     
+    // First set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event);
+        
+        if (isMounted) {
+          if (event === 'SIGNED_IN' && session?.user) {
+            // Cast to our User type
+            const supabaseUser = session.user as unknown as User;
+            setUser(supabaseUser);
+            const role = supabaseUser.user_metadata?.role || null;
+            setUserRole(role);
+            console.log('Auth session found, user role:', role);
+            setIsAuthenticating(false);
+          } else if ((event === 'SIGNED_OUT' || event === 'USER_DELETED')) {
+            setUser(null);
+            setUserRole(null);
+            setIsAuthenticating(false);
+            console.log('User signed out');
+          }
+          
+          // Always update loading state
+          setIsLoading(false);
+        }
+      }
+    );
+    
+    // Then check for existing session
     const checkSession = async () => {
       try {
+        console.log('Checking for existing session');
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -95,34 +123,11 @@ export const useAuthState = () => {
         if (isMounted) {
           setUser(null);
           setUserRole(null);
-          setIsLoading(false); // Make sure to set isLoading to false here
+          setIsLoading(false);
         }
       }
     };
     
-    // Set up auth state listener first
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event);
-        
-        if (isMounted) {
-          if (event === 'SIGNED_IN' && session?.user) {
-            // Cast to our User type
-            const supabaseUser = session.user as unknown as User;
-            setUser(supabaseUser);
-            const role = supabaseUser.user_metadata?.role || null;
-            setUserRole(role);
-            setIsAuthenticating(false);
-          } else if ((event === 'SIGNED_OUT' || event === 'USER_DELETED')) {
-            setUser(null);
-            setUserRole(null);
-            setIsAuthenticating(false);
-          }
-        }
-      }
-    );
-    
-    // Then check for existing session
     checkSession();
 
     return () => {

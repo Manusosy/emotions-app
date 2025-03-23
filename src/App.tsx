@@ -33,222 +33,74 @@ import AmbassadorDashboardAlt from "@/features/ambassadors/pages/AmbassadorDashb
 
 // Use a component approach to ensure Router is available before using hooks that depend on it
 const AppContent = () => {
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false); // Set to false to disable onboarding
   const [userRole, setUserRole] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    console.log('App.tsx useEffect checking session...');
     async function checkSession() {
       try {
+        // First set up auth state listener
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event, session) => {
+            console.log('Auth state changed:', event);
+            if (event === 'SIGNED_IN' && session?.user) {
+              setUser(session.user);
+              setUserRole(session.user.user_metadata?.role || null);
+              setIsAuthenticated(true);
+              console.log('User signed in with role:', session.user.user_metadata?.role);
+            } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+              setUser(null);
+              setUserRole(null);
+              setIsAuthenticated(false);
+              console.log('User signed out');
+            }
+            setIsLoading(false);
+          }
+        );
+        
+        // Then check for existing session
         const { data } = await supabase.auth.getSession();
         if (data.session?.user) {
           setUser(data.session.user);
           setUserRole(data.session.user.user_metadata?.role || null);
           setIsAuthenticated(true);
-          
-          // Check if ambassador needs onboarding
-          if (data.session.user.user_metadata?.role === 'ambassador') {
-            await refreshAmbassadorStatus(data.session.user.id);
-          }
+          console.log('Existing session found for user with role:', data.session.user.user_metadata?.role);
+        } else {
+          console.log('No existing session found');
         }
+        setIsLoading(false);
+        
+        return () => {
+          subscription.unsubscribe();
+        };
       } catch (error) {
         console.error('Error checking session:', error);
-      } finally {
         setIsLoading(false);
       }
     }
     
     checkSession();
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          setUser(session.user);
-          setUserRole(session.user.user_metadata?.role || null);
-          setIsAuthenticated(true);
-          
-          if (session.user.user_metadata?.role === 'ambassador') {
-            await refreshAmbassadorStatus(session.user.id);
-          }
-        } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
-          setUser(null);
-          setUserRole(null);
-          setIsAuthenticated(false);
-        }
-      }
-    );
-    
-    return () => {
-      subscription.unsubscribe();
-    };
   }, []);
 
-  const decideOnboardingStatus = (userData, profile) => {
-    if (userData?.user_metadata?.onboarded === true) {
-      console.log('User marked as onboarded in metadata');
-      return false;
-    }
-    
-    if (userData?.user_metadata?.has_completed_profile === true) {
-      console.log('User has completed profile according to metadata');
-      return false;
-    }
-    
-    if (!profile) {
-      console.log('No profile data found');
-      return true;
-    }
-    
-    const isIncomplete = !profile.full_name || 
-      !profile.bio || 
-      !profile.speciality || 
-      !profile.avatar_url;
-      
-    console.log('Profile completeness check:', 
-      {
-        'Has full_name': !!profile.full_name,
-        'Has bio': !!profile.bio,
-        'Has speciality': !!profile.speciality,
-        'Has avatar': !!profile.avatar_url
-      }
-    );
-    
-    return isIncomplete;
-  }
-
-  const checkAmbassadorProfile = async (userId) => {
-    try {
-      console.log('Checking profile for ambassador:', userId);
-      
-      const { data: { user: userData } } = await supabase.auth.getUser();
-      console.log('User metadata check:', userData?.user_metadata);
-      
-      const { data: profile, error } = await supabase
-        .from('ambassador_profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error checking ambassador profile:', error);
-      }
-
-      console.log('Ambassador profile data:', profile);
-      
-      const needsOnboarding = decideOnboardingStatus(userData, profile);
-      console.log('Final onboarding decision:', needsOnboarding ? 'NEEDS ONBOARDING' : 'ALREADY ONBOARDED');
-      
-      return needsOnboarding;
-    } catch (error) {
-      console.error('Error in checkAmbassadorProfile:', error);
-      return true;
-    }
-  };
-
-  const refreshAmbassadorStatus = async (userId) => {
-    if (!userId) return;
-    console.log('Refreshing ambassador onboarding status...');
-    
-    try {
-      const { data, error } = await supabase.auth.refreshSession();
-      if (error) {
-        console.error('Error refreshing session:', error);
-        return;
-      }
-      
-      if (data?.user?.user_metadata?.onboarded === true || 
-          data?.user?.user_metadata?.has_completed_profile === true) {
-        console.log('User is marked as onboarded in refreshed metadata');
-        setShowOnboarding(false);
-        return;
-      }
-      
-      const needsOnboarding = await checkAmbassadorProfile(userId);
-      console.log('Updated onboarding status:', needsOnboarding ? 'needs onboarding' : 'already onboarded');
-      setShowOnboarding(needsOnboarding);
-    } catch (error) {
-      console.error('Error refreshing ambassador status:', error);
-    }
-  };
-
-  const checkUserMetadataDirectly = async () => {
-    if (userRole !== 'ambassador') return;
-    
-    try {
-      console.log('Performing direct metadata check...');
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        console.log('No authenticated user found in direct check');
-        return;
-      }
-      
-      const isOnboarded = user.user_metadata?.onboarded === true || 
-                         user.user_metadata?.has_completed_profile === true;
-                         
-      if (isOnboarded) {
-        console.log('User is marked as onboarded in metadata, hiding onboarding');
-        setShowOnboarding(false);
-        return;
-      }
-      
-      const { data: profile } = await supabase
-        .from('ambassador_profiles')
-        .select('full_name, bio, speciality, avatar_url')
-        .eq('id', user.id)
-        .single();
-        
-      const hasCompleteProfile = profile && 
-                               profile.full_name && 
-                               profile.bio && 
-                               profile.speciality;
-                               
-      if (hasCompleteProfile) {
-        console.log('Profile is complete, hiding onboarding');
-        setShowOnboarding(false);
-      }
-    } catch (error) {
-      console.error('Error in direct metadata check:', error);
-    }
-  };
-
-  useEffect(() => {
-    console.log('App useEffect checking userRole:', userRole);
-    
-    if (user?.id && userRole === 'ambassador') {
-      refreshAmbassadorStatus(user.id);
-      checkUserMetadataDirectly();
-    }
-  }, [user?.id, userRole]);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      if (userRole === 'ambassador' && user?.id) {
-        checkUserMetadataDirectly();
-      }
-    }, 60000);
-
-    return () => clearInterval(timer);
-  }, [userRole, user?.id]);
+  // Temporarily remove the onboarding check
 
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
-  if (userRole === 'ambassador' && showOnboarding) {
-    console.log('Ambassador detected, showing onboarding dialog');
-    
-    return (
-      <>
-        <AmbassadorOnboardingDialog />
-        <div style={{ display: 'none' }}>
-          <AmbassadorDashboardAlt />
-        </div>
-      </>
-    );
-  }
+  // We're disabling onboarding for now as requested
+  // if (userRole === 'ambassador' && showOnboarding) {
+  //   console.log('Ambassador detected, showing onboarding dialog');
+  //   return (
+  //     <>
+  //       <AmbassadorOnboardingDialog />
+  //     </>
+  //   );
+  // }
 
   console.log('App rendering with user:', !!user, 'and role:', userRole);
 
@@ -322,8 +174,9 @@ const AppContent = () => {
                 } 
               />
               
+              {/* Fix the ambassador dashboard routes */}
               <Route 
-                path="/ambassador-dashboard/*" 
+                path="/ambassador-dashboard" 
                 element={
                   <ProtectedRoute 
                     element={<AmbassadorDashboardAlt />}

@@ -4,7 +4,8 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { OnboardingDialog } from './OnboardingDialog';
 
 export function AmbassadorOnboardingDialog() {
-  const [open, setOpen] = useState(true);
+  // Set initial state to false to disable the dialog
+  const [open, setOpen] = useState(false);
   
   // Function to handle dialog state
   const handleOpenChange = (isOpen: boolean) => {
