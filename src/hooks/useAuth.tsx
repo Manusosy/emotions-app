@@ -86,40 +86,44 @@ export const useAuthState = () => {
           setUserRole(null);
           console.log('No auth session found');
         }
+        
+        if (isMounted) {
+          setIsLoading(false);
+        }
       } catch (error) {
         console.error('Error checking session:', error);
         if (isMounted) {
           setUser(null);
           setUserRole(null);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
+          setIsLoading(false); // Make sure to set isLoading to false here
         }
       }
     };
     
-    checkSession();
-    
-    // Listen for auth changes
+    // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event);
         
-        if (event === 'SIGNED_IN' && session?.user && isMounted) {
-          // Cast to our User type
-          const supabaseUser = session.user as unknown as User;
-          setUser(supabaseUser);
-          const role = supabaseUser.user_metadata?.role || null;
-          setUserRole(role);
-          setIsAuthenticating(false);
-        } else if ((event === 'SIGNED_OUT' || event === 'USER_DELETED') && isMounted) {
-          setUser(null);
-          setUserRole(null);
-          setIsAuthenticating(false);
+        if (isMounted) {
+          if (event === 'SIGNED_IN' && session?.user) {
+            // Cast to our User type
+            const supabaseUser = session.user as unknown as User;
+            setUser(supabaseUser);
+            const role = supabaseUser.user_metadata?.role || null;
+            setUserRole(role);
+            setIsAuthenticating(false);
+          } else if ((event === 'SIGNED_OUT' || event === 'USER_DELETED')) {
+            setUser(null);
+            setUserRole(null);
+            setIsAuthenticating(false);
+          }
         }
       }
     );
+    
+    // Then check for existing session
+    checkSession();
 
     return () => {
       isMounted = false;
