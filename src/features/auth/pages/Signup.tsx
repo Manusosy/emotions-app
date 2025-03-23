@@ -101,6 +101,8 @@ export default function Signup() {
     setIsAuthenticating(true);
     
     try {
+      console.log("Starting signup process with role:", formData.role);
+      
       // Create user with Supabase
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
@@ -123,9 +125,12 @@ export default function Signup() {
       
       // Redirect to the appropriate dashboard
       const dashboardUrl = getDashboardUrlForRole(formData.role);
+      console.log(`User signed up as ${formData.role}, redirecting to ${dashboardUrl}`);
+      
+      // Slight delay to allow the toast to be seen
       setTimeout(() => {
         navigate(dashboardUrl);
-      }, 1500);
+      }, 1000);
       
     } catch (error: any) {
       console.error("Signup process error:", error);

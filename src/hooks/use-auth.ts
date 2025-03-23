@@ -14,40 +14,22 @@ export const useAuth = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   
   useEffect(() => {
-    // Check for existing session on mount
-    const checkSession = async () => {
-      try {
-        setIsLoading(true);
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Error checking session:', error);
-          return;
-        }
-        
-        if (data.session) {
-          setUser(data.session.user);
-          setIsAuthenticated(true);
-          
-          // Fetch user role from metadata
-          const role = data.session.user.user_metadata?.role || 'patient';
-          setUserRole(role as UserRole);
-        }
-      } catch (error) {
-        console.error('Session check error:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    // Set up auth state change listener
+    console.log("Setting up auth state listener");
+    
+    // Set up auth state change listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log(`Auth state changed: ${event}`, session?.user?.id);
+        
         if (event === 'SIGNED_IN' && session) {
           setUser(session.user);
           setIsAuthenticated(true);
+          
+          // Fetch user role from metadata
           const role = session.user.user_metadata?.role || 'patient';
           setUserRole(role as UserRole);
+          console.log(`User signed in with role: ${role}`);
+          
           toast.success('Signed in successfully!');
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
@@ -58,6 +40,38 @@ export const useAuth = () => {
         setIsLoading(false);
       }
     );
+
+    // Then check for existing session
+    const checkSession = async () => {
+      try {
+        console.log("Checking initial Supabase session...");
+        setIsLoading(true);
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error checking session:', error);
+          return;
+        }
+        
+        console.log("Initial session check result:", data.session?.user?.id);
+        
+        if (data.session) {
+          setUser(data.session.user);
+          setIsAuthenticated(true);
+          
+          // Fetch user role from metadata
+          const role = data.session.user.user_metadata?.role || 'patient';
+          setUserRole(role as UserRole);
+          console.log(`User has existing session with role: ${role}`);
+        } else {
+          console.log("No authenticated user found");
+        }
+      } catch (error) {
+        console.error('Session check error:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
     checkSession();
     
@@ -94,6 +108,7 @@ export const useAuth = () => {
   };
 
   const getDashboardUrlForRole = (role: UserRole) => {
+    console.log(`Getting dashboard URL for role: ${role}`);
     switch (role) {
       case 'ambassador':
         return '/ambassador-dashboard';

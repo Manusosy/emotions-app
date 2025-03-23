@@ -39,6 +39,10 @@ const ProtectedRoute = ({
   const { isAuthenticated, userRole, isLoading } = useAuth();
   const location = useLocation();
   
+  useEffect(() => {
+    console.log(`ProtectedRoute check - authenticated: ${isAuthenticated}, role: ${userRole}, required: ${requiredRole}`);
+  }, [isAuthenticated, userRole, requiredRole]);
+  
   if (isLoading) {
     // Optional: show loading indicator
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
@@ -46,12 +50,15 @@ const ProtectedRoute = ({
   
   if (!isAuthenticated) {
     // Redirect to login if not authenticated
+    console.log("User not authenticated, redirecting to login");
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   
   if (requiredRole && userRole !== requiredRole) {
     // Redirect to appropriate dashboard if role doesn't match
+    console.log(`Role mismatch: user has ${userRole}, requires ${requiredRole}`);
     toast.error("You don't have permission to access this page");
+    
     if (userRole === 'ambassador') {
       return <Navigate to="/ambassador-dashboard" replace />;
     } else if (userRole === 'patient') {

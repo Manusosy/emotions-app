@@ -33,6 +33,7 @@ export default function Login() {
         // Get the user's role and redirect to the appropriate dashboard
         const role = data.user.user_metadata?.role || 'patient';
         const dashboardUrl = getDashboardUrlForRole(role);
+        console.log(`Logging in as ${role}, redirecting to ${dashboardUrl}`);
         navigate(dashboardUrl);
       }
       
