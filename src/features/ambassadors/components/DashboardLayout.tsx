@@ -1,10 +1,11 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-is-mobile";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/use-auth"; // Fixed import path from useAuth to use-auth
 import {
   Home,
   Calendar,

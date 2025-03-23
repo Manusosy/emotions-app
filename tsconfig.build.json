@@ -5,6 +5,7 @@
     "outDir": "dist",
     "declaration": true,
     "skipLibCheck": true
+    // Removed noEmit as it conflicts with build
   },
   "include": ["src"]
 }
