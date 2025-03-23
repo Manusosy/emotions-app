@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/use-auth";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, isAuthenticated, getDashboardUrl, logout } = useAuth();
+  const { user, isAuthenticated, isAuthenticating, getDashboardUrl, logout } = useAuth();
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width: 768px)");
 
@@ -49,9 +49,10 @@ const Header = () => {
                   size="sm" 
                   className="bg-white text-[#0078FF] hover:bg-white/90 text-sm flex items-center gap-1"
                   onClick={logout}
+                  disabled={isAuthenticating}
                 >
                   <LogOut className="w-4 h-4" />
-                  <span>Logout</span>
+                  <span>{isAuthenticating ? 'Signing out...' : 'Logout'}</span>
                 </Button>
               </>
             ) : (
@@ -143,9 +144,10 @@ const Header = () => {
                         setIsMenuOpen(false);
                         logout();
                       }}
+                      disabled={isAuthenticating}
                     >
                       <LogOut className="w-4 h-4" />
-                      <span>Logout</span>
+                      <span>{isAuthenticating ? 'Signing out...' : 'Logout'}</span>
                     </Button>
                   </>
                 ) : (

@@ -6,13 +6,16 @@ import { LogOut, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Navbar() {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, isAuthenticating, logout, getDashboardUrl } = useAuth();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
     await logout();
-    navigate('/');
+  };
+
+  const handleDashboardClick = () => {
+    navigate(getDashboardUrl());
   };
 
   return (
@@ -54,14 +57,24 @@ export default function Navbar() {
           {/* Auth Buttons */}
           <div className="flex items-center space-x-3">
             {isAuthenticated ? (
-              <Button
-                variant="outline"
-                onClick={handleSignOut}
-                className="bg-white text-[#0078FF] hover:bg-[#fda802] hover:text-white rounded-full px-6 font-medium shadow-sm shadow-blue-600/20 border-none transition-all flex items-center gap-2"
-              >
-                <LogOut className="w-4 h-4" />
-                Sign Out
-              </Button>
+              <>
+                <Button
+                  variant="ghost"
+                  onClick={handleDashboardClick}
+                  className="text-white hover:bg-[#fda802] rounded-full px-6 font-medium transition-all"
+                >
+                  Dashboard
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleSignOut}
+                  disabled={isAuthenticating}
+                  className="bg-white text-[#0078FF] hover:bg-[#fda802] hover:text-white rounded-full px-6 font-medium shadow-sm shadow-blue-600/20 border-none transition-all flex items-center gap-2"
+                >
+                  <LogOut className="w-4 h-4" />
+                  {isAuthenticating ? 'Signing out...' : 'Sign Out'}
+                </Button>
+              </>
             ) : (
               <>
                 <Link to="/login">
@@ -117,6 +130,24 @@ export default function Navbar() {
             <Link to="/help-groups" className="block px-4 py-2 hover:bg-[#fda802] rounded-lg transition-colors">
               Help Groups
             </Link>
+            
+            {isAuthenticated && (
+              <>
+                <button 
+                  onClick={handleDashboardClick}
+                  className="block w-full text-left px-4 py-2 hover:bg-[#fda802] rounded-lg transition-colors"
+                >
+                  Dashboard
+                </button>
+                <button 
+                  onClick={handleSignOut}
+                  disabled={isAuthenticating}
+                  className="block w-full text-left px-4 py-2 hover:bg-[#fda802] rounded-lg transition-colors"
+                >
+                  {isAuthenticating ? 'Signing out...' : 'Sign Out'}
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>

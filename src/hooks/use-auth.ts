@@ -31,13 +31,16 @@ export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     // Check for active session on mount
     const checkSession = async () => {
       try {
+        setIsLoading(true);
         const { data } = await supabase.auth.getSession();
+        
         if (data.session?.user) {
           // Cast to our User type since Supabase user types don't exactly match our custom User type
           const supabaseUser = data.session.user as unknown as User;
@@ -58,16 +61,23 @@ export const useAuth = () => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log('Auth state changed:', event);
+        
         if (event === 'SIGNED_IN' && session?.user) {
           // Cast to our User type
           const supabaseUser = session.user as unknown as User;
           setUser(supabaseUser);
           setUserRole(supabaseUser.user_metadata?.role || null);
+          setIsAuthenticating(false);
+          
+          // Redirect to dashboard after successful sign-in
+          const dashboardUrl = getDashboardUrlForRole(supabaseUser.user_metadata?.role);
+          navigate(dashboardUrl);
         } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
           setUser(null);
           setUserRole(null);
+          setIsAuthenticating(false);
         }
       }
     );
@@ -75,10 +85,11 @@ export const useAuth = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
-  const getDashboardUrl = () => {
-    switch (userRole) {
+  // Helper function to get dashboard URL based on role
+  const getDashboardUrlForRole = (role?: string) => {
+    switch (role) {
       case 'therapist':
         return '/therapist-dashboard';
       case 'ambassador':
@@ -92,8 +103,13 @@ export const useAuth = () => {
     }
   };
 
+  const getDashboardUrl = () => {
+    return getDashboardUrlForRole(userRole || undefined);
+  };
+
   const logout = async () => {
     try {
+      setIsAuthenticating(true);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
@@ -105,6 +121,8 @@ export const useAuth = () => {
       navigate('/');
     } catch (error: any) {
       toast.error(error.message || 'Failed to log out');
+    } finally {
+      setIsAuthenticating(false);
     }
   };
 
@@ -130,6 +148,7 @@ export const useAuth = () => {
     user,
     userRole,
     isLoading,
+    isAuthenticating,
     isAuthenticated: !!user,
     getDashboardUrl,
     logout,
