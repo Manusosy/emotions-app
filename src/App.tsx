@@ -360,7 +360,7 @@ const App = () => {
               />
               
               <Route 
-                path="/ambassador-dashboard" 
+                path="/ambassador-dashboard/*" 
                 element={
                   <ProtectedRoute 
                     element={<AmbassadorDashboardAlt />}

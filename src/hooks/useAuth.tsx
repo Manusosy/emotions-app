@@ -173,3 +173,5 @@ export const useAuth = () => {
     getFullName
   };
 };
+
+export default useAuth;
