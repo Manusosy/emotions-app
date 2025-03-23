@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -34,7 +35,6 @@ const App = () => {
 
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
-  const [isInitialized, setIsInitialized] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Add logging to clearly display onboarding decision process
@@ -237,10 +237,6 @@ const App = () => {
       } catch (error) {
         console.error('Error getting initial session:', error);
         toast.error('Authentication error. Please try again.');
-      } finally {
-        if (isMounted) {
-          setIsInitialized(true);
-        }
       }
     };
 
@@ -267,13 +263,13 @@ const App = () => {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [refreshAmbassadorStatus]);
+  }, []);
 
   useEffect(() => {
     if (userRole === 'ambassador') {
       checkUserMetadataDirectly();
     }
-  }, [userRole, checkUserMetadataDirectly]);
+  }, [userRole]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -283,20 +279,7 @@ const App = () => {
     }, 60000);
 
     return () => clearInterval(timer);
-  }, [userRole, checkUserMetadataDirectly]);
-
-  // Show loading state only during initial load
-  if (!isInitialized) {
-    console.log('App still initializing...');
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="bg-white shadow-sm rounded-lg p-4 flex items-center space-x-3">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-solid border-[#0078FF] border-r-transparent"></div>
-          <p className="text-sm text-gray-600 font-medium">Loading application...</p>
-        </div>
-      </div>
-    );
-  }
+  }, [userRole]);
 
   // Show onboarding dialog for ambassadors with incomplete profiles
   if (userRole === 'ambassador') {

@@ -24,7 +24,6 @@ interface Ambassador {
 export default function AmbassadorsGrid() {
   const navigate = useNavigate();
   const [ambassadors, setAmbassadors] = useState<Ambassador[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchAmbassadors();
@@ -41,8 +40,6 @@ export default function AmbassadorsGrid() {
       setAmbassadors(data || []);
     } catch (error: any) {
       toast.error(error.message || 'Error fetching ambassadors');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -57,10 +54,6 @@ export default function AmbassadorsGrid() {
       search: `?ambassadorId=${ambassador.id}&ambassadorName=${encodeURIComponent(ambassador.full_name)}&duration=${encodeURIComponent(ambassador.duration || '30 Min')}`
     });
   };
-
-  if (loading) {
-    return <div className="flex justify-center items-center min-h-[400px]">Loading...</div>;
-  }
 
   return (
     <div className="container mx-auto px-4 py-8">

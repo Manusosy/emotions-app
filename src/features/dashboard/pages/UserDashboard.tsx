@@ -29,7 +29,6 @@ interface Booking {
 
 export function UserDashboard() {
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
@@ -94,8 +93,6 @@ export function UserDashboard() {
     } catch (error) {
       toast.error('Failed to load bookings');
       console.error('Error loading bookings:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -109,10 +106,6 @@ export function UserDashboard() {
     setIsReviewModalOpen(false);
     setSelectedBooking(null);
   };
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
 
   return (
     <div className="container mx-auto py-8">
