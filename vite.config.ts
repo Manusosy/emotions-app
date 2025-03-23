@@ -31,7 +31,7 @@ export default defineConfig(({ mode }) => ({
       }
     }
   },
-  // Add TypeScript configuration
+  // Simplified TypeScript configuration
   optimizeDeps: {
     esbuildOptions: {
       tsconfigRaw: {
