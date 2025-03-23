@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { Smile, Meh, Frown, BookOpen } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
