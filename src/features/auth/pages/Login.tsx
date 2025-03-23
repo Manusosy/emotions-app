@@ -27,15 +27,36 @@ export default function Login() {
 
       if (error) throw error;
 
-      console.log('Login successful, auth state change listener will redirect');
-      toast.success("Welcome back!");
-
-      // We don't need to manually redirect here as the auth state change listener
-      // in useAuth will handle the redirection based on the user's role
+      // Get user role from metadata to determine where to redirect
+      const role = data.user?.user_metadata?.role;
+      console.log('Login successful, user role:', role);
+      
+      // Determine the correct dashboard URL based on role
+      let dashboardUrl = '/';
+      switch (role) {
+        case 'ambassador':
+          dashboardUrl = '/ambassador-dashboard';
+          break;
+        case 'patient':
+          dashboardUrl = '/patient-dashboard';
+          break;
+        case 'therapist':
+          dashboardUrl = '/therapist-dashboard';
+          break;
+        case 'admin':
+          dashboardUrl = '/admin-dashboard';
+          break;
+        default:
+          dashboardUrl = '/';
+      }
+      
+      toast.success("Login successful!");
+      navigate(dashboardUrl);
 
     } catch (error: any) {
       console.error('Login error:', error);
       toast.error(error.message || "Failed to login. Please try again.");
+    } finally {
       setIsLoading(false);
     }
   };

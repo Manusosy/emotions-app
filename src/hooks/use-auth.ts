@@ -36,6 +36,7 @@ export const useAuth = () => {
 
   // Helper function to get dashboard URL based on role
   const getDashboardUrlForRole = useCallback((role?: string) => {
+    console.log('Getting dashboard URL for role:', role);
     switch (role) {
       case 'therapist':
         return '/therapist-dashboard';
@@ -66,8 +67,9 @@ export const useAuth = () => {
           // Cast to our User type since Supabase user types don't exactly match our custom User type
           const supabaseUser = data.session.user as unknown as User;
           setUser(supabaseUser);
-          setUserRole(supabaseUser.user_metadata?.role || null);
-          console.log('Auth session found, user role:', supabaseUser.user_metadata?.role);
+          const role = supabaseUser.user_metadata?.role || null;
+          setUserRole(role);
+          console.log('Auth session found, user role:', role);
         } else {
           setUser(null);
           setUserRole(null);
@@ -93,11 +95,12 @@ export const useAuth = () => {
           // Cast to our User type
           const supabaseUser = session.user as unknown as User;
           setUser(supabaseUser);
-          setUserRole(supabaseUser.user_metadata?.role || null);
+          const role = supabaseUser.user_metadata?.role || null;
+          setUserRole(role);
           setIsAuthenticating(false);
           
           // Redirect to dashboard after successful sign-in
-          const dashboardUrl = getDashboardUrlForRole(supabaseUser.user_metadata?.role);
+          const dashboardUrl = getDashboardUrlForRole(role);
           console.log('Redirecting to dashboard:', dashboardUrl);
           navigate(dashboardUrl);
         } else if ((event === 'SIGNED_OUT' || event === 'USER_DELETED') && isMounted) {

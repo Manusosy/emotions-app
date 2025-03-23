@@ -73,7 +73,7 @@ const App = () => {
     return isIncomplete;
   }
 
-  const checkAmbassadorProfile = async (userId: string) => {
+  const checkAmbassadorProfile = async (userId) => {
     try {
       console.log('Checking profile for ambassador:', userId);
       
@@ -324,7 +324,7 @@ const App = () => {
   };
 
   // Check if current path is a dashboard route
-  const isDashboardRoute = (pathname: string) => {
+  const isDashboardRoute = (pathname) => {
     return pathname.includes('dashboard') || 
            pathname.includes('ambassador') || 
            pathname.includes('admin') ||
@@ -378,12 +378,95 @@ const App = () => {
                 } 
               />
               
-              {/* Protected Dashboard Routes */}
+              {/* Ambassador Dashboard Routes */}
               <Route 
-                path="/dashboard/*" 
+                path="/ambassador-dashboard" 
+                element={
+                  <ProtectedRoute 
+                    element={<AmbassadorDashboard />}
+                    allowedRoles={["ambassador"]}
+                  />
+                } 
+              />
+              <Route 
+                path="/ambassador-dashboard/appointments" 
+                element={
+                  <ProtectedRoute 
+                    element={<AppointmentsPage />}
+                    allowedRoles={["ambassador"]}
+                  />
+                } 
+              />
+              <Route 
+                path="/ambassador-dashboard/clients" 
+                element={
+                  <ProtectedRoute 
+                    element={<ClientsPage />}
+                    allowedRoles={["ambassador"]}
+                  />
+                } 
+              />
+              <Route 
+                path="/ambassador-dashboard/groups" 
+                element={
+                  <ProtectedRoute 
+                    element={<GroupsPage />}
+                    allowedRoles={["ambassador"]}
+                  />
+                } 
+              />
+              <Route 
+                path="/ambassador-dashboard/resources" 
+                element={
+                  <ProtectedRoute 
+                    element={<ResourcesPage />}
+                    allowedRoles={["ambassador"]}
+                  />
+                } 
+              />
+              
+              {/* Patient Dashboard Routes */}
+              <Route 
+                path="/patient-dashboard" 
                 element={
                   <ProtectedRoute 
                     element={<PatientDashboard />}
+                    allowedRoles={["patient"]}
+                  />
+                } 
+              />
+              <Route 
+                path="/patient-dashboard/appointments" 
+                element={
+                  <ProtectedRoute 
+                    element={<PatientAppointmentsPage />}
+                    allowedRoles={["patient"]}
+                  />
+                } 
+              />
+              <Route 
+                path="/patient-dashboard/favorites" 
+                element={
+                  <ProtectedRoute 
+                    element={<FavoritesPage />}
+                    allowedRoles={["patient"]}
+                  />
+                } 
+              />
+              <Route 
+                path="/patient-dashboard/settings" 
+                element={
+                  <ProtectedRoute 
+                    element={<Settings />}
+                    allowedRoles={["patient", "ambassador"]}
+                  />
+                } 
+              />
+              <Route 
+                path="/patient-dashboard/profile" 
+                element={
+                  <ProtectedRoute 
+                    element={<Profile />}
                     allowedRoles={["patient", "ambassador"]}
                   />
                 } 
