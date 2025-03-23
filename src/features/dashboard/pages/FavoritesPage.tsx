@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -7,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Heart, Star, Clock, MapPin, Calendar } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/use-auth';
 
 const FavoritesPage = () => {
   const { user } = useAuth();
