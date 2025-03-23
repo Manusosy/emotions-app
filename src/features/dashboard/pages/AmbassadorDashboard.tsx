@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { ReviewList } from '@/features/ambassadors/components/ReviewList';
+import { DashboardLayout } from '@/features/ambassadors/components/DashboardLayout';
 
 interface Booking {
   id: string;
@@ -55,9 +56,12 @@ export function AmbassadorDashboard() {
         .eq('id', user.id)
         .single();
 
-      if (profileError) throw profileError;
-
-      setIsAvailable(profile.availability_status || false);
+      if (profileError) {
+        console.log('Profile fetch error, might be a new user:', profileError);
+        // Continue anyway as this might be a new user without a profile yet
+      } else {
+        setIsAvailable(profile?.availability_status || false);
+      }
 
       // Load bookings with explicit column specification for the join
       const { data: bookingsData, error: bookingsError } = await supabase
@@ -76,7 +80,10 @@ export function AmbassadorDashboard() {
         .eq('ambassador_id', user.id)
         .order('session_date', { ascending: false });
 
-      if (bookingsError) throw bookingsError;
+      if (bookingsError) {
+        console.log('Bookings fetch error, might be expected if table is new:', bookingsError);
+        // Continue anyway as bookings table might not exist yet
+      }
 
       // Transform data to match our Booking interface
       const processedBookings = (bookingsData || []).map(booking => {
@@ -147,117 +154,130 @@ export function AmbassadorDashboard() {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <DashboardLayout>
+        <div className="container mx-auto p-8 flex justify-center items-center h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-lg text-gray-600">Loading your dashboard...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Ambassador Dashboard</h1>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-muted-foreground">
-            Available for bookings
-          </span>
-          <Switch
-            checked={isAvailable}
-            onCheckedChange={handleAvailabilityChange}
-          />
+    <DashboardLayout>
+      <div className="container mx-auto py-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Ambassador Dashboard</h1>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-muted-foreground">
+              Available for bookings
+            </span>
+            <Switch
+              checked={isAvailable}
+              onCheckedChange={handleAvailabilityChange}
+            />
+          </div>
         </div>
-      </div>
 
-      <div className="space-y-8">
-        <div>
-          <h2 className="text-2xl font-semibold mb-4">Upcoming Sessions</h2>
-          {bookings.length === 0 ? (
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-center text-muted-foreground">
-                  You have no upcoming sessions
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {bookings.map((booking) => (
-                <Card key={booking.id}>
-                  <CardHeader>
-                    <div className="flex items-center space-x-4">
-                      <img
-                        src={booking.user.avatar_url || '/default-avatar.png'}
-                        alt={`${booking.user.full_name}'s avatar`}
-                        className="h-10 w-10 rounded-full"
-                      />
-                      <div>
-                        <CardTitle className="text-lg">
-                          {booking.user.full_name}
-                        </CardTitle>
-                        <CardDescription>
-                          {format(new Date(booking.session_date), 'PPP')} at{' '}
-                          {booking.session_time}
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div>
-                        <p className="text-sm font-medium">Status</p>
-                        <p className="text-sm text-muted-foreground capitalize">
-                          {booking.status}
-                        </p>
-                      </div>
-                      {booking.notes && (
+        <div className="space-y-8">
+          <div>
+            <h2 className="text-2xl font-semibold mb-4">Upcoming Sessions</h2>
+            {bookings.length === 0 ? (
+              <Card>
+                <CardContent className="pt-6">
+                  <p className="text-center text-muted-foreground py-8">
+                    You have no upcoming sessions
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {bookings.map((booking) => (
+                  <Card key={booking.id}>
+                    <CardHeader>
+                      <div className="flex items-center space-x-4">
+                        <img
+                          src={booking.user.avatar_url || '/default-avatar.png'}
+                          alt={`${booking.user.full_name}'s avatar`}
+                          className="h-10 w-10 rounded-full"
+                        />
                         <div>
-                          <p className="text-sm font-medium">Notes</p>
-                          <p className="text-sm text-muted-foreground">
-                            {booking.notes}
+                          <CardTitle className="text-lg">
+                            {booking.user.full_name}
+                          </CardTitle>
+                          <CardDescription>
+                            {format(new Date(booking.session_date), 'PPP')} at{' '}
+                            {booking.session_time}
+                          </CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-sm font-medium">Status</p>
+                          <p className="text-sm text-muted-foreground capitalize">
+                            {booking.status}
                           </p>
                         </div>
-                      )}
-                      {booking.status === 'pending' && (
-                        <div className="flex gap-2">
+                        {booking.notes && (
+                          <div>
+                            <p className="text-sm font-medium">Notes</p>
+                            <p className="text-sm text-muted-foreground">
+                              {booking.notes}
+                            </p>
+                          </div>
+                        )}
+                        {booking.status === 'pending' && (
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() =>
+                                handleStatusUpdate(booking.id, 'confirmed')
+                              }
+                              className="flex-1"
+                            >
+                              Confirm
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              onClick={() =>
+                                handleStatusUpdate(booking.id, 'cancelled')
+                              }
+                              className="flex-1"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        )}
+                        {booking.status === 'confirmed' && (
                           <Button
                             onClick={() =>
-                              handleStatusUpdate(booking.id, 'confirmed')
+                              handleStatusUpdate(booking.id, 'completed')
                             }
-                            className="flex-1"
+                            className="w-full"
                           >
-                            Confirm
+                            Mark as Completed
                           </Button>
-                          <Button
-                            variant="destructive"
-                            onClick={() =>
-                              handleStatusUpdate(booking.id, 'cancelled')
-                            }
-                            className="flex-1"
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      )}
-                      {booking.status === 'confirmed' && (
-                        <Button
-                          onClick={() =>
-                            handleStatusUpdate(booking.id, 'completed')
-                          }
-                          className="w-full"
-                        >
-                          Mark as Completed
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
 
-        <div>
-          <h2 className="text-2xl font-semibold mb-4">Your Reviews</h2>
-          {userId && <ReviewList ambassadorId={userId} />}
+          <div>
+            <h2 className="text-2xl font-semibold mb-4">Your Reviews</h2>
+            {userId && <ReviewList ambassadorId={userId} />}
+          </div>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }
+
+export default AmbassadorDashboard;

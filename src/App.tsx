@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,7 +11,7 @@ import JournalPage from "@/features/journal/pages/JournalPage";
 import Footer from "@/components/layout/Footer";
 import ContactBanner from "@/components/layout/ContactBanner";
 import Ambassadors from "@/features/ambassadors/pages/Ambassadors";
-import AmbassadorDashboard from "@/features/ambassadors/pages/AmbassadorDashboard";
+import AmbassadorDashboard from "@/features/dashboard/pages/AmbassadorDashboard";
 import AppointmentsPage from "@/features/ambassadors/pages/AppointmentsPage";
 import ClientsPage from "@/features/ambassadors/pages/ClientsPage";
 import GroupsPage from "@/features/ambassadors/pages/GroupsPage";
@@ -37,9 +36,7 @@ const App = () => {
   const [userRole, setUserRole] = useState(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
-  // Add logging to clearly display onboarding decision process
   const decideOnboardingStatus = (userData, profile) => {
-    // Check metadata flags first
     if (userData?.user_metadata?.onboarded === true) {
       console.log('User marked as onboarded in metadata');
       return false;
@@ -50,7 +47,6 @@ const App = () => {
       return false;
     }
     
-    // If no flags in metadata, check profile data
     if (!profile) {
       console.log('No profile data found');
       return true;
@@ -77,41 +73,36 @@ const App = () => {
     try {
       console.log('Checking profile for ambassador:', userId);
       
-      // First, check user metadata to see if already onboarded
       const { data: { user: userData } } = await supabase.auth.getUser();
       console.log('User metadata check:', userData?.user_metadata);
       
-      // Get profile data regardless of metadata state for better logging
       const { data: profile, error } = await supabase
         .from('ambassador_profiles')
         .select('*')
         .eq('id', userId)
         .single();
 
-      if (error && error.code !== 'PGRST116') { // Not found is expected for new users
+      if (error && error.code !== 'PGRST116') {
         console.error('Error checking ambassador profile:', error);
       }
 
       console.log('Ambassador profile data:', profile);
       
-      // Make decision based on all available data
       const needsOnboarding = decideOnboardingStatus(userData, profile);
       console.log('Final onboarding decision:', needsOnboarding ? 'NEEDS ONBOARDING' : 'ALREADY ONBOARDED');
       
       return needsOnboarding;
     } catch (error) {
       console.error('Error in checkAmbassadorProfile:', error);
-      return true; // Return true to show onboarding if there's an error
+      return true;
     }
   };
 
-  // Add a refreshAmbassadorStatus function to reload when needed
   const refreshAmbassadorStatus = async (userId) => {
     if (!userId) return;
     console.log('Refreshing ambassador onboarding status...');
     
     try {
-      // Force refresh the user data from Supabase to get latest metadata
       const { data, error } = await supabase.auth.refreshSession();
       if (error) {
         console.error('Error refreshing session:', error);
@@ -133,7 +124,6 @@ const App = () => {
     }
   };
 
-  // Update the checkUserMetadataDirectly function to be more efficient
   const checkUserMetadataDirectly = async () => {
     if (userRole !== 'ambassador') return;
     
@@ -146,7 +136,6 @@ const App = () => {
         return;
       }
       
-      // Check both metadata flags and profile completion
       const isOnboarded = user.user_metadata?.onboarded === true || 
                          user.user_metadata?.has_completed_profile === true;
                          
@@ -156,7 +145,6 @@ const App = () => {
         return;
       }
       
-      // Only check profile if metadata doesn't indicate completion
       const { data: profile } = await supabase
         .from('ambassador_profiles')
         .select('full_name, bio, speciality, avatar_url')
@@ -177,17 +165,14 @@ const App = () => {
     }
   };
 
-  // Add a function to load ambassador dashboard data
   const loadAmbassadorDashboardData = async (userId) => {
     if (!userId) return null;
     
     try {
       console.log('Loading ambassador dashboard data for:', userId);
       
-      // Force refresh the session to get latest metadata
       await supabase.auth.refreshSession();
       
-      // Get profile data with a fresh query
       const { data: profile, error } = await supabase
         .from('ambassador_profiles')
         .select('*')
@@ -225,7 +210,6 @@ const App = () => {
           console.log('User role from metadata:', userRole);
           setUserRole(userRole);
 
-          // If user is an ambassador, check their profile
           if (userRole === 'ambassador') {
             await refreshAmbassadorStatus(session.user.id);
           }
@@ -281,9 +265,7 @@ const App = () => {
     return () => clearInterval(timer);
   }, [userRole]);
 
-  // Show onboarding dialog for ambassadors with incomplete profiles
   if (userRole === 'ambassador') {
-    // Always ensure we've made the right decision about whether to show onboarding
     console.log('Ambassador detected, showing onboarding status:', showOnboarding ? 'NEEDS ONBOARDING' : 'ALREADY ONBOARDED');
     
     if (showOnboarding) {
@@ -294,7 +276,7 @@ const App = () => {
               <>
                 <AmbassadorOnboardingDialog />
                 <div style={{ display: 'none' }}>
-                  <AmbassadorDashboard /> {/* Preloaded but hidden */}
+                  <AmbassadorDashboard />
                 </div>
               </>
             } />
@@ -323,7 +305,6 @@ const App = () => {
     return element;
   };
 
-  // Check if current path is a dashboard route
   const isDashboardRoute = (pathname) => {
     return pathname.includes('dashboard') || 
            pathname.includes('ambassador') || 
@@ -349,7 +330,6 @@ const App = () => {
               <Route path="/ambassadors" element={<Ambassadors />} />
               <Route path="/booking" element={<BookingPage />} />
               
-              {/* Coming Soon Pages */}
               <Route 
                 path="/therapists" 
                 element={
@@ -378,7 +358,6 @@ const App = () => {
                 } 
               />
               
-              {/* Ambassador Dashboard Routes */}
               <Route 
                 path="/ambassador-dashboard" 
                 element={
@@ -425,7 +404,6 @@ const App = () => {
                 } 
               />
               
-              {/* Patient Dashboard Routes */}
               <Route 
                 path="/patient-dashboard" 
                 element={
