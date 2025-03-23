@@ -30,79 +30,25 @@ import Navbar from "@/components/layout/Navbar";
 import ComingSoon from '@/components/ComingSoon';
 import AmbassadorDashboard from "@/features/dashboard/pages/AmbassadorDashboard";
 import AmbassadorDashboardAlt from "@/features/ambassadors/pages/AmbassadorDashboard";
+import { useAuth } from "@/hooks/use-auth";
 
 // Use a component approach to ensure Router is available before using hooks that depend on it
 const AppContent = () => {
-  const [showOnboarding, setShowOnboarding] = useState(false); // Set to false to disable onboarding
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [user, setUser] = useState<any>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, userRole, isLoading, isAuthenticated, getDashboardUrl } = useAuth();
+  const [showFooter, setShowFooter] = useState(true);
 
   useEffect(() => {
-    console.log('App.tsx useEffect checking session...');
-    async function checkSession() {
-      try {
-        // First set up auth state listener
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          async (event, session) => {
-            console.log('Auth state changed:', event);
-            if (event === 'SIGNED_IN' && session?.user) {
-              setUser(session.user);
-              setUserRole(session.user.user_metadata?.role || null);
-              setIsAuthenticated(true);
-              console.log('User signed in with role:', session.user.user_metadata?.role);
-            } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
-              setUser(null);
-              setUserRole(null);
-              setIsAuthenticated(false);
-              console.log('User signed out');
-            }
-            setIsLoading(false);
-          }
-        );
-        
-        // Then check for existing session
-        const { data } = await supabase.auth.getSession();
-        if (data.session?.user) {
-          setUser(data.session.user);
-          setUserRole(data.session.user.user_metadata?.role || null);
-          setIsAuthenticated(true);
-          console.log('Existing session found for user with role:', data.session.user.user_metadata?.role);
-        } else {
-          console.log('No existing session found');
-        }
-        setIsLoading(false);
-        
-        return () => {
-          subscription.unsubscribe();
-        };
-      } catch (error) {
-        console.error('Error checking session:', error);
-        setIsLoading(false);
-      }
-    }
-    
-    checkSession();
+    const pathname = window.location.pathname;
+    const shouldShowFooter = !pathname.includes('dashboard') && 
+                            !pathname.includes('ambassador') && 
+                            !pathname.includes('admin') &&
+                            !pathname.includes('booking');
+    setShowFooter(shouldShowFooter);
   }, []);
-
-  // Temporarily remove the onboarding check
 
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
-
-  // We're disabling onboarding for now as requested
-  // if (userRole === 'ambassador' && showOnboarding) {
-  //   console.log('Ambassador detected, showing onboarding dialog');
-  //   return (
-  //     <>
-  //       <AmbassadorOnboardingDialog />
-  //     </>
-  //   );
-  // }
-
-  console.log('App rendering with user:', !!user, 'and role:', userRole);
 
   const ProtectedRoute = ({ element, allowedRoles = [], redirectTo = "/login" }) => {
     console.log('Protected route check - User:', !!user, 'Required roles:', allowedRoles, 'User role:', userRole);
@@ -120,15 +66,6 @@ const AppContent = () => {
     console.log('Access granted to protected route');
     return element;
   };
-
-  const isDashboardRoute = (pathname) => {
-    return pathname.includes('dashboard') || 
-           pathname.includes('ambassador') || 
-           pathname.includes('admin') ||
-           pathname.includes('booking');
-  };
-
-  const showFooter = !isDashboardRoute(window.location.pathname);
 
   return (
     <>
@@ -174,7 +111,7 @@ const AppContent = () => {
                 } 
               />
               
-              {/* Fix the ambassador dashboard routes */}
+              {/* Ambassador dashboard routes */}
               <Route 
                 path="/ambassador-dashboard" 
                 element={
@@ -221,6 +158,7 @@ const AppContent = () => {
                 } 
               />
               
+              {/* Patient dashboard routes */}
               <Route 
                 path="/patient-dashboard" 
                 element={
