@@ -52,7 +52,7 @@ export default function Login() {
         if (isMountedRef.current) {
           navigate(dashboardUrl, { replace: true });
         }
-      }, 500);
+      }, 100); // Reduced timeout for faster navigation
       
       return () => clearTimeout(timer);
     }
