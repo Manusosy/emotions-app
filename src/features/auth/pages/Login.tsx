@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,18 +17,27 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const { getDashboardUrlForRole, setIsAuthenticating, isAuthenticated, userRole } = useAuth();
+  const redirectAttemptedRef = useRef(false);
 
   // Check if user is already authenticated and redirect them
   useEffect(() => {
-    if (isAuthenticated && userRole && !isRedirecting) {
-      setIsRedirecting(true); // Prevent multiple redirects
-      const dashboardUrl = getDashboardUrlForRole(userRole);
-      console.log(`User already authenticated as ${userRole}, redirecting to ${dashboardUrl}`);
+    // Skip if we're already redirecting or if we've already tried to redirect
+    if (isRedirecting || redirectAttemptedRef.current) return;
+    
+    if (isAuthenticated && userRole) {
+      console.log(`User authenticated as ${userRole}, preparing to redirect`);
+      redirectAttemptedRef.current = true;
+      setIsRedirecting(true);
       
-      // Use a slight delay to ensure state is stable
-      setTimeout(() => {
+      const dashboardUrl = getDashboardUrlForRole(userRole);
+      console.log(`Redirecting to ${dashboardUrl}`);
+      
+      // Use a slight delay to ensure all state is stable before navigation
+      const timer = setTimeout(() => {
         navigate(dashboardUrl, { replace: true });
-      }, 500);
+      }, 300);
+      
+      return () => clearTimeout(timer);
     }
   }, [isAuthenticated, userRole, navigate, getDashboardUrlForRole, isRedirecting]);
 
@@ -38,6 +47,7 @@ export default function Login() {
     
     setIsLoading(true);
     setIsAuthenticating(true);
+    redirectAttemptedRef.current = false; // Reset this flag for new login attempts
 
     try {
       console.log("Attempting login with email:", email);
@@ -58,16 +68,18 @@ export default function Login() {
         
         // Prevent any redirection logic from running during this time
         setIsRedirecting(true);
+        redirectAttemptedRef.current = true;
         
         // Add a delay to ensure auth state is properly updated
         setTimeout(() => {
           console.log("Executing delayed navigation to:", dashboardUrl);
           navigate(dashboardUrl, { replace: true });
-        }, 1000);
+        }, 800);
       }
     } catch (error: any) {
       console.error('Login error:', error);
       toast.error(error.message || "Failed to sign in. Please check your credentials.");
+      redirectAttemptedRef.current = false;
     } finally {
       setIsLoading(false);
       setIsAuthenticating(false);
@@ -89,6 +101,7 @@ export default function Login() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            disabled={isRedirecting}
           />
         </div>
         <div className="space-y-2">
@@ -100,6 +113,7 @@ export default function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            disabled={isRedirecting}
           />
         </div>
         <Button 
@@ -108,7 +122,7 @@ export default function Login() {
           disabled={isLoading || isRedirecting}
           variant="brand"
         >
-          {isLoading ? "Logging in..." : "Login"}
+          {isLoading ? "Logging in..." : isRedirecting ? "Redirecting..." : "Login"}
         </Button>
         <p className="text-center text-sm text-gray-600">
           Don't have an account?{" "}
