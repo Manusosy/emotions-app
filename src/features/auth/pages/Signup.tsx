@@ -1,5 +1,6 @@
+
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +15,6 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import AuthLayout from "../components/AuthLayout";
 import { countries } from "../utils/countries";
-import { UserRole } from "@/types/database.types";
 import { User, Heart, UserPlus, Info, Eye, EyeOff } from "lucide-react";
 import {
   HoverCard,
@@ -22,6 +22,9 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
+import type { UserRole } from "@/hooks/use-auth";
 
 const roleInfo = {
   patient: {
@@ -70,26 +73,66 @@ export default function Signup() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [signupSuccessful, setSignupSuccessful] = useState(false);
+  const navigate = useNavigate();
+  const { getDashboardUrlForRole, setIsAuthenticating } = useAuth();
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (isLoading) return;
     
+    // Basic validation
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    
+    if (formData.password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+    
+    if (!formData.country) {
+      toast.error("Please select your country");
+      return;
+    }
+    
     setIsLoading(true);
+    setIsAuthenticating(true);
     
     try {
-      console.log('Signup placeholder with:', formData);
-      toast.info("Authentication system is being rebuilt. Registration functionality will be available soon.");
+      // Create user with Supabase
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            full_name: `${formData.firstName} ${formData.lastName}`,
+            role: formData.role,
+            country: formData.country,
+          }
+        }
+      });
       
+      if (error) throw error;
+      
+      toast.success("Account created successfully!");
+      setSignupSuccessful(true);
+      
+      // Redirect to the appropriate dashboard
+      const dashboardUrl = getDashboardUrlForRole(formData.role);
       setTimeout(() => {
-        setIsLoading(false);
-        setSignupSuccessful(true);
-      }, 1000);
+        navigate(dashboardUrl);
+      }, 1500);
+      
     } catch (error: any) {
       console.error("Signup process error:", error);
-      toast.error("Authentication system is currently unavailable.");
+      toast.error(error.message || "Failed to create account. Please try again.");
+    } finally {
       setIsLoading(false);
+      setIsAuthenticating(false);
     }
   };
 

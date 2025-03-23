@@ -1,34 +1,47 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AuthLayout from "../components/AuthLayout";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const { getDashboardUrlForRole, setIsAuthenticating } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setIsAuthenticating(true);
 
     try {
-      // Placeholder for login logic
-      console.log('Login placeholder with:', { email, password });
-      toast.info("Authentication system is being rebuilt. Login functionality will be available soon.");
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        // Get the user's role and redirect to the appropriate dashboard
+        const role = data.user.user_metadata?.role || 'patient';
+        const dashboardUrl = getDashboardUrlForRole(role);
+        navigate(dashboardUrl);
+      }
       
-      // Simulate delay
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 1000);
     } catch (error: any) {
       console.error('Login error:', error);
-      toast.error("Authentication system is currently unavailable.");
+      toast.error(error.message || "Failed to sign in. Please check your credentials.");
+    } finally {
       setIsLoading(false);
+      setIsAuthenticating(false);
     }
   };
 
