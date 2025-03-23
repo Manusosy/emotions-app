@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -28,7 +27,6 @@ import ComingSoon from '@/components/ComingSoon';
 import AmbassadorDashboardAlt from "@/features/ambassadors/pages/AmbassadorDashboard";
 import { useAuth } from "@/hooks/use-auth";
 
-// Protected route component that checks authentication and role
 const ProtectedRoute = ({ 
   children, 
   requiredRole,
@@ -44,18 +42,15 @@ const ProtectedRoute = ({
   }, [isAuthenticated, userRole, requiredRole]);
   
   if (isLoading) {
-    // Optional: show loading indicator
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
   
   if (!isAuthenticated) {
-    // Redirect to login if not authenticated
     console.log("User not authenticated, redirecting to login");
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   
   if (requiredRole && userRole !== requiredRole) {
-    // Redirect to appropriate dashboard if role doesn't match
     console.log(`Role mismatch: user has ${userRole}, requires ${requiredRole}`);
     toast.error("You don't have permission to access this page");
     
@@ -71,7 +66,6 @@ const ProtectedRoute = ({
   return <>{children}</>;
 };
 
-// Use a component approach to ensure Router is available before using hooks that depend on it
 const AppContent = () => {
   const [showFooter, setShowFooter] = useState(true);
   const location = useLocation();
@@ -84,7 +78,6 @@ const AppContent = () => {
                             !pathname.includes('booking');
     setShowFooter(shouldShowFooter);
     
-    // Debug log
     console.log('Current path:', pathname);
   }, [location.pathname]);
 
@@ -132,7 +125,6 @@ const AppContent = () => {
                 } 
               />
               
-              {/* Ambassador dashboard routes with role protection */}
               <Route path="/ambassador-dashboard" element={
                 <ProtectedRoute requiredRole="ambassador">
                   <AmbassadorDashboardAlt />
@@ -159,7 +151,6 @@ const AppContent = () => {
                 </ProtectedRoute>
               } />
               
-              {/* Patient dashboard routes with role protection */}
               <Route path="/patient-dashboard" element={
                 <ProtectedRoute requiredRole="patient">
                   <PatientDashboard />
