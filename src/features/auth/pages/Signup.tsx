@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,9 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Card, CardContent } from "@/components/ui/card";
 import AuthLayout from "../components/AuthLayout";
-import { supabase } from "@/integrations/supabase/client";
 import { countries } from "../utils/countries";
 import { UserRole } from "@/types/database.types";
 import { User, Heart, UserPlus, Info, Eye, EyeOff } from "lucide-react";
@@ -72,7 +70,6 @@ export default function Signup() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [signupSuccessful, setSignupSuccessful] = useState(false);
-  const navigate = useNavigate();
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,57 +79,16 @@ export default function Signup() {
     setIsLoading(true);
     
     try {
-      console.log('Starting signup process...');
+      console.log('Signup placeholder with:', formData);
+      toast.info("Authentication system is being rebuilt. Registration functionality will be available soon.");
       
-      // Validate password
-      if (formData.password !== formData.confirmPassword) {
-        toast.error("Passwords do not match");
+      setTimeout(() => {
         setIsLoading(false);
-        return;
-      }
-
-      // Sign up with Supabase
-      console.log('Calling Supabase auth.signUp...');
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            role: formData.role,
-            full_name: `${formData.firstName} ${formData.lastName}`,
-            country: formData.country
-          },
-        },
-      });
-
-      if (signUpError) {
-        console.error('Signup error:', signUpError);
-        throw signUpError;
-      }
-
-      if (!authData.user) {
-        throw new Error('No user data returned from signup');
-      }
-
-      setSignupSuccessful(true);
-      toast.success("Account created successfully!");
-      
-      // We don't need to manually redirect here as the auth state change listener
-      // in useAuth will handle the redirection based on the user's role
-      console.log('Signup successful, auth state change listener will redirect');
-
+        setSignupSuccessful(true);
+      }, 1000);
     } catch (error: any) {
       console.error("Signup process error:", error);
-      
-      if (error.message?.includes("already registered")) {
-        toast.error("An account with this email already exists. Please login instead.");
-        navigate("/login");
-        return;
-      }
-      
-      toast.error(error.message || "Failed to create account. Please try again.");
+      toast.error("Authentication system is currently unavailable.");
       setIsLoading(false);
     }
   };

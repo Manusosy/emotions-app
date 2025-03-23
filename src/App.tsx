@@ -2,7 +2,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import MoodTracker from "@/features/mood-tracking/pages/MoodTracker";
 import Login from "@/features/auth/pages/Login";
@@ -22,21 +22,14 @@ import PatientAppointmentsPage from "@/features/dashboard/pages/AppointmentsPage
 import FavoritesPage from "@/features/dashboard/pages/FavoritesPage";
 import Settings from "@/features/dashboard/pages/Settings";
 import Profile from "@/features/dashboard/pages/Profile";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AmbassadorOnboardingDialog } from "@/features/ambassadors/components/AmbassadorOnboardingDialog";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import Navbar from "@/components/layout/Navbar";
 import ComingSoon from '@/components/ComingSoon';
-import AmbassadorDashboard from "@/features/dashboard/pages/AmbassadorDashboard";
 import AmbassadorDashboardAlt from "@/features/ambassadors/pages/AmbassadorDashboard";
-import { useAuth } from "@/hooks/use-auth";
 
 // Use a component approach to ensure Router is available before using hooks that depend on it
 const AppContent = () => {
-  const { user, userRole, isLoading, isAuthenticated, getDashboardUrl } = useAuth();
   const [showFooter, setShowFooter] = useState(true);
-  const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
@@ -48,51 +41,8 @@ const AppContent = () => {
     setShowFooter(shouldShowFooter);
     
     // Debug log
-    console.log('Current path:', pathname, 'User authenticated:', isAuthenticated, 'User role:', userRole);
-  }, [location.pathname, isAuthenticated, userRole]);
-
-  // Effect to handle redirection after authentication is confirmed
-  useEffect(() => {
-    // Only run this when authentication state is fully loaded (not in loading state)
-    if (!isLoading) {
-      const pathname = location.pathname;
-      console.log('Auth state loaded, current path:', pathname);
-      
-      // If authenticated but on home/login/signup page, redirect to dashboard
-      if (isAuthenticated && ['/', '/login', '/signup', '/404'].includes(pathname)) {
-        const dashboardUrl = getDashboardUrl();
-        console.log('Redirecting authenticated user to dashboard:', dashboardUrl);
-        navigate(dashboardUrl);
-      }
-      
-      // If trying to access a protected route but not authenticated, redirect to login
-      if (!isAuthenticated && (pathname.includes('/patient-dashboard') || pathname.includes('/ambassador-dashboard'))) {
-        console.log('Unauthenticated user trying to access protected route, redirecting to login');
-        navigate('/login');
-      }
-    }
-  }, [isAuthenticated, isLoading, userRole, location.pathname, navigate, getDashboardUrl]);
-
-  if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
-  }
-
-  const ProtectedRoute = ({ element, allowedRoles = [], redirectTo = "/login" }) => {
-    console.log('Protected route check - User:', !!user, 'Required roles:', allowedRoles, 'User role:', userRole);
-    
-    if (!isAuthenticated) {
-      console.log('No authenticated user, redirecting to:', redirectTo);
-      return <Navigate to={redirectTo} replace />;
-    }
-    
-    if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
-      console.log('User role not allowed, redirecting to home');
-      return <Navigate to="/" replace />;
-    }
-    
-    console.log('Access granted to protected route');
-    return element;
-  };
+    console.log('Current path:', pathname);
+  }, [location.pathname]);
 
   return (
     <>
@@ -138,99 +88,19 @@ const AppContent = () => {
                 } 
               />
               
-              {/* Ambassador dashboard routes */}
-              <Route 
-                path="/ambassador-dashboard" 
-                element={
-                  <ProtectedRoute 
-                    element={<AmbassadorDashboardAlt />}
-                    allowedRoles={["ambassador"]}
-                  />
-                } 
-              />
-              <Route 
-                path="/ambassador-dashboard/appointments" 
-                element={
-                  <ProtectedRoute 
-                    element={<AppointmentsPage />}
-                    allowedRoles={["ambassador"]}
-                  />
-                } 
-              />
-              <Route 
-                path="/ambassador-dashboard/clients" 
-                element={
-                  <ProtectedRoute 
-                    element={<ClientsPage />}
-                    allowedRoles={["ambassador"]}
-                  />
-                } 
-              />
-              <Route 
-                path="/ambassador-dashboard/groups" 
-                element={
-                  <ProtectedRoute 
-                    element={<GroupsPage />}
-                    allowedRoles={["ambassador"]}
-                  />
-                } 
-              />
-              <Route 
-                path="/ambassador-dashboard/resources" 
-                element={
-                  <ProtectedRoute 
-                    element={<ResourcesPage />}
-                    allowedRoles={["ambassador"]}
-                  />
-                } 
-              />
+              {/* Ambassador dashboard routes - temporary, no authentication check */}
+              <Route path="/ambassador-dashboard" element={<AmbassadorDashboardAlt />} />
+              <Route path="/ambassador-dashboard/appointments" element={<AppointmentsPage />} />
+              <Route path="/ambassador-dashboard/clients" element={<ClientsPage />} />
+              <Route path="/ambassador-dashboard/groups" element={<GroupsPage />} />
+              <Route path="/ambassador-dashboard/resources" element={<ResourcesPage />} />
               
-              {/* Patient dashboard routes */}
-              <Route 
-                path="/patient-dashboard" 
-                element={
-                  <ProtectedRoute 
-                    element={<PatientDashboard />}
-                    allowedRoles={["patient"]}
-                  />
-                } 
-              />
-              <Route 
-                path="/patient-dashboard/appointments" 
-                element={
-                  <ProtectedRoute 
-                    element={<PatientAppointmentsPage />}
-                    allowedRoles={["patient"]}
-                  />
-                } 
-              />
-              <Route 
-                path="/patient-dashboard/favorites" 
-                element={
-                  <ProtectedRoute 
-                    element={<FavoritesPage />}
-                    allowedRoles={["patient"]}
-                  />
-                } 
-              />
-              <Route 
-                path="/patient-dashboard/settings" 
-                element={
-                  <ProtectedRoute 
-                    element={<Settings />}
-                    allowedRoles={["patient", "ambassador"]}
-                  />
-                } 
-              />
-              <Route 
-                path="/patient-dashboard/profile" 
-                element={
-                  <ProtectedRoute 
-                    element={<Profile />}
-                    allowedRoles={["patient", "ambassador"]}
-                  />
-                } 
-              />
+              {/* Patient dashboard routes - temporary, no authentication check */}
+              <Route path="/patient-dashboard" element={<PatientDashboard />} /> 
+              <Route path="/patient-dashboard/appointments" element={<PatientAppointmentsPage />} />
+              <Route path="/patient-dashboard/favorites" element={<FavoritesPage />} />
+              <Route path="/patient-dashboard/settings" element={<Settings />} />
+              <Route path="/patient-dashboard/profile" element={<Profile />} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -1,62 +1,33 @@
 
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AuthLayout from "../components/AuthLayout";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      console.log('Login process started');
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-
-      // Get user role from metadata to determine where to redirect
-      const role = data.user?.user_metadata?.role;
-      console.log('Login successful, user role:', role);
+      // Placeholder for login logic
+      console.log('Login placeholder with:', { email, password });
+      toast.info("Authentication system is being rebuilt. Login functionality will be available soon.");
       
-      // Determine the correct dashboard URL based on role
-      let dashboardUrl = '/';
-      switch (role) {
-        case 'ambassador':
-          dashboardUrl = '/ambassador-dashboard';
-          break;
-        case 'patient':
-          dashboardUrl = '/patient-dashboard';
-          break;
-        case 'therapist':
-          dashboardUrl = '/therapist-dashboard';
-          break;
-        case 'admin':
-          dashboardUrl = '/admin-dashboard';
-          break;
-        default:
-          dashboardUrl = '/';
-      }
-      
-      toast.success("Login successful!");
-      navigate(dashboardUrl);
-
+      // Simulate delay
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 1000);
     } catch (error: any) {
       console.error('Login error:', error);
-      toast.error(error.message || "Failed to login. Please try again.");
-    } finally {
+      toast.error("Authentication system is currently unavailable.");
       setIsLoading(false);
     }
   };
