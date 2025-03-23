@@ -62,10 +62,10 @@ export const useAuthState = () => {
     // First set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event);
+        console.log('Auth state changed:', event, 'Session:', !!session);
         
         if (isMounted) {
-          if (event === 'SIGNED_IN' && session?.user) {
+          if (session?.user) {
             // Cast to our User type
             const supabaseUser = session.user as unknown as User;
             setUser(supabaseUser);

@@ -36,6 +36,7 @@ import { useAuth } from "@/hooks/use-auth";
 const AppContent = () => {
   const { user, userRole, isLoading, isAuthenticated, getDashboardUrl } = useAuth();
   const [showFooter, setShowFooter] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const pathname = window.location.pathname;
@@ -44,7 +45,15 @@ const AppContent = () => {
                             !pathname.includes('admin') &&
                             !pathname.includes('booking');
     setShowFooter(shouldShowFooter);
-  }, []);
+    
+    // Debug log
+    console.log('Current path:', pathname, 'User authenticated:', isAuthenticated, 'User role:', userRole);
+    
+    // Handle the case where user is authenticated but trying to access 404 page
+    if (isAuthenticated && (pathname === '/patient-dashboard' || pathname === '/ambassador-dashboard')) {
+      console.log('Authenticated user accessing dashboard at', pathname);
+    }
+  }, [isAuthenticated, userRole]);
 
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
