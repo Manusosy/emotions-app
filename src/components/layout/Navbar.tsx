@@ -1,3 +1,4 @@
+
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
@@ -5,12 +6,12 @@ import { LogOut, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Navbar() {
-  const { user, signOut } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
-    await signOut();
+    await logout();
     navigate('/');
   };
 
@@ -52,7 +53,7 @@ export default function Navbar() {
 
           {/* Auth Buttons */}
           <div className="flex items-center space-x-3">
-            {user ? (
+            {isAuthenticated ? (
               <Button
                 variant="outline"
                 onClick={handleSignOut}
@@ -121,4 +122,4 @@ export default function Navbar() {
       </div>
     </nav>
   );
-} 
+}

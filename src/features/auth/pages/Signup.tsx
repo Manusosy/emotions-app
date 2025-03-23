@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -71,10 +72,14 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [signupSuccessful, setSignupSuccessful] = useState(false);
   const navigate = useNavigate();
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isLoading) return;
+    
     setIsLoading(true);
     
     try {
@@ -83,6 +88,7 @@ export default function Signup() {
       // Validate password
       if (formData.password !== formData.confirmPassword) {
         toast.error("Passwords do not match");
+        setIsLoading(false);
         return;
       }
 
@@ -111,16 +117,19 @@ export default function Signup() {
         throw new Error('No user data returned from signup');
       }
 
+      setSignupSuccessful(true);
       toast.success("Account created successfully! Please check your email to verify your account.");
       
-      // Redirect based on role
-      if (formData.role === 'patient') {
-        navigate('/patient-dashboard');
-      } else if (formData.role === 'ambassador') {
-        navigate('/ambassador-dashboard');
-      } else {
-        navigate('/');
-      }
+      // Redirect based on role with a slight delay to ensure state updates properly
+      setTimeout(() => {
+        if (formData.role === 'patient') {
+          navigate('/patient-dashboard');
+        } else if (formData.role === 'ambassador') {
+          navigate('/ambassador-dashboard');
+        } else {
+          navigate('/');
+        }
+      }, 500);
 
     } catch (error: any) {
       console.error("Signup process error:", error);
@@ -132,8 +141,8 @@ export default function Signup() {
       }
       
       toast.error(error.message || "Failed to create account. Please try again.");
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   return (
@@ -151,6 +160,7 @@ export default function Signup() {
               value={formData.firstName}
               onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
               required
+              disabled={isLoading || signupSuccessful}
             />
           </div>
           <div className="grid gap-2">
@@ -161,6 +171,7 @@ export default function Signup() {
               value={formData.lastName}
               onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
               required
+              disabled={isLoading || signupSuccessful}
             />
           </div>
           <div className="grid gap-2">
@@ -172,6 +183,7 @@ export default function Signup() {
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
+              disabled={isLoading || signupSuccessful}
             />
           </div>
           <div className="grid gap-2">
@@ -184,6 +196,7 @@ export default function Signup() {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 required
+                disabled={isLoading || signupSuccessful}
               />
               <Button
                 type="button"
@@ -191,6 +204,7 @@ export default function Signup() {
                 size="icon"
                 className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                 onClick={() => setShowPassword(!showPassword)}
+                disabled={isLoading || signupSuccessful}
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4 text-gray-400" />
@@ -213,6 +227,7 @@ export default function Signup() {
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 required
+                disabled={isLoading || signupSuccessful}
               />
               <Button
                 type="button"
@@ -220,6 +235,7 @@ export default function Signup() {
                 size="icon"
                 className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                 onClick={() => setShowPassword(!showPassword)}
+                disabled={isLoading || signupSuccessful}
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4 text-gray-400" />
@@ -237,6 +253,7 @@ export default function Signup() {
             <Select
               value={formData.country}
               onValueChange={(value) => setFormData({ ...formData, country: value })}
+              disabled={isLoading || signupSuccessful}
             >
               <SelectTrigger id="country">
                 <SelectValue placeholder="Select your country" />
@@ -258,15 +275,16 @@ export default function Signup() {
             value={formData.role}
             onValueChange={(value) => setFormData({ ...formData, role: value as UserRole })}
             className="grid gap-4 md:grid-cols-3"
+            disabled={isLoading || signupSuccessful}
           >
             {Object.entries(roleInfo).map(([role, info]) => (
               <Label
                 key={role}
                 className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary ${
                   formData.role === role ? "border-primary" : ""
-                }`}
+                } ${(isLoading || signupSuccessful) ? "opacity-60 cursor-not-allowed" : ""}`}
               >
-                <RadioGroupItem value={role} className="sr-only" />
+                <RadioGroupItem value={role} className="sr-only" disabled={isLoading || signupSuccessful} />
                 <HoverCard>
                   <HoverCardTrigger asChild>
                     <div className="flex items-center gap-2">
@@ -301,10 +319,11 @@ export default function Signup() {
             id="terms"
             checked={agreedToTerms}
             onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+            disabled={isLoading || signupSuccessful}
           />
           <label
             htmlFor="terms"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${(isLoading || signupSuccessful) ? "opacity-60 cursor-not-allowed" : ""}`}
           >
             I agree to the{" "}
             <Link to="/terms" className="text-primary hover:underline">
@@ -316,10 +335,10 @@ export default function Signup() {
         <Button
           type="submit"
           className="w-full"
-          disabled={isLoading || !agreedToTerms}
+          disabled={isLoading || !agreedToTerms || signupSuccessful}
           variant="brand"
         >
-          {isLoading ? "Creating Account..." : "Create Account"}
+          {isLoading ? "Creating Account..." : signupSuccessful ? "Account Created!" : "Create Account"}
         </Button>
 
         <p className="text-center text-sm text-gray-600">

@@ -59,12 +59,13 @@ export const useAuth = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        if (session?.user) {
+        console.log('Auth state changed:', event);
+        if (event === 'SIGNED_IN' && session?.user) {
           // Cast to our User type
           const supabaseUser = session.user as unknown as User;
           setUser(supabaseUser);
           setUserRole(supabaseUser.user_metadata?.role || null);
-        } else {
+        } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
           setUser(null);
           setUserRole(null);
         }
