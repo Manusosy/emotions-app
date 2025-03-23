@@ -1,6 +1,6 @@
 
-// Temporary placeholder for authentication hooks
-// This will be reimplemented in a new approach
+// Placeholder for authentication hooks
+// This file provides mock authentication methods and states
 
 export const useAuth = () => {
   return {
@@ -9,7 +9,10 @@ export const useAuth = () => {
     isLoading: false,
     isAuthenticating: false,
     isAuthenticated: false,
-    logout: async () => {},
+    logout: async () => {
+      console.log('Logout called - placeholder implementation');
+      return Promise.resolve();
+    },
     getFullName: () => '',
     getDashboardUrl: () => '/',
     getDashboardUrlForRole: () => '/',
