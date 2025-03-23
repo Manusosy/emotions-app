@@ -28,7 +28,7 @@ interface User {
 }
 
 // Create a version of the hook that doesn't use router-dependent features
-const useAuthState = () => {
+export const useAuthState = () => {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,10 +58,21 @@ const useAuthState = () => {
   useEffect(() => {
     // Check for active session on mount
     let isMounted = true;
+    setIsLoading(true);
+    
     const checkSession = async () => {
       try {
-        setIsLoading(true);
-        const { data } = await supabase.auth.getSession();
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error checking session:', error);
+          if (isMounted) {
+            setUser(null);
+            setUserRole(null);
+            setIsLoading(false);
+          }
+          return;
+        }
         
         if (data.session?.user && isMounted) {
           // Cast to our User type since Supabase user types don't exactly match our custom User type
@@ -70,22 +81,26 @@ const useAuthState = () => {
           const role = supabaseUser.user_metadata?.role || null;
           setUserRole(role);
           console.log('Auth session found, user role:', role);
-        } else {
+        } else if (isMounted) {
           setUser(null);
           setUserRole(null);
           console.log('No auth session found');
         }
       } catch (error) {
         console.error('Error checking session:', error);
+        if (isMounted) {
+          setUser(null);
+          setUserRole(null);
+        }
       } finally {
         if (isMounted) {
           setIsLoading(false);
         }
       }
     };
-
+    
     checkSession();
-
+    
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
