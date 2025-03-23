@@ -25,7 +25,7 @@ import Profile from "@/features/dashboard/pages/Profile";
 import { toast } from "sonner";
 import Navbar from "@/components/layout/Navbar";
 import ComingSoon from '@/components/ComingSoon';
-import AmbassadorDashboardAlt from "@/features/ambassadors/pages/AmbassadorDashboard";
+import AmbassadorDashboard from "@/features/ambassadors/pages/AmbassadorDashboard";
 import { useAuth } from "@/hooks/use-auth";
 import Header from "@/app/layout/Header";
 
@@ -130,7 +130,7 @@ const AppContent = () => {
               
               <Route path="/ambassador-dashboard" element={
                 <ProtectedRoute requiredRole="ambassador">
-                  <AmbassadorDashboardAlt />
+                  <AmbassadorDashboard />
                 </ProtectedRoute>
               } />
               <Route path="/ambassador-dashboard/appointments" element={

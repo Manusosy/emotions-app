@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -146,17 +147,28 @@ const AmbassadorDashboard = ({ refreshData }: AmbassadorDashboardProps) => {
   }, [user]);
 
   useEffect(() => {
+    console.log("AmbassadorDashboard component mounted");
+    
     const loadData = async () => {
       try {
+        setIsLoading(true);
+        console.log("Loading ambassador dashboard data");
+        
         if (refreshData) {
           const profile = await refreshData();
           setProfileData(profile);
         }
         
+        if (!user?.id) {
+          console.log("No user ID found, skipping data loading");
+          return;
+        }
+        
+        console.log("Fetching appointments for user:", user.id);
         const { data: appointmentsData, error: appointmentsError } = await supabase
           .from("appointments")
           .select("*, patient_profiles:patient_id(*)")
-          .eq("ambassador_id", user?.id)
+          .eq("ambassador_id", user.id)
           .gte("date", new Date().toISOString())
           .order("date", { ascending: true })
           .limit(5);
@@ -164,23 +176,27 @@ const AmbassadorDashboard = ({ refreshData }: AmbassadorDashboardProps) => {
         if (appointmentsError) {
           console.error("Error loading appointments:", appointmentsError);
         } else {
+          console.log("Appointments loaded:", appointmentsData?.length || 0);
           setUpcomingAppointments(appointmentsData || []);
         }
 
         const { data: groupsData, error: groupsError } = await supabase
           .from("groups")
           .select("*")
-          .eq("ambassador_id", user?.id)
+          .eq("ambassador_id", user.id)
           .order("created_at", { ascending: false })
           .limit(3);
 
         if (groupsError) {
           console.error("Error loading groups:", groupsError);
         } else {
+          console.log("Groups loaded:", groupsData?.length || 0);
           setManagedGroups(groupsData || []);
         }
       } catch (error) {
         console.error("Failed to load dashboard data:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
