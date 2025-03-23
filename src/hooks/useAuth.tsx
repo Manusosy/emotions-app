@@ -174,4 +174,5 @@ export const useAuth = () => {
   };
 };
 
+// Export both a named export and a default export
 export default useAuth;

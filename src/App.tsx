@@ -29,12 +29,12 @@ import Navbar from "@/components/layout/Navbar";
 import ComingSoon from '@/components/ComingSoon';
 import AmbassadorDashboard from "@/features/dashboard/pages/AmbassadorDashboard";
 import AmbassadorDashboardAlt from "@/features/ambassadors/pages/AmbassadorDashboard";
+import { useAuth } from "@/hooks/useAuth";
 
 const App = () => {
   console.log('App component mounting...');
 
-  const [user, setUser] = useState(null);
-  const [userRole, setUserRole] = useState(null);
+  const { user, userRole, isAuthenticated } = useAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   const decideOnboardingStatus = (userData, profile) => {
@@ -166,133 +166,50 @@ const App = () => {
     }
   };
 
-  const loadAmbassadorDashboardData = async (userId) => {
-    if (!userId) return null;
-    
-    try {
-      console.log('Loading ambassador dashboard data for:', userId);
-      
-      await supabase.auth.refreshSession();
-      
-      const { data: profile, error } = await supabase
-        .from('ambassador_profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-        
-      if (error) {
-        console.error('Error loading ambassador profile:', error);
-        return null;
-      }
-      
-      console.log('Loaded fresh ambassador profile:', profile);
-      return profile;
-    } catch (error) {
-      console.error('Error in loadAmbassadorDashboardData:', error);
-      return null;
-    }
-  };
-
   useEffect(() => {
-    console.log('App useEffect running...');
-    let isMounted = true;
+    console.log('App useEffect checking userRole:', userRole);
     
-    const checkInitialSession = async () => {
-      try {
-        console.log('Checking initial Supabase session...');
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log('Initial session check result:', session);
-        
-        if (session?.user && isMounted) {
-          console.log('User found in session:', session.user);
-          setUser(session.user);
-          
-          const userRole = session.user.user_metadata?.role;
-          console.log('User role from metadata:', userRole);
-          setUserRole(userRole);
-
-          if (userRole === 'ambassador') {
-            await refreshAmbassadorStatus(session.user.id);
-          }
-          
-          toast.success(`Welcome back!`);
-        } else {
-          console.log('No authenticated user found');
-        }
-      } catch (error) {
-        console.error('Error getting initial session:', error);
-        toast.error('Authentication error. Please try again.');
-      }
-    };
-
-    checkInitialSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session);
-      
-      if (session?.user && isMounted) {
-        setUser(session.user);
-        const userRole = session.user.user_metadata?.role;
-        setUserRole(userRole);
-        
-        if (userRole === 'ambassador') {
-          await refreshAmbassadorStatus(session.user.id);
-        }
-      } else {
-        setUser(null);
-        setUserRole(null);
-      }
-    });
-
-    return () => {
-      isMounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (userRole === 'ambassador') {
+    if (user?.id && userRole === 'ambassador') {
+      refreshAmbassadorStatus(user.id);
       checkUserMetadataDirectly();
     }
-  }, [userRole]);
+  }, [user?.id, userRole]);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      if (userRole === 'ambassador') {
+      if (userRole === 'ambassador' && user?.id) {
         checkUserMetadataDirectly();
       }
     }, 60000);
 
     return () => clearInterval(timer);
-  }, [userRole]);
+  }, [userRole, user?.id]);
 
-  if (userRole === 'ambassador') {
-    console.log('Ambassador detected, showing onboarding status:', showOnboarding ? 'NEEDS ONBOARDING' : 'ALREADY ONBOARDED');
+  if (userRole === 'ambassador' && showOnboarding) {
+    console.log('Ambassador detected, showing onboarding dialog');
     
-    if (showOnboarding) {
-      return (
-        <BrowserRouter>
-          <Routes>
-            <Route path="*" element={
-              <>
-                <AmbassadorOnboardingDialog />
-                <div style={{ display: 'none' }}>
-                  <AmbassadorDashboardAlt />
-                </div>
-              </>
-            } />
-          </Routes>
-        </BrowserRouter>
-      );
-    }
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="*" element={
+            <>
+              <AmbassadorOnboardingDialog />
+              <div style={{ display: 'none' }}>
+                <AmbassadorDashboardAlt />
+              </div>
+            </>
+          } />
+        </Routes>
+      </BrowserRouter>
+    );
   }
 
-  console.log('App rendering with user:', user, 'and role:', userRole);
+  console.log('App rendering with user:', !!user, 'and role:', userRole);
 
   const ProtectedRoute = ({ element, allowedRoles = [], redirectTo = "/login" }) => {
     console.log('Protected route check - User:', !!user, 'Required roles:', allowedRoles, 'User role:', userRole);
     
-    if (!user) {
+    if (!isAuthenticated) {
       console.log('No authenticated user, redirecting to:', redirectTo);
       return <Navigate to={redirectTo} replace />;
     }

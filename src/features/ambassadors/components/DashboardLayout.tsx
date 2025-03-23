@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-is-mobile";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Home,
   Calendar,
@@ -49,6 +49,13 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   }, [isMobile]);
 
   useEffect(() => {
+    console.log("DashboardLayout checking auth - User:", user?.id);
+    if (!user?.id) {
+      console.log("No authenticated user in DashboardLayout, redirecting to login");
+      navigate('/login');
+      return;
+    }
+    
     // Fetch unread notifications and messages count
     const fetchUnreadCounts = async () => {
       if (!user?.id) return;
@@ -75,10 +82,8 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       }
     };
 
-    if (user?.id) {
-      fetchUnreadCounts();
-    }
-  }, [user?.id]);
+    fetchUnreadCounts();
+  }, [user?.id, navigate]);
 
   const ambassadorNavigation = [
     { 
