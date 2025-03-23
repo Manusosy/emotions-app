@@ -1,81 +1,107 @@
 
-import React, { useEffect, useRef } from "react";
+import React, { useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
 
-const items = [
-  "Mental Health Support",
-  "Therapy Sessions",
-  "Mindfulness Exercises",
-  "Mood Tracking",
-  "Self-Care Resources",
-  "Stress Management",
-  "Community Support",
-  "Professional Guidance",
-];
+interface ScrollingInfoStripProps {
+  className?: string;
+  items: Array<{
+    id: string | number;
+    content: React.ReactNode;
+  }>;
+  speed?: number;
+  pauseOnHover?: boolean;
+  direction?: 'left' | 'right';
+  gap?: number;
+}
 
-const ScrollingInfoStrip = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
+const ScrollingInfoStrip: React.FC<ScrollingInfoStripProps> = ({
+  className,
+  items,
+  speed = 30, // pixels per second
+  pauseOnHover = true,
+  direction = 'left',
+  gap = 20,
+}) => {
+  const [isHovering, setIsHovering] = useState(false);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [contentWidth, setContentWidth] = useState(0);
 
+  // Update measurements on resize
   useEffect(() => {
-    if (!containerRef.current) return;
+    const updateWidths = () => {
+      const container = document.querySelector('.scrolling-container');
+      const content = document.querySelector('.scrolling-content');
+      
+      if (container && content) {
+        setContainerWidth(container.clientWidth);
+        setContentWidth(content.scrollWidth);
+      }
+    };
+
+    // Initial measurement
+    updateWidths();
     
-    const scrollWidth = containerRef.current.scrollWidth;
-    const clientWidth = containerRef.current.clientWidth;
+    // Update on resize
+    window.addEventListener('resize', updateWidths);
     
-    // Only start animation if content is wider than container
-    if (scrollWidth > clientWidth) {
-      containerRef.current.style.setProperty('--scroll-width', `-${scrollWidth}px`);
-    }
-  }, []);
+    return () => {
+      window.removeEventListener('resize', updateWidths);
+    };
+  }, [items]);
+
+  // Calculate the CSS animation duration based on content width and speed
+  const calculateDuration = () => {
+    if (contentWidth === 0) return 0;
+    // Duration is distance (px) / speed (px/s) = time (s)
+    return contentWidth / speed;
+  };
+
+  const duration = calculateDuration();
+  const isPaused = pauseOnHover && isHovering;
+  const directionMultiplier = direction === 'left' ? 1 : -1;
+
+  // Animation style
+  const animationStyle = {
+    animationDuration: `${duration}s`,
+    animationDirection: direction === 'left' ? 'normal' : 'reverse',
+    animationPlayState: isPaused ? 'paused' : 'running',
+    gap: `${gap}px`,
+  };
 
   return (
-    <div className="relative w-full overflow-hidden">
-      {/* Blue gradient strip */}
-      <div className="bg-gradient-to-r from-blue-500 via-blue-400 to-cyan-500 py-4 overflow-hidden">
-        <div 
-          ref={containerRef}
-          className="flex whitespace-nowrap animate-marquee"
-          style={{
-            animationDuration: '30s',
-            animationTimingFunction: 'linear',
-            animationIterationCount: 'infinite',
-          }}
+    <div
+      className={cn(
+        'relative overflow-hidden whitespace-nowrap bg-neutral-100 py-3',
+        className
+      )}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
+    >
+      <div className="scrolling-container relative w-full">
+        <div
+          className="scrolling-content inline-flex animate-marquee"
+          style={animationStyle}
         >
-          {items.map((item, index) => (
-            <React.Fragment key={index}>
-              <div className="flex items-center mx-8">
-                <div className="w-8 h-0.5 bg-white/70 mr-4"></div>
-                <span className="text-white font-medium">{item}</span>
-              </div>
-            </React.Fragment>
-          ))}
-          
-          {/* Duplicate items for seamless loop */}
-          {items.map((item, index) => (
-            <React.Fragment key={`dup-${index}`}>
-              <div className="flex items-center mx-8">
-                <div className="w-8 h-0.5 bg-white/70 mr-4"></div>
-                <span className="text-white font-medium">{item}</span>
-              </div>
-            </React.Fragment>
+          {items.map((item) => (
+            <div key={item.id} className="mx-4 flex items-center whitespace-nowrap">
+              {item.content}
+            </div>
           ))}
         </div>
-      </div>
-      
-      {/* Dotted lines with softer appearance */}
-      <div className="w-full h-6 relative overflow-hidden">
-        <div className="absolute inset-0 flex flex-col justify-evenly">
-          <div className="w-full h-0.5 bg-repeat-x" 
-            style={{ 
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='6' height='2' viewBox='0 0 6 2' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='1' cy='1' r='1' fill='%23D1D5DB' fill-opacity='0.3'/%3E%3C/svg%3E")`,
-              backgroundSize: "6px 2px"
-            }}
-          ></div>
-          <div className="w-full h-0.5 bg-repeat-x" 
-            style={{ 
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='6' height='2' viewBox='0 0 6 2' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='1' cy='1' r='1' fill='%23D1D5DB' fill-opacity='0.3'/%3E%3C/svg%3E")`,
-              backgroundSize: "6px 2px"
-            }}
-          ></div>
+        
+        {/* Duplicate content for seamless looping */}
+        <div
+          className="scrolling-content inline-flex animate-marquee"
+          style={{
+            ...animationStyle,
+            animationDelay: `${duration / 2}s`
+          }}
+        >
+          {items.map((item) => (
+            <div key={`duplicate-${item.id}`} className="mx-4 flex items-center whitespace-nowrap">
+              {item.content}
+            </div>
+          ))}
         </div>
       </div>
     </div>
