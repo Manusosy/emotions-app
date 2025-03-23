@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { 
   PatientHealthMetric, 
@@ -143,19 +144,46 @@ export const uploadFile = async (
   path: string,
   file: File
 ): Promise<{ error: Error | null; url: string | null }> => {
-  // ... existing code ...
+  try {
+    const { error } = await supabase.storage.from(bucket).upload(path, file, {
+      cacheControl: '3600',
+      upsert: true
+    });
+
+    if (error) throw error;
+
+    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+    return { error: null, url: data.publicUrl };
+  } catch (error) {
+    console.error('Error uploading file:', error);
+    return { error: error as Error, url: null };
+  }
 };
 
 export const downloadFile = async (
   bucket: string,
   path: string
 ): Promise<{ data: Uint8Array | null; error: Error | null }> => {
-  // ... existing code ...
+  try {
+    const { data, error } = await supabase.storage.from(bucket).download(path);
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error downloading file:', error);
+    return { data: null, error: error as Error };
+  }
 };
 
 export const deleteFile = async (
   bucket: string,
   path: string
 ): Promise<{ error: Error | null }> => {
-  // ... existing code ...
+  try {
+    const { error } = await supabase.storage.from(bucket).remove([path]);
+    if (error) throw error;
+    return { error: null };
+  } catch (error) {
+    console.error('Error deleting file:', error);
+    return { error: error as Error };
+  }
 };

@@ -14,93 +14,47 @@ export type Database = {
           availability_status: string | null
           avatar_url: string | null
           bio: string | null
-          created_at: string
+          created_at: string | null
+          email: string | null
           full_name: string | null
+          hourly_rate: number | null
           id: string
           phone_number: string | null
           speciality: string | null
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           availability_status?: string | null
           avatar_url?: string | null
           bio?: string | null
-          created_at?: string
+          created_at?: string | null
+          email?: string | null
           full_name?: string | null
+          hourly_rate?: number | null
           id: string
           phone_number?: string | null
           speciality?: string | null
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           availability_status?: string | null
           avatar_url?: string | null
           bio?: string | null
-          created_at?: string
+          created_at?: string | null
+          email?: string | null
           full_name?: string | null
+          hourly_rate?: number | null
           id?: string
           phone_number?: string | null
           speciality?: string | null
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "ambassador_profiles_id_fkey"
             columns: ["id"]
             isOneToOne: true
-            referencedRelation: "admin_users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ambassador_reviews: {
-        Row: {
-          ambassador_id: string
-          booking_id: string
-          comment: string | null
-          created_at: string | null
-          id: string
-          rating: number | null
-          user_id: string
-        }
-        Insert: {
-          ambassador_id: string
-          booking_id: string
-          comment?: string | null
-          created_at?: string | null
-          id?: string
-          rating?: number | null
-          user_id: string
-        }
-        Update: {
-          ambassador_id?: string
-          booking_id?: string
-          comment?: string | null
-          created_at?: string | null
-          id?: string
-          rating?: number | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_ambassador"
-            columns: ["ambassador_id"]
-            isOneToOne: false
-            referencedRelation: "admin_users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_booking"
-            columns: ["booking_id"]
-            isOneToOne: true
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "admin_users"
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -109,40 +63,40 @@ export type Database = {
         Row: {
           ambassador_id: string | null
           created_at: string | null
-          date: string
-          duration: string
+          description: string | null
+          end_time: string | null
           id: string
-          notes: string | null
+          meeting_link: string | null
           patient_id: string | null
+          start_time: string | null
           status: string | null
-          time: string
-          type: string
+          title: string | null
           updated_at: string | null
         }
         Insert: {
           ambassador_id?: string | null
           created_at?: string | null
-          date: string
-          duration: string
+          description?: string | null
+          end_time?: string | null
           id?: string
-          notes?: string | null
+          meeting_link?: string | null
           patient_id?: string | null
+          start_time?: string | null
           status?: string | null
-          time: string
-          type: string
+          title?: string | null
           updated_at?: string | null
         }
         Update: {
           ambassador_id?: string | null
           created_at?: string | null
-          date?: string
-          duration?: string
+          description?: string | null
+          end_time?: string | null
           id?: string
-          notes?: string | null
+          meeting_link?: string | null
           patient_id?: string | null
+          start_time?: string | null
           status?: string | null
-          time?: string
-          type?: string
+          title?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -150,14 +104,14 @@ export type Database = {
             foreignKeyName: "appointments_ambassador_id_fkey"
             columns: ["ambassador_id"]
             isOneToOne: false
-            referencedRelation: "admin_users"
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "appointments_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
-            referencedRelation: "admin_users"
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -245,6 +199,58 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_members: {
+        Row: {
+          added_by: string | null
+          group_id: string | null
+          id: string
+          joined_at: string | null
+          notes: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          added_by?: string | null
+          group_id?: string | null
+          id?: string
+          joined_at?: string | null
+          notes?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          added_by?: string | null
+          group_id?: string | null
+          id?: string
+          joined_at?: string | null
+          notes?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "support_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -365,89 +371,44 @@ export type Database = {
       messages: {
         Row: {
           content: string
-          created_at: string
+          created_at: string | null
           id: string
-          recipient_id: string
-          sender_id: string
-          unread: boolean | null
+          is_read: boolean | null
+          receiver_id: string | null
+          sender_id: string | null
+          updated_at: string | null
         }
         Insert: {
           content: string
-          created_at?: string
+          created_at?: string | null
           id?: string
-          recipient_id: string
-          sender_id: string
-          unread?: boolean | null
+          is_read?: boolean | null
+          receiver_id?: string | null
+          sender_id?: string | null
+          updated_at?: string | null
         }
         Update: {
           content?: string
-          created_at?: string
+          created_at?: string | null
           id?: string
-          recipient_id?: string
-          sender_id?: string
-          unread?: boolean | null
+          is_read?: boolean | null
+          receiver_id?: string | null
+          sender_id?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "messages_recipient_id_fkey"
-            columns: ["recipient_id"]
+            foreignKeyName: "messages_receiver_id_fkey"
+            columns: ["receiver_id"]
             isOneToOne: false
-            referencedRelation: "admin_users"
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "messages_sender_id_fkey"
             columns: ["sender_id"]
             isOneToOne: false
-            referencedRelation: "admin_users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      mood_entries: {
-        Row: {
-          assessment_details: Json | null
-          assessment_result: string
-          created_at: string
-          id: string
-          journal_entry_id: string | null
-          mood_score: number
-          notes: string | null
-          user_id: string
-        }
-        Insert: {
-          assessment_details?: Json | null
-          assessment_result: string
-          created_at?: string
-          id?: string
-          journal_entry_id?: string | null
-          mood_score: number
-          notes?: string | null
-          user_id: string
-        }
-        Update: {
-          assessment_details?: Json | null
-          assessment_result?: string
-          created_at?: string
-          id?: string
-          journal_entry_id?: string | null
-          mood_score?: number
-          notes?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "mood_entries_journal_entry_id_fkey"
-            columns: ["journal_entry_id"]
-            isOneToOne: false
-            referencedRelation: "journal_entries"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "mood_entries_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "admin_users"
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -490,10 +451,9 @@ export type Database = {
       patient_profiles: {
         Row: {
           address: string | null
-          avatar_url: string | null
           city: string | null
           country: string | null
-          created_at: string
+          created_at: string | null
           date_of_birth: string | null
           email: string | null
           first_name: string | null
@@ -502,14 +462,13 @@ export type Database = {
           phone_number: string | null
           pincode: string | null
           state: string | null
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           address?: string | null
-          avatar_url?: string | null
           city?: string | null
           country?: string | null
-          created_at?: string
+          created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
           first_name?: string | null
@@ -518,14 +477,13 @@ export type Database = {
           phone_number?: string | null
           pincode?: string | null
           state?: string | null
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           address?: string | null
-          avatar_url?: string | null
           city?: string | null
           country?: string | null
-          created_at?: string
+          created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
           first_name?: string | null
@@ -534,14 +492,14 @@ export type Database = {
           phone_number?: string | null
           pincode?: string | null
           state?: string | null
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "patient_profiles_id_fkey"
             columns: ["id"]
             isOneToOne: true
-            referencedRelation: "admin_users"
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -561,85 +519,52 @@ export type Database = {
         }
         Relationships: []
       }
-      profiles: {
+      support_groups: {
         Row: {
-          availability_status: boolean | null
-          country: string
-          created_at: string
-          first_name: string
+          ambassador_id: string | null
+          created_at: string | null
+          description: string | null
+          group_type: string
           id: string
-          last_name: string
-          location: string | null
-          onboarding_completed: boolean | null
-          rating: number | null
+          max_participants: number | null
+          meeting_schedule: string | null
+          name: string
+          status: string | null
+          updated_at: string | null
         }
         Insert: {
-          availability_status?: boolean | null
-          country: string
-          created_at?: string
-          first_name: string
-          id: string
-          last_name: string
-          location?: string | null
-          onboarding_completed?: boolean | null
-          rating?: number | null
+          ambassador_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          group_type: string
+          id?: string
+          max_participants?: number | null
+          meeting_schedule?: string | null
+          name: string
+          status?: string | null
+          updated_at?: string | null
         }
         Update: {
-          availability_status?: boolean | null
-          country?: string
-          created_at?: string
-          first_name?: string
+          ambassador_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          group_type?: string
           id?: string
-          last_name?: string
-          location?: string | null
-          onboarding_completed?: boolean | null
-          rating?: number | null
+          max_participants?: number | null
+          meeting_schedule?: string | null
+          name?: string
+          status?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "profiles_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "admin_users"
+            foreignKeyName: "support_groups_ambassador_id_fkey"
+            columns: ["ambassador_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
-      }
-      support_groups: {
-        Row: {
-          created_at: string
-          description: string
-          id: string
-          max_participants: number
-          name: string
-          participants: number | null
-          price: number
-          schedule: Json
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description: string
-          id?: string
-          max_participants: number
-          name: string
-          participants?: number | null
-          price: number
-          schedule: Json
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          description?: string
-          id?: string
-          max_participants?: number
-          name?: string
-          participants?: number | null
-          price?: number
-          schedule?: Json
-          updated_at?: string
-        }
-        Relationships: []
       }
       tags: {
         Row: {
@@ -696,6 +621,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "therapist_profiles_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          email: string
+          full_name: string | null
+          id: string
+          onboarding_completed: boolean | null
+          role: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email: string
+          full_name?: string | null
+          id: string
+          onboarding_completed?: boolean | null
+          role?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          onboarding_completed?: boolean | null
+          role?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "users_id_fkey"
             columns: ["id"]
             isOneToOne: true
             referencedRelation: "admin_users"

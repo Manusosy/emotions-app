@@ -1,15 +1,38 @@
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { Menu, X, LogOut } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useAuth } from "@/hooks/use-auth";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, isAuthenticated, getDashboardUrl, logout } = useAuth();
+  const { user, isAuthenticated, isAuthenticating, getDashboardUrl, logout } = useAuth();
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width: 768px)");
+
+  const handleSignOut = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    console.log('Header: Sign out button clicked');
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Error during logout in header:', error);
+    }
+  };
+
+  const handleDashboardClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const url = getDashboardUrl();
+    console.log('Header: Dashboard button clicked, navigating to:', url);
+    navigate(url);
+    setIsMenuOpen(false);
+  };
+
+  useEffect(() => {
+    console.log('Header auth state:', { isAuthenticated, user });
+  }, [isAuthenticated, user]);
 
   return (
     <header className="fixed top-0 w-full bg-[#0078FF] text-white z-50">
@@ -41,17 +64,18 @@ const Header = () => {
                   variant="ghost" 
                   size="sm" 
                   className="text-white hover:bg-white/10 text-sm" 
-                  onClick={() => navigate(getDashboardUrl())}
+                  onClick={handleDashboardClick}
                 >
                   Dashboard
                 </Button>
                 <Button 
                   size="sm" 
                   className="bg-white text-[#0078FF] hover:bg-white/90 text-sm flex items-center gap-1"
-                  onClick={logout}
+                  onClick={handleSignOut}
+                  disabled={isAuthenticating}
                 >
                   <LogOut className="w-4 h-4" />
-                  <span>Logout</span>
+                  <span>{isAuthenticating ? 'Signing out...' : 'Logout'}</span>
                 </Button>
               </>
             ) : (
@@ -131,8 +155,7 @@ const Header = () => {
                       variant="ghost" 
                       className="w-full text-white hover:bg-white/10 py-2 text-sm justify-start" 
                       onClick={() => {
-                        navigate(getDashboardUrl());
-                        setIsMenuOpen(false);
+                        handleDashboardClick({ preventDefault: () => {} } as React.MouseEvent);
                       }}
                     >
                       Dashboard
@@ -141,11 +164,12 @@ const Header = () => {
                       className="w-full bg-white text-[#0078FF] hover:bg-white/90 py-2 text-sm flex items-center justify-center gap-1" 
                       onClick={() => {
                         setIsMenuOpen(false);
-                        logout();
+                        handleSignOut({ preventDefault: () => {} } as React.MouseEvent);
                       }}
+                      disabled={isAuthenticating}
                     >
                       <LogOut className="w-4 h-4" />
-                      <span>Logout</span>
+                      <span>{isAuthenticating ? 'Signing out...' : 'Logout'}</span>
                     </Button>
                   </>
                 ) : (

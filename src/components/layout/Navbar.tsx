@@ -1,18 +1,11 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/use-auth';
+
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { LogOut, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Navbar() {
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
-  };
 
   return (
     <nav className="bg-[#0078FF] text-white relative z-50">
@@ -50,36 +43,23 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* Auth Buttons */}
+          {/* Auth Buttons - Simplified without authentication dependency */}
           <div className="flex items-center space-x-3">
-            {user ? (
-              <Button
-                variant="outline"
-                onClick={handleSignOut}
-                className="bg-white text-[#0078FF] hover:bg-[#fda802] hover:text-white rounded-full px-6 font-medium shadow-sm shadow-blue-600/20 border-none transition-all flex items-center gap-2"
+            <Link to="/login">
+              <Button 
+                variant="ghost" 
+                className="text-white hover:bg-[#fda802] rounded-full px-6 font-medium transition-all"
               >
-                <LogOut className="w-4 h-4" />
-                Sign Out
+                Login
               </Button>
-            ) : (
-              <>
-                <Link to="/login">
-                  <Button 
-                    variant="ghost" 
-                    className="text-white hover:bg-[#fda802] rounded-full px-6 font-medium transition-all"
-                  >
-                    Login
-                  </Button>
-                </Link>
-                <Link to="/signup">
-                  <Button 
-                    className="bg-white text-[#0078FF] hover:bg-[#fda802] hover:text-white rounded-full px-6 font-medium shadow-sm shadow-blue-600/20 transition-all"
-                  >
-                    Signup
-                  </Button>
-                </Link>
-              </>
-            )}
+            </Link>
+            <Link to="/signup">
+              <Button 
+                className="bg-white text-[#0078FF] hover:bg-[#fda802] hover:text-white rounded-full px-6 font-medium shadow-sm shadow-blue-600/20 transition-all"
+              >
+                Signup
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -121,4 +101,4 @@ export default function Navbar() {
       </div>
     </nav>
   );
-} 
+}

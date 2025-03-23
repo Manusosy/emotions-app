@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -18,7 +19,6 @@ interface Ambassador {
 
 export default function Ambassadors() {
   const [ambassadors, setAmbassadors] = useState<Ambassador[]>([]);
-  const [loading, setLoading] = useState(true);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
   const navigate = useNavigate();
@@ -74,8 +74,6 @@ export default function Ambassadors() {
     } catch (error) {
       toast.error('Failed to load ambassadors');
       console.error('Error loading ambassadors:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -140,14 +138,6 @@ export default function Ambassadors() {
 
   if (needsOnboarding) {
     return <div>Onboarding component</div>;
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
-      </div>
-    );
   }
 
   return (

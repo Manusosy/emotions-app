@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -68,15 +69,21 @@ const patientNavigation = [
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
 
   useEffect(() => {
+    // Verify user is authenticated, if not redirect to login
+    if (!isAuthenticated) {
+      navigate('/login', { replace: true });
+      return;
+    }
+
     setCurrentPath(window.location.pathname);
-  }, [window.location.pathname]);
+  }, [window.location.pathname, isAuthenticated, navigate]);
 
   useEffect(() => {
     setSidebarOpen(!isMobile);
@@ -86,6 +93,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     // Fetch unread notifications and messages count
     const fetchUnreadCounts = async () => {
       try {
+        if (!user?.id) return;
+        
         const [notificationsResponse, messagesResponse] = await Promise.all([
           supabase
             .from('notifications')
@@ -110,6 +119,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       fetchUnreadCounts();
     }
   }, [user?.id]);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('Error during logout:', error);
+      toast.error('Failed to sign out. Please try again.');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -236,7 +255,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <Button
                   variant="ghost"
                   className="w-full justify-start gap-x-3 text-red-600 hover:bg-red-50 hover:text-red-700"
-                  onClick={logout}
+                  onClick={handleLogout}
                 >
                   <LogOut className="h-5 w-5" aria-hidden="true" />
                   Logout

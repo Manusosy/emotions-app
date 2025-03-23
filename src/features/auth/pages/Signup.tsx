@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -12,11 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Card, CardContent } from "@/components/ui/card";
 import AuthLayout from "../components/AuthLayout";
-import { supabase } from "@/integrations/supabase/client";
 import { countries } from "../utils/countries";
-import { UserRole } from "@/types/database.types";
 import { User, Heart, UserPlus, Info, Eye, EyeOff } from "lucide-react";
 import {
   HoverCard,
@@ -24,6 +22,9 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
+import type { UserRole } from "@/hooks/use-auth";
 
 const roleInfo = {
   patient: {
@@ -71,69 +72,76 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [signupSuccessful, setSignupSuccessful] = useState(false);
   const navigate = useNavigate();
+  const { getDashboardUrlForRole, setIsAuthenticating } = useAuth();
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isLoading) return;
+    
+    // Basic validation
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    
+    if (formData.password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+    
+    if (!formData.country) {
+      toast.error("Please select your country");
+      return;
+    }
+    
     setIsLoading(true);
+    setIsAuthenticating(true);
     
     try {
-      console.log('Starting signup process...');
+      console.log("Starting signup process with role:", formData.role);
       
-      // Validate password
-      if (formData.password !== formData.confirmPassword) {
-        toast.error("Passwords do not match");
-        return;
-      }
-
-      // Sign up with Supabase
-      console.log('Calling Supabase auth.signUp...');
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+      // Create user with Supabase
+      const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
           data: {
             first_name: formData.firstName,
             last_name: formData.lastName,
-            role: formData.role,
             full_name: `${formData.firstName} ${formData.lastName}`,
-            country: formData.country
-          },
-        },
+            role: formData.role,
+            country: formData.country,
+          }
+        }
       });
-
-      if (signUpError) {
-        console.error('Signup error:', signUpError);
-        throw signUpError;
-      }
-
-      if (!authData.user) {
-        throw new Error('No user data returned from signup');
-      }
-
-      toast.success("Account created successfully! Please check your email to verify your account.");
       
-      // Redirect based on role
-      if (formData.role === 'patient') {
-        navigate('/patient-dashboard');
-      } else if (formData.role === 'ambassador') {
-        navigate('/ambassador-dashboard');
-      } else {
-        navigate('/');
-      }
-
+      if (error) throw error;
+      
+      toast.success("Account created successfully!");
+      setSignupSuccessful(true);
+      
+      // Get the user's role and redirect to the appropriate dashboard
+      const dashboardUrl = getDashboardUrlForRole(formData.role);
+      console.log(`User signed up as ${formData.role}, redirecting to ${dashboardUrl}`);
+      
+      // Add a slightly longer delay to ensure auth state is properly updated
+      setTimeout(() => {
+        // Force a fresh session check before navigation
+        supabase.auth.getSession().then(() => {
+          navigate(dashboardUrl);
+        });
+      }, 800);
+      
     } catch (error: any) {
       console.error("Signup process error:", error);
-      
-      if (error.message?.includes("already registered")) {
-        toast.error("An account with this email already exists. Please login instead.");
-        navigate("/login");
-        return;
-      }
-      
       toast.error(error.message || "Failed to create account. Please try again.");
+    } finally {
+      setIsLoading(false);
+      setIsAuthenticating(false);
     }
-    setIsLoading(false);
   };
 
   return (
@@ -151,6 +159,7 @@ export default function Signup() {
               value={formData.firstName}
               onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
               required
+              disabled={isLoading || signupSuccessful}
             />
           </div>
           <div className="grid gap-2">
@@ -161,6 +170,7 @@ export default function Signup() {
               value={formData.lastName}
               onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
               required
+              disabled={isLoading || signupSuccessful}
             />
           </div>
           <div className="grid gap-2">
@@ -172,6 +182,7 @@ export default function Signup() {
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
+              disabled={isLoading || signupSuccessful}
             />
           </div>
           <div className="grid gap-2">
@@ -184,6 +195,7 @@ export default function Signup() {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 required
+                disabled={isLoading || signupSuccessful}
               />
               <Button
                 type="button"
@@ -191,6 +203,7 @@ export default function Signup() {
                 size="icon"
                 className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                 onClick={() => setShowPassword(!showPassword)}
+                disabled={isLoading || signupSuccessful}
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4 text-gray-400" />
@@ -213,6 +226,7 @@ export default function Signup() {
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 required
+                disabled={isLoading || signupSuccessful}
               />
               <Button
                 type="button"
@@ -220,6 +234,7 @@ export default function Signup() {
                 size="icon"
                 className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                 onClick={() => setShowPassword(!showPassword)}
+                disabled={isLoading || signupSuccessful}
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4 text-gray-400" />
@@ -237,6 +252,7 @@ export default function Signup() {
             <Select
               value={formData.country}
               onValueChange={(value) => setFormData({ ...formData, country: value })}
+              disabled={isLoading || signupSuccessful}
             >
               <SelectTrigger id="country">
                 <SelectValue placeholder="Select your country" />
@@ -258,15 +274,16 @@ export default function Signup() {
             value={formData.role}
             onValueChange={(value) => setFormData({ ...formData, role: value as UserRole })}
             className="grid gap-4 md:grid-cols-3"
+            disabled={isLoading || signupSuccessful}
           >
             {Object.entries(roleInfo).map(([role, info]) => (
               <Label
                 key={role}
                 className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary ${
                   formData.role === role ? "border-primary" : ""
-                }`}
+                } ${(isLoading || signupSuccessful) ? "opacity-60 cursor-not-allowed" : ""}`}
               >
-                <RadioGroupItem value={role} className="sr-only" />
+                <RadioGroupItem value={role} className="sr-only" disabled={isLoading || signupSuccessful} />
                 <HoverCard>
                   <HoverCardTrigger asChild>
                     <div className="flex items-center gap-2">
@@ -301,10 +318,11 @@ export default function Signup() {
             id="terms"
             checked={agreedToTerms}
             onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+            disabled={isLoading || signupSuccessful}
           />
           <label
             htmlFor="terms"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${(isLoading || signupSuccessful) ? "opacity-60 cursor-not-allowed" : ""}`}
           >
             I agree to the{" "}
             <Link to="/terms" className="text-primary hover:underline">
@@ -316,10 +334,10 @@ export default function Signup() {
         <Button
           type="submit"
           className="w-full"
-          disabled={isLoading || !agreedToTerms}
+          disabled={isLoading || !agreedToTerms || signupSuccessful}
           variant="brand"
         >
-          {isLoading ? "Creating Account..." : "Create Account"}
+          {isLoading ? "Creating Account..." : signupSuccessful ? "Account Created!" : "Create Account"}
         </Button>
 
         <p className="text-center text-sm text-gray-600">
