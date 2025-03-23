@@ -27,12 +27,12 @@ interface User {
   };
 }
 
-export const useAuth = () => {
+// Create a version of the hook that doesn't use router-dependent features
+const useAuthState = () => {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const navigate = useNavigate();
 
   // Helper function to get dashboard URL based on role
   const getDashboardUrlForRole = useCallback((role?: string) => {
@@ -98,17 +98,10 @@ export const useAuth = () => {
           const role = supabaseUser.user_metadata?.role || null;
           setUserRole(role);
           setIsAuthenticating(false);
-          
-          // Redirect to dashboard after successful sign-in
-          const dashboardUrl = getDashboardUrlForRole(role);
-          console.log('Redirecting to dashboard:', dashboardUrl);
-          navigate(dashboardUrl);
         } else if ((event === 'SIGNED_OUT' || event === 'USER_DELETED') && isMounted) {
           setUser(null);
           setUserRole(null);
           setIsAuthenticating(false);
-          navigate('/');
-          console.log('User signed out, redirected to home');
         }
       }
     );
@@ -117,21 +110,34 @@ export const useAuth = () => {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate, getDashboardUrlForRole]);
+  }, []);
 
+  return {
+    user,
+    userRole,
+    isLoading,
+    isAuthenticating,
+    isAuthenticated: !!user,
+    getDashboardUrl,
+    getDashboardUrlForRole,
+    setIsAuthenticating
+  };
+};
+
+// Main hook that includes router functionality
+export const useAuth = () => {
+  const auth = useAuthState();
+  const navigate = useNavigate();
+  
   const logout = async () => {
     try {
       console.log('Logout initiated');
-      setIsAuthenticating(true);
+      auth.setIsAuthenticating(true);
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Logout error:', error);
         throw error;
       }
-
-      // Clear user data
-      setUser(null);
-      setUserRole(null);
 
       toast.success('Logged out successfully');
       navigate('/');
@@ -140,20 +146,20 @@ export const useAuth = () => {
       console.error('Logout failed:', error);
       toast.error(error.message || 'Failed to log out');
     } finally {
-      setIsAuthenticating(false);
+      auth.setIsAuthenticating(false);
     }
   };
 
   // Helper to get the full name from user metadata
   const getFullName = () => {
-    if (!user) return '';
+    if (!auth.user) return '';
     
-    if (user.user_metadata?.full_name) {
-      return user.user_metadata.full_name;
+    if (auth.user.user_metadata?.full_name) {
+      return auth.user.user_metadata.full_name;
     }
     
-    const firstName = user.user_metadata?.first_name || '';
-    const lastName = user.user_metadata?.last_name || '';
+    const firstName = auth.user.user_metadata?.first_name || '';
+    const lastName = auth.user.user_metadata?.last_name || '';
     
     if (firstName || lastName) {
       return `${firstName} ${lastName}`.trim();
@@ -163,12 +169,7 @@ export const useAuth = () => {
   };
 
   return {
-    user,
-    userRole,
-    isLoading,
-    isAuthenticating,
-    isAuthenticated: !!user,
-    getDashboardUrl,
+    ...auth,
     logout,
     getFullName
   };

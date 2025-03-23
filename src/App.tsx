@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -29,13 +30,60 @@ import Navbar from "@/components/layout/Navbar";
 import ComingSoon from '@/components/ComingSoon';
 import AmbassadorDashboard from "@/features/dashboard/pages/AmbassadorDashboard";
 import AmbassadorDashboardAlt from "@/features/ambassadors/pages/AmbassadorDashboard";
-import { useAuth } from "@/hooks/useAuth";
 
-const App = () => {
-  console.log('App component mounting...');
-
-  const { user, userRole, isAuthenticated } = useAuth();
+// Use a component approach to ensure Router is available before using hooks that depend on it
+const AppContent = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function checkSession() {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data.session?.user) {
+          setUser(data.session.user);
+          setUserRole(data.session.user.user_metadata?.role || null);
+          setIsAuthenticated(true);
+          
+          // Check if ambassador needs onboarding
+          if (data.session.user.user_metadata?.role === 'ambassador') {
+            await refreshAmbassadorStatus(data.session.user.id);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking session:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    checkSession();
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          setUser(session.user);
+          setUserRole(session.user.user_metadata?.role || null);
+          setIsAuthenticated(true);
+          
+          if (session.user.user_metadata?.role === 'ambassador') {
+            await refreshAmbassadorStatus(session.user.id);
+          }
+        } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+          setUser(null);
+          setUserRole(null);
+          setIsAuthenticated(false);
+        }
+      }
+    );
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const decideOnboardingStatus = (userData, profile) => {
     if (userData?.user_metadata?.onboarded === true) {
@@ -185,22 +233,20 @@ const App = () => {
     return () => clearInterval(timer);
   }, [userRole, user?.id]);
 
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+
   if (userRole === 'ambassador' && showOnboarding) {
     console.log('Ambassador detected, showing onboarding dialog');
     
     return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="*" element={
-            <>
-              <AmbassadorOnboardingDialog />
-              <div style={{ display: 'none' }}>
-                <AmbassadorDashboardAlt />
-              </div>
-            </>
-          } />
-        </Routes>
-      </BrowserRouter>
+      <>
+        <AmbassadorOnboardingDialog />
+        <div style={{ display: 'none' }}>
+          <AmbassadorDashboardAlt />
+        </div>
+      </>
     );
   }
 
@@ -233,7 +279,7 @@ const App = () => {
   const showFooter = !isDashboardRoute(window.location.pathname);
 
   return (
-    <BrowserRouter>
+    <>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -382,6 +428,16 @@ const App = () => {
           )}
         </div>
       </TooltipProvider>
+    </>
+  );
+};
+
+const App = () => {
+  console.log('App component mounting...');
+
+  return (
+    <BrowserRouter>
+      <AppContent />
     </BrowserRouter>
   );
 };
