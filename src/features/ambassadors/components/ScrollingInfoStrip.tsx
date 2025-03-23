@@ -16,8 +16,8 @@ interface ScrollingInfoStripProps {
 
 const ScrollingInfoStrip: React.FC<ScrollingInfoStripProps> = ({
   className,
-  items,
-  speed = 30, // pixels per second
+  items = [], // Provide default empty array to prevent undefined errors
+  speed = 30,
   pauseOnHover = true,
   direction = 'left',
   gap = 20,
@@ -58,7 +58,6 @@ const ScrollingInfoStrip: React.FC<ScrollingInfoStripProps> = ({
 
   const duration = calculateDuration();
   const isPaused = pauseOnHover && isHovering;
-  const directionMultiplier = direction === 'left' ? 1 : -1;
 
   // Animation style
   const animationStyle = {
@@ -67,6 +66,11 @@ const ScrollingInfoStrip: React.FC<ScrollingInfoStripProps> = ({
     animationPlayState: isPaused ? 'paused' : 'running',
     gap: `${gap}px`,
   };
+
+  // If items is undefined or empty, render nothing
+  if (!items || items.length === 0) {
+    return null;
+  }
 
   return (
     <div
