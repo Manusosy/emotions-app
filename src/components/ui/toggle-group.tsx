@@ -1,45 +1,99 @@
 import * as React from "react"
-import * as ToggleGroupPrimitive from "@radix-ui/react-toggle-group"
 import { type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 import { toggleVariants } from "@/components/ui/toggle"
 
-const ToggleGroupContext = React.createContext<
-  VariantProps<typeof toggleVariants>
->({
+type ToggleGroupContextType = VariantProps<typeof toggleVariants> & {
+  value?: string[];
+  onValueChange?: (value: string[]) => void;
+  type?: 'single' | 'multiple';
+};
+
+const ToggleGroupContext = React.createContext<ToggleGroupContextType>({
   size: "default",
   variant: "default",
-})
+  type: 'multiple',
+  value: [],
+});
+
+type ToggleGroupProps = React.HTMLAttributes<HTMLDivElement> &
+  VariantProps<typeof toggleVariants> & {
+    type?: 'single' | 'multiple';
+    value?: string[];
+    onValueChange?: (value: string[]) => void;
+  };
 
 const ToggleGroup = React.forwardRef<
-  React.ElementRef<typeof ToggleGroupPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof ToggleGroupPrimitive.Root> &
-    VariantProps<typeof toggleVariants>
->(({ className, variant, size, children, ...props }, ref) => (
-  <ToggleGroupPrimitive.Root
-    ref={ref}
-    className={cn("flex items-center justify-center gap-1", className)}
-    {...props}
-  >
-    <ToggleGroupContext.Provider value={{ variant, size }}>
-      {children}
-    </ToggleGroupContext.Provider>
-  </ToggleGroupPrimitive.Root>
-))
+  HTMLDivElement,
+  ToggleGroupProps
+>(({ className, variant, size, children, type = 'multiple', value, onValueChange, ...props }, ref) => {
+  const [internalValue, setInternalValue] = React.useState<string[]>(value || []);
 
-ToggleGroup.displayName = ToggleGroupPrimitive.Root.displayName
+  React.useEffect(() => {
+    if (value !== undefined) {
+      setInternalValue(value);
+    }
+  }, [value]);
 
-const ToggleGroupItem = React.forwardRef<
-  React.ElementRef<typeof ToggleGroupPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof ToggleGroupPrimitive.Item> &
-    VariantProps<typeof toggleVariants>
->(({ className, children, variant, size, ...props }, ref) => {
-  const context = React.useContext(ToggleGroupContext)
+  const handleValueChange = React.useCallback((newValue: string[]) => {
+    setInternalValue(newValue);
+    onValueChange?.(newValue);
+  }, [onValueChange]);
 
   return (
-    <ToggleGroupPrimitive.Item
+    <div
       ref={ref}
+      className={cn("flex items-center justify-center gap-1", className)}
+      {...props}
+    >
+      <ToggleGroupContext.Provider value={{ 
+        variant, 
+        size, 
+        type, 
+        value: internalValue, 
+        onValueChange: handleValueChange 
+      }}>
+        {children}
+      </ToggleGroupContext.Provider>
+    </div>
+  );
+});
+
+ToggleGroup.displayName = "ToggleGroup";
+
+type ToggleGroupItemProps = React.ButtonHTMLAttributes<HTMLButtonElement> &
+  VariantProps<typeof toggleVariants> & {
+    value: string;
+  };
+
+const ToggleGroupItem = React.forwardRef<
+  HTMLButtonElement,
+  ToggleGroupItemProps
+>(({ className, children, variant, size, value, ...props }, ref) => {
+  const context = React.useContext(ToggleGroupContext);
+  const isActive = context.value?.includes(value);
+
+  const handleClick = () => {
+    if (!context.onValueChange || !context.value) return;
+
+    if (context.type === 'single') {
+      context.onValueChange([value]);
+    } else {
+      if (isActive) {
+        context.onValueChange(context.value.filter(v => v !== value));
+      } else {
+        context.onValueChange([...context.value, value]);
+      }
+    }
+  };
+
+  return (
+    <button
+      ref={ref}
+      type="button"
+      aria-pressed={isActive}
+      data-state={isActive ? "on" : "off"}
       className={cn(
         toggleVariants({
           variant: context.variant || variant,
@@ -47,13 +101,14 @@ const ToggleGroupItem = React.forwardRef<
         }),
         className
       )}
+      onClick={handleClick}
       {...props}
     >
       {children}
-    </ToggleGroupPrimitive.Item>
-  )
-})
+    </button>
+  );
+});
 
-ToggleGroupItem.displayName = ToggleGroupPrimitive.Item.displayName
+ToggleGroupItem.displayName = "ToggleGroupItem";
 
 export { ToggleGroup, ToggleGroupItem }
