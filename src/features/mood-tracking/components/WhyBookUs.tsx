@@ -83,20 +83,34 @@ const stepItems = [
 
 const faqItems = [
   {
+    id: "item-1",
     question: "How can mood tracking improve my mental health?",
     answer: "Regular mood tracking helps you identify patterns and triggers, giving you insights into your emotional wellbeing. This awareness allows you to make positive changes, implement coping strategies earlier, and track your progress over time."
   },
   {
+    id: "item-2",
     question: "Is my emotional data kept private and secure?",
     answer: "Yes, we take your privacy seriously. All your emotional health data is encrypted and stored securely. We never share your personal information with third parties without your explicit consent."
   },
   {
+    id: "item-3",
     question: "How often should I track my mood?",
     answer: "For best results, we recommend tracking your mood daily. Consistent daily entries provide the most accurate patterns and insights, but even periodic tracking can be beneficial for your emotional awareness."
   },
   {
+    id: "item-4",
     question: "Can I use the app if I'm already seeing a therapist?",
     answer: "Absolutely! Our mood tracking platform works as a complementary tool to professional therapy. Many users share their mood data with their therapists to provide additional insights between sessions."
+  },
+  {
+    id: "item-5",
+    question: "How do I get started with mood tracking?",
+    answer: "Getting started is easy! Simply create an account, complete the initial mood assessment, and begin tracking your emotions daily. Our intuitive interface guides you through the process, making it simple to maintain your emotional wellness journey."
+  },
+  {
+    id: "item-6",
+    question: "Are there any costs associated with using the platform?",
+    answer: "We offer both free and premium tiers. The free tier provides access to basic mood tracking and resources, while our premium subscription unlocks advanced analytics, personalized insights, and direct access to mental health professionals."
   }
 ];
 
@@ -125,17 +139,7 @@ const testimonials = [
 ];
 
 const WhyBookUs = () => {
-  const [activeAccordion, setActiveAccordion] = useState("vision");
-  const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const isMobile = useMediaQuery("(max-width: 768px)");
-
-  const toggleAccordion = (id) => {
-    setActiveAccordion(activeAccordion === id ? null : id);
-  };
-
-  const toggleFaq = (index) => {
-    setActiveFaq(activeFaq === index ? null : index);
-  };
 
   return (
     <>
@@ -293,34 +297,34 @@ const WhyBookUs = () => {
               </motion.p>
               
               <div className="space-y-4">
-                {missionVisionData.map((item) => (
-                  <div 
-                    key={item.id}
-                    className={`bg-[#001F54] rounded-lg overflow-hidden border border-[#1E3A8A]/30`}
-                  >
-                    <div 
-                      className="flex items-center justify-between p-4 cursor-pointer"
-                      onClick={() => toggleAccordion(item.id)}
+                <Accordion type="single" collapsible defaultValue="vision" className="w-full">
+                  {missionVisionData.map((item) => (
+                    <AccordionItem 
+                      key={item.id} 
+                      value={item.id}
+                      className="bg-[#001F54] rounded-lg overflow-hidden border border-[#1E3A8A]/30 mb-4"
                     >
-                      <div className="flex items-center">
-                        <div className="text-[#007BFF] font-bold mr-2 font-jakarta">{item.number} .</div>
-                        <div className="text-white font-medium font-jakarta">{item.title}</div>
-                      </div>
-                      <div className={`w-8 h-8 rounded-md flex items-center justify-center ${activeAccordion === item.id ? 'bg-[#007BFF]' : 'bg-[#007BFF]'}`}>
-                        {activeAccordion === item.id ? 
-                          <Minus className="w-5 h-5 text-white" /> : 
-                          <Plus className="w-5 h-5 text-white" />
+                      <AccordionTrigger 
+                        className="p-4 hover:no-underline focus:outline-none group"
+                        iconPosition="right"
+                        customIcon={
+                          <div className="w-8 h-8 rounded-md flex items-center justify-center bg-[#007BFF] transition-colors duration-300">
+                            <Plus className="w-5 h-5 text-white group-data-[state=open]:hidden" />
+                            <Minus className="w-5 h-5 text-white hidden group-data-[state=open]:block" />
+                          </div>
                         }
-                      </div>
-                    </div>
-                    
-                    {activeAccordion === item.id && (
-                      <div className="p-4 text-gray-300 border-t border-[#1E3A8A]/30 font-jakarta">
+                      >
+                        <div className="flex items-center">
+                          <div className="text-[#007BFF] font-bold mr-2 font-jakarta">{item.number} .</div>
+                          <div className="text-white font-medium font-jakarta">{item.title}</div>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="p-4 text-gray-300 border-t border-[#1E3A8A]/30 font-jakarta">
                         {item.content}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
               </div>
             </div>
           </div>
@@ -441,36 +445,36 @@ const WhyBookUs = () => {
           </div>
           
           <div className="max-w-3xl mx-auto">
-            {faqItems.map((item, index) => (
-              <div 
-                key={index}
-                className="mb-4 border border-gray-200 rounded-lg overflow-hidden"
-              >
-                <div 
-                  className="flex items-center justify-between p-4 bg-white cursor-pointer"
-                  onClick={() => toggleFaq(index)}
+            <Accordion type="single" collapsible className="w-full">
+              {faqItems.map((item) => (
+                <AccordionItem 
+                  key={item.id} 
+                  value={item.id}
+                  className="mb-4 border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow duration-300"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-[#E1F5FE] flex items-center justify-center text-[#007BFF]">
-                      <HelpCircle className="w-4 h-4" />
-                    </div>
-                    <h3 className="text-lg font-medium text-[#001A41] font-jakarta">{item.question}</h3>
-                  </div>
-                  <div className={`w-8 h-8 rounded-md flex items-center justify-center ${activeFaq === index ? 'bg-[#007BFF]' : 'bg-gray-100'}`}>
-                    {activeFaq === index ? 
-                      <Minus className={`w-4 h-4 ${activeFaq === index ? 'text-white' : 'text-gray-600'}`} /> : 
-                      <Plus className={`w-4 h-4 ${activeFaq === index ? 'text-white' : 'text-gray-600'}`} />
+                  <AccordionTrigger 
+                    className="p-4 hover:no-underline focus:outline-none group"
+                    iconPosition="right"
+                    customIcon={
+                      <div className="w-8 h-8 rounded-md flex items-center justify-center bg-gray-100 group-data-[state=open]:bg-[#007BFF] transition-colors duration-300">
+                        <Plus className="w-4 h-4 text-gray-600 group-data-[state=open]:hidden" />
+                        <Minus className="w-4 h-4 text-white hidden group-data-[state=open]:block" />
+                      </div>
                     }
-                  </div>
-                </div>
-                
-                {activeFaq === index && (
-                  <div className="p-4 bg-gray-50 border-t border-gray-200 font-jakarta text-[#475467]">
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-[#E1F5FE] flex items-center justify-center text-[#007BFF]">
+                        <HelpCircle className="w-4 h-4" />
+                      </div>
+                      <h3 className="text-lg font-medium text-[#001A41] font-jakarta text-left">{item.question}</h3>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-6 py-5 bg-gray-50 border-t border-gray-200 font-jakarta text-[#475467] leading-relaxed">
                     {item.answer}
-                  </div>
-                )}
-              </div>
-            ))}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
           </div>
         </div>
       </section>

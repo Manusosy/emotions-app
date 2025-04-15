@@ -1,6 +1,5 @@
-
-import { useState, useEffect, useRef } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,59 +12,32 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
   const { getDashboardUrlForRole, setIsAuthenticating, isAuthenticated, userRole } = useAuth();
   
-  // Track redirect attempts to prevent infinite loops
-  const redirectAttemptedRef = useRef(false);
-  // Track if component is mounted
-  const isMountedRef = useRef(true);
-  
-  // Set up mount/unmount tracking
+  // Check if user is already authenticated and redirect if needed
   useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
-
-  // Check if user is already authenticated and redirect them
-  useEffect(() => {
-    // Skip if component is unmounted
-    if (!isMountedRef.current) return;
-    
-    // If we're already redirecting or have already tried to redirect, don't try again
-    if (isRedirecting || redirectAttemptedRef.current) return;
-    
-    if (isAuthenticated && userRole) {
-      console.log(`User authenticated as ${userRole}, preparing to redirect`);
-      redirectAttemptedRef.current = true;
-      setIsRedirecting(true);
+    // If already authenticated, redirect to dashboard
+    if (isAuthenticated && userRole && !redirecting) {
+      console.log(`User already authenticated as ${userRole}, redirecting...`);
+      setRedirecting(true);
       
       const dashboardUrl = getDashboardUrlForRole(userRole);
       console.log(`Redirecting to ${dashboardUrl}`);
       
-      // Use a slight delay to ensure all state is stable before navigation
-      const timer = setTimeout(() => {
-        if (isMountedRef.current) {
-          navigate(dashboardUrl, { replace: true });
-        }
-      }, 100); // Reduced timeout for faster navigation
-      
-      return () => clearTimeout(timer);
+      // Navigate to dashboard
+      navigate(dashboardUrl, { replace: true });
     }
-  }, [isAuthenticated, userRole, navigate, getDashboardUrlForRole, isRedirecting]);
+  }, [isAuthenticated, userRole, navigate, getDashboardUrlForRole, redirecting]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLoading || isRedirecting) return;
+    if (isLoading || redirecting) return;
     
     setIsLoading(true);
     setIsAuthenticating(true);
-    redirectAttemptedRef.current = false; // Reset this flag for new login attempts
-
+    
     try {
       console.log("Attempting login with email:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -76,33 +48,26 @@ export default function Login() {
       if (error) throw error;
 
       if (data.user) {
-        // Get the user's role and redirect to the appropriate dashboard
+        // Get the user's role from metadata
         const role = data.user.user_metadata?.role || 'patient';
         const dashboardUrl = getDashboardUrlForRole(role);
-        console.log(`Logging in as ${role}, redirecting to ${dashboardUrl}`);
         
         toast.success(`Signed in successfully! Redirecting to dashboard...`);
+        console.log(`Login successful as ${role}, redirecting to ${dashboardUrl}`);
         
-        // Prevent any redirection logic from running during this time
-        setIsRedirecting(true);
-        redirectAttemptedRef.current = true;
+        // Set redirecting state to prevent multiple redirects
+        setRedirecting(true);
         
-        // Make sure we only redirect if the component is still mounted
-        if (isMountedRef.current) {
-          // Navigate immediately instead of with a timeout
-          navigate(dashboardUrl, { replace: true });
-        }
+        // Navigate to the appropriate dashboard
+        navigate(dashboardUrl, { replace: true });
       }
     } catch (error: any) {
       console.error('Login error:', error);
       toast.error(error.message || "Failed to sign in. Please check your credentials.");
-      setIsRedirecting(false);
-      redirectAttemptedRef.current = false;
+      setRedirecting(false);
     } finally {
-      if (isMountedRef.current) {
-        setIsLoading(false);
-        setIsAuthenticating(false);
-      }
+      setIsLoading(false);
+      setIsAuthenticating(false);
     }
   };
 
@@ -121,7 +86,7 @@ export default function Login() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            disabled={isRedirecting || isLoading}
+            disabled={redirecting || isLoading}
           />
         </div>
         <div className="space-y-2">
@@ -133,16 +98,16 @@ export default function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            disabled={isRedirecting || isLoading}
+            disabled={redirecting || isLoading}
           />
         </div>
         <Button 
           type="submit" 
           className="w-full" 
-          disabled={isLoading || isRedirecting}
+          disabled={isLoading || redirecting}
           variant="brand"
         >
-          {isLoading ? "Logging in..." : isRedirecting ? "Redirecting..." : "Login"}
+          {isLoading ? "Logging in..." : redirecting ? "Redirecting..." : "Login"}
         </Button>
         <p className="text-center text-sm text-gray-600">
           Don't have an account?{" "}

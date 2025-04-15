@@ -111,12 +111,37 @@
     transform: translateX(0);
   }
   100% {
-    transform: translateX(var(--scroll-width, -100%));
+    transform: translateX(calc(-100% - 80px)); /* Increased offset to account for larger gaps */
   }
 }
 
 .animate-marquee {
-  animation: marquee 30s linear infinite;
+  animation: marquee 40s linear infinite; /* Slower animation speed */
+  will-change: transform; /* Optimize animation performance */
+  text-rendering: optimizeLegibility; /* Change to optimizeLegibility for cleaner text */
+  backface-visibility: hidden; /* Prevent text flickering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* New scrolling text animation */
+@keyframes scrollText {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(calc(-33.33% - 60px)); /* More offset to prevent overlap at transition points */
+  }
+}
+
+.scroll-text-animation {
+  animation-name: scrollText;
+  will-change: transform;
+  text-rendering: optimizeLegibility;
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  position: relative; /* Ensure proper stacking */
 }
 
 /* Global font styles */
@@ -172,4 +197,34 @@ html {
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+/* Custom scrollbar for team section */
+.scrollbar-thin::-webkit-scrollbar {
+  height: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(209, 213, 219, 0.5);
+  border-radius: 20px;
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(209, 213, 219, 0.5) transparent;
+}
+
+/* Scrollbar for Firefox */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(209, 213, 219, 0.5) transparent;
+}
+
+/* Add smooth scrolling */
+.snap-x {
+  scroll-behavior: smooth;
 }

@@ -1,9 +1,10 @@
-
 import { AnimatePresence, motion } from "framer-motion";
 import { useState, RefObject } from "react";
 import EmotionButton from "./EmotionButton";
 import QuestionCard from "./QuestionCard";
 import { Button } from "@/components/ui/button";
+import { ArrowRight, Book, Heart, LifeBuoy, FileText } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 // Emotion data
 const emotions = [{
@@ -71,6 +72,7 @@ const MoodAssessment = ({ emotionsRef }: MoodAssessmentProps) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
   const [showResults, setShowResults] = useState(false);
+  const navigate = useNavigate();
 
   const handleEmotionSelect = (emotion: string) => {
     if (selectedEmotion === emotion) {
@@ -98,7 +100,19 @@ const MoodAssessment = ({ emotionsRef }: MoodAssessmentProps) => {
   };
 
   const navigateToJournal = () => {
-    console.log("Navigate to journal page");
+    navigate("/journal");
+  };
+
+  const navigateToResources = () => {
+    navigate("/resources");
+  };
+
+  const navigateToTherapists = () => {
+    navigate("/therapists");
+  };
+
+  const navigateToHelpGroups = () => {
+    navigate("/help-groups");
   };
 
   return (
@@ -161,47 +175,144 @@ const MoodAssessment = ({ emotionsRef }: MoodAssessmentProps) => {
                   )}
 
                   {showResults && (
-                    <div className="space-y-6">
-                      <div className="p-6 rounded-2xl bg-white/90 backdrop-blur-lg shadow-md border border-blue-100">
-                        <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5 }}
+                      className="space-y-8"
+                    >
+                      <div className="p-8 rounded-2xl bg-white shadow-lg border border-[#20C0F3]/20">
+                        <div className="flex items-center justify-center mb-6">
+                          <div className="w-16 h-16 bg-gradient-to-r from-[#0078FF] to-[#20C0F3] rounded-full flex items-center justify-center shadow-lg shadow-blue-500/20">
+                            <Heart className="h-8 w-8 text-white" />
+                          </div>
+                        </div>
+                        
+                        <h2 className="text-2xl font-bold bg-gradient-to-r from-[#0078FF] via-[#20C0F3] to-[#00D2FF] bg-clip-text text-transparent mb-4">
                           Your Assessment Results
                         </h2>
+                        
                         {score <= 3 ? (
-                          <div className="space-y-4">
-                            <p className="text-gray-700 text-base">
-                              Your assessment is fine. You are currently not experiencing significant mental health issues.
-                            </p>
-                            <div className="space-y-3">
-                              <p className="text-gray-600 text-sm">
-                                Would you like to journal your feelings to maintain your emotional well-being?
+                          <div className="space-y-6">
+                            <div className="py-3 px-4 bg-green-50 rounded-lg border-l-4 border-green-400">
+                              <p className="text-green-800 font-medium">
+                                You're doing great! Your assessment indicates minimal mental health concerns.
                               </p>
-                              <Button onClick={navigateToJournal} className="bg-blue-500 hover:bg-blue-600 text-white shadow shadow-blue-500/20 transform transition-all duration-200 hover:scale-105 text-sm">
-                                Go to Journal
-                              </Button>
+                            </div>
+                            
+                            <p className="text-gray-700">
+                              It appears you're managing your emotions well. Journaling can help maintain this positive state and provide insights into your emotional patterns.
+                            </p>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                              <div className="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                                <div className="flex items-center mb-3">
+                                  <div className="bg-[#20C0F3]/10 p-2 rounded-full mr-3">
+                                    <FileText className="h-5 w-5 text-[#20C0F3]" />
+                                  </div>
+                                  <h3 className="font-semibold text-gray-800">Journal Your Feelings</h3>
+                                </div>
+                                <p className="text-gray-600 text-sm mb-4">
+                                  Document your thoughts and emotions to track patterns over time.
+                                </p>
+                                <Button 
+                                  onClick={navigateToJournal} 
+                                  className="w-full bg-gradient-to-r from-[#0078FF] to-[#20C0F3] hover:from-[#0062CC] hover:to-[#1AB6E8] text-white shadow-md hover:shadow-lg transition-all"
+                                >
+                                  Go to Journal
+                                  <ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
+                              </div>
+                              
+                              <div className="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                                <div className="flex items-center mb-3">
+                                  <div className="bg-[#20C0F3]/10 p-2 rounded-full mr-3">
+                                    <Book className="h-5 w-5 text-[#20C0F3]" />
+                                  </div>
+                                  <h3 className="font-semibold text-gray-800">Explore Resources</h3>
+                                </div>
+                                <p className="text-gray-600 text-sm mb-4">
+                                  Discover articles and tools to enhance your mental wellbeing.
+                                </p>
+                                <Button 
+                                  onClick={navigateToResources} 
+                                  variant="outline" 
+                                  className="w-full border-[#20C0F3] text-[#20C0F3] hover:bg-[#20C0F3]/5 hover:text-[#0078FF]"
+                                >
+                                  Browse Resources
+                                  <ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         ) : (
-                          <div className="space-y-4">
-                            <p className="text-gray-700 text-base">
-                              Based on your assessment, you seem to be experiencing significant mental health challenges.
-                            </p>
-                            <div className="space-y-3">
-                              <p className="text-gray-600 text-sm">
-                                We recommend either booking a session with a therapist or journaling your feelings.
+                          <div className="space-y-6">
+                            <div className="py-3 px-4 bg-amber-50 rounded-lg border-l-4 border-amber-400">
+                              <p className="text-amber-800 font-medium">
+                                Your assessment indicates you may be experiencing some mental health challenges.
                               </p>
-                              <div className="flex flex-wrap gap-3 justify-center">
-                                <Button
-                                  className="bg-blue-500 hover:bg-blue-600 text-white shadow shadow-blue-500/20 transform transition-all duration-200 hover:scale-105 text-sm"
-                                  onClick={() => console.log("Book therapist")}
+                            </div>
+                            
+                            <p className="text-gray-700">
+                              It's important to address these feelings. Consider connecting with a therapist, joining support groups, or using our journaling tool to process your emotions.
+                            </p>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                              <div className="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                                <div className="flex items-center mb-3">
+                                  <div className="bg-[#20C0F3]/10 p-2 rounded-full mr-3">
+                                    <LifeBuoy className="h-5 w-5 text-[#20C0F3]" />
+                                  </div>
+                                  <h3 className="font-semibold text-gray-800">Talk to a Therapist</h3>
+                                </div>
+                                <p className="text-gray-600 text-sm mb-4">
+                                  Connect with a professional therapist for personalized support.
+                                </p>
+                                <Button 
+                                  onClick={navigateToTherapists} 
+                                  className="w-full bg-gradient-to-r from-[#0078FF] to-[#20C0F3] hover:from-[#0062CC] hover:to-[#1AB6E8] text-white shadow-md hover:shadow-lg transition-all"
                                 >
-                                  Book a Therapist
+                                  Find a Therapist
+                                  <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
-                                <Button
-                                  onClick={navigateToJournal}
-                                  variant="outline"
-                                  className="border-blue-500 text-blue-500 hover:bg-blue-50 transform transition-all duration-200 hover:scale-105 text-sm"
+                              </div>
+                              
+                              <div className="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                                <div className="flex items-center mb-3">
+                                  <div className="bg-[#20C0F3]/10 p-2 rounded-full mr-3">
+                                    <FileText className="h-5 w-5 text-[#20C0F3]" />
+                                  </div>
+                                  <h3 className="font-semibold text-gray-800">Journal Your Feelings</h3>
+                                </div>
+                                <p className="text-gray-600 text-sm mb-4">
+                                  Express and process your emotions through guided journaling.
+                                </p>
+                                <Button 
+                                  onClick={navigateToJournal} 
+                                  variant="outline" 
+                                  className="w-full border-[#20C0F3] text-[#20C0F3] hover:bg-[#20C0F3]/5 hover:text-[#0078FF]"
                                 >
                                   Go to Journal
+                                  <ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
+                              </div>
+                              
+                              <div className="col-span-1 md:col-span-2 bg-gray-50 p-5 rounded-xl border border-gray-100">
+                                <div className="flex items-center mb-3">
+                                  <div className="bg-[#20C0F3]/10 p-2 rounded-full mr-3">
+                                    <Heart className="h-5 w-5 text-[#20C0F3]" />
+                                  </div>
+                                  <h3 className="font-semibold text-gray-800">Join Support Groups</h3>
+                                </div>
+                                <p className="text-gray-600 text-sm mb-4">
+                                  Connect with others who share similar experiences in a supportive environment.
+                                </p>
+                                <Button 
+                                  onClick={navigateToHelpGroups}
+                                  className="w-full bg-[#0078FF]/10 hover:bg-[#0078FF]/20 text-[#0078FF] font-medium"
+                                >
+                                  Explore Support Groups
+                                  <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
                               </div>
                             </div>
@@ -216,7 +327,7 @@ const MoodAssessment = ({ emotionsRef }: MoodAssessmentProps) => {
                       >
                         Start Over
                       </Button>
-                    </div>
+                    </motion.div>
                   )}
                 </AnimatePresence>
               </div>

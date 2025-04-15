@@ -1,4 +1,3 @@
-
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Download, MapPin, Search, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -158,6 +157,11 @@ const HeroSection = ({ scrollToEmotions, emotionsRef }: HeroSectionProps) => {
           </div>
         </div>
       </div>
+      
+      {/* Curved bottom edge */}
+      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-br from-brand-purple-light via-white to-brand-blue-light" style={{ 
+        clipPath: "ellipse(75% 100% at 50% 100%)" 
+      }}></div>
     </div>
   );
 };

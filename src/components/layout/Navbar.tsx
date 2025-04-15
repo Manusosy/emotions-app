@@ -1,4 +1,3 @@
-
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
@@ -24,9 +23,6 @@ export default function Navbar() {
             <div className="flex items-center space-x-1 bg-blue-600/30 backdrop-blur-sm rounded-full px-2 py-1.5">
               <Link to="/" className="text-white/90 hover:text-white px-4 py-1.5 rounded-full transition-all hover:bg-[#fda802] text-sm font-medium">
                 Home
-              </Link>
-              <Link to="/therapists" className="text-white/90 hover:text-white px-4 py-1.5 rounded-full transition-all hover:bg-[#fda802] text-sm font-medium">
-                Therapists
               </Link>
               <Link to="/journal" className="text-white/90 hover:text-white px-4 py-1.5 rounded-full transition-all hover:bg-[#fda802] text-sm font-medium">
                 Journal
@@ -80,9 +76,6 @@ export default function Navbar() {
           <div className="md:hidden py-4 space-y-2">
             <Link to="/" className="block px-4 py-2 hover:bg-[#fda802] rounded-lg transition-colors">
               Home
-            </Link>
-            <Link to="/therapists" className="block px-4 py-2 hover:bg-[#fda802] rounded-lg transition-colors">
-              Therapists
             </Link>
             <Link to="/journal" className="block px-4 py-2 hover:bg-[#fda802] rounded-lg transition-colors">
               Journal

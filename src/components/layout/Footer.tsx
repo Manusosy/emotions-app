@@ -1,7 +1,16 @@
 import { Facebook, Twitter, Instagram, Linkedin, Heart } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useSafeNavigation } from "@/hooks/use-safe-navigation";
+import { useNavigate } from "react-router-dom";
 
 const Footer = () => {
+  const navigate = useNavigate();
+  
+  // Direct navigation function that doesn't use setTimeout
+  const handleNavigation = (path: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    navigate(path);
+  };
+
   return (
     <footer className="bg-gradient-to-br from-brand-blue-light via-white to-brand-purple-light w-full">
       <div className="max-w-7xl mx-auto px-4 py-12">
@@ -28,14 +37,50 @@ const Footer = () => {
             <h3 className="text-sm font-semibold text-gray-900">Quick Links</h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-3">
-                <Link to="/about" className="block text-sm text-gray-500 hover:text-blue-500">About Us</Link>
-                <Link to="/contact" className="block text-sm text-gray-500 hover:text-blue-500">Contact</Link>
-                <Link to="/therapy" className="block text-sm text-gray-500 hover:text-blue-500">Therapy</Link>
+                <a 
+                  href="/about" 
+                  onClick={(e) => handleNavigation("/about", e)}
+                  className="block text-sm text-gray-500 hover:text-blue-500 cursor-pointer"
+                >
+                  About Us
+                </a>
+                <a 
+                  href="/contact" 
+                  onClick={(e) => handleNavigation("/contact", e)}
+                  className="block text-sm text-gray-500 hover:text-blue-500 cursor-pointer"
+                >
+                  Contact
+                </a>
+                <a 
+                  href="/resources" 
+                  onClick={(e) => handleNavigation("/resources", e)}
+                  className="block text-sm text-gray-500 hover:text-blue-500 cursor-pointer"
+                >
+                  Resources
+                </a>
               </div>
               <div className="space-y-3">
-                <Link to="/journal" className="block text-sm text-gray-500 hover:text-blue-500">Journal</Link>
-                <Link to="/mood-tracker" className="block text-sm text-gray-500 hover:text-blue-500">Mood Tracker</Link>
-                <Link to="/ambassadors" className="block text-sm text-gray-500 hover:text-blue-500">Ambassadors</Link>
+                <a 
+                  href="/journal" 
+                  onClick={(e) => handleNavigation("/journal", e)}
+                  className="block text-sm text-gray-500 hover:text-blue-500 cursor-pointer"
+                >
+                  Journal
+                </a>
+                <a 
+                  href="/help-groups" 
+                  onClick={(e) => handleNavigation("/help-groups", e)}
+                  className="block text-sm text-gray-500 hover:text-blue-500 cursor-pointer"
+                >
+                  Help Groups
+                </a>
+                <a 
+                  href="/ambassadors" 
+                  onClick={(e) => handleNavigation("/ambassadors", e)}
+                  className="block text-sm text-gray-500 hover:text-blue-500 cursor-pointer"
+                >
+                  Ambassadors
+                </a>
               </div>
             </div>
           </div>
@@ -81,21 +126,40 @@ const Footer = () => {
         </div>
 
         {/* Bottom footer */}
-        <div className="border-t border-gray-200 mt-12 pt-8">
+        <div className="mt-8 pt-8 border-t border-gray-200">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-gray-500">
               © {new Date().getFullYear()} Emotions. All rights reserved.
             </p>
             <div className="flex items-center gap-6">
-              <Link to="/privacy" className="text-sm text-gray-500 hover:text-blue-500">
+              <a 
+                href="/privacy" 
+                onClick={(e) => handleNavigation("/privacy", e)}
+                className="text-sm text-gray-500 hover:text-blue-500 cursor-pointer"
+              >
                 Privacy Policy
-              </Link>
-              <Link to="/data-protection" className="text-sm text-gray-500 hover:text-blue-500">
+              </a>
+              <a 
+                href="/data-protection" 
+                onClick={(e) => handleNavigation("/data-protection", e)}
+                className="text-sm text-gray-500 hover:text-blue-500 cursor-pointer"
+              >
                 Data Protection
-              </Link>
-              <Link to="/terms" className="text-sm text-gray-500 hover:text-blue-500">
+              </a>
+              <a 
+                href="/terms" 
+                onClick={(e) => handleNavigation("/terms", e)}
+                className="text-sm text-gray-500 hover:text-blue-500 cursor-pointer"
+              >
                 Terms of Service
-              </Link>
+              </a>
+              <a 
+                href="/faqs" 
+                onClick={(e) => handleNavigation("/faqs", e)}
+                className="text-sm text-gray-500 hover:text-blue-500 cursor-pointer"
+              >
+                FAQs
+              </a>
             </div>
           </div>
         </div>

@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 
 interface ScrollingInfoStripProps {
@@ -16,93 +15,67 @@ interface ScrollingInfoStripProps {
 
 const ScrollingInfoStrip: React.FC<ScrollingInfoStripProps> = ({
   className,
-  items = [], // Provide default empty array to prevent undefined errors
-  speed = 30,
+  items = [],
+  speed = 15, // Slower speed for better readability
   pauseOnHover = true,
   direction = 'left',
-  gap = 20,
+  gap = 120, // Even more gap between items
 }) => {
   const [isHovering, setIsHovering] = useState(false);
-  const [containerWidth, setContainerWidth] = useState(0);
-  const [contentWidth, setContentWidth] = useState(0);
-
-  // Update measurements on resize
-  useEffect(() => {
-    const updateWidths = () => {
-      const container = document.querySelector('.scrolling-container');
-      const content = document.querySelector('.scrolling-content');
-      
-      if (container && content) {
-        setContainerWidth(container.clientWidth);
-        setContentWidth(content.scrollWidth);
-      }
-    };
-
-    // Initial measurement
-    updateWidths();
-    
-    // Update on resize
-    window.addEventListener('resize', updateWidths);
-    
-    return () => {
-      window.removeEventListener('resize', updateWidths);
-    };
-  }, [items]);
-
-  // Calculate the CSS animation duration based on content width and speed
-  const calculateDuration = () => {
-    if (contentWidth === 0) return 0;
-    // Duration is distance (px) / speed (px/s) = time (s)
-    return contentWidth / speed;
-  };
-
-  const duration = calculateDuration();
-  const isPaused = pauseOnHover && isHovering;
-
-  // Animation style
-  const animationStyle = {
-    animationDuration: `${duration}s`,
-    animationDirection: direction === 'left' ? 'normal' : 'reverse',
-    animationPlayState: isPaused ? 'paused' : 'running',
-    gap: `${gap}px`,
-  };
-
+  const containerRef = useRef<HTMLDivElement>(null);
+  
   // If items is undefined or empty, render nothing
   if (!items || items.length === 0) {
     return null;
   }
 
+  // We only need 3 copies to ensure continuous scrolling
+  const allItems = [...items, ...items, ...items]; 
+  
   return (
     <div
       className={cn(
-        'relative overflow-hidden whitespace-nowrap bg-neutral-100 py-3',
+        'relative overflow-hidden bg-neutral-100 py-8', // Increased vertical padding
         className
       )}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
+      ref={containerRef}
     >
-      <div className="scrolling-container relative w-full">
-        <div
-          className="scrolling-content inline-flex animate-marquee"
-          style={animationStyle}
-        >
-          {items.map((item) => (
-            <div key={item.id} className="mx-4 flex items-center whitespace-nowrap">
-              {item.content}
-            </div>
-          ))}
-        </div>
-        
-        {/* Duplicate content for seamless looping */}
-        <div
-          className="scrolling-content inline-flex animate-marquee"
+      {/* Fixed width container */}
+      <div className="max-w-screen overflow-hidden">
+        {/* Single scrolling container with animation class */}
+        <div 
+          className="inline-flex items-center scroll-text-animation"
           style={{
-            ...animationStyle,
-            animationDelay: `${duration / 2}s`
+            animationDuration: '45s', // Slower animation
+            animationTimingFunction: 'linear',
+            animationIterationCount: 'infinite',
+            animationDirection: direction === 'right' ? 'reverse' : 'normal',
+            animationPlayState: isHovering && pauseOnHover ? 'paused' : 'running',
+            whiteSpace: 'nowrap',
+            willChange: 'transform',
+            gap: `${gap}px`,
           }}
         >
-          {items.map((item) => (
-            <div key={`duplicate-${item.id}`} className="mx-4 flex items-center whitespace-nowrap">
+          {allItems.map((item, index) => (
+            <div 
+              key={`${item.id}-${index}`} 
+              className="font-semibold text-gray-700 px-8 py-3 mx-8 rounded-md"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minWidth: '200px',
+                textAlign: 'center',
+                boxShadow: '0 0 15px rgba(255, 255, 255, 1)', 
+                transform: 'translateZ(0)', // Force GPU acceleration
+                border: '1px solid rgba(0,0,0,0.05)',
+                background: 'rgba(255, 255, 255, 0.75)', // Slightly different background
+                backdropFilter: 'blur(8px)', // Add blur effect
+                letterSpacing: '0.02em', // Improve letter spacing
+              }}
+            >
               {item.content}
             </div>
           ))}

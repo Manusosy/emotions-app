@@ -1,295 +1,355 @@
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
+import { MapPin, ThumbsUp, MessageSquare, DollarSign, Info } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { motion } from "framer-motion"
 
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { Star, MapPin } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-
-interface Ambassador {
-  id: string;
-  full_name: string;
-  avatar_url: string;
-  speciality: string;
-  country: string;
-  rating: number;
-  availability_status: 'Available' | 'Unavailable';
+type Ambassador = {
+  id: string
+  name: string
+  credentials: string
+  specialty: string
+  rating: number
+  totalRatings: number
+  feedback: number
+  location: string
+  isFree: boolean
+  therapyTypes: string[]
+  image: string
+  satisfaction: number
 }
 
-export default function Ambassadors() {
-  const [ambassadors, setAmbassadors] = useState<Ambassador[]>([]);
-  const [needsOnboarding, setNeedsOnboarding] = useState(false);
-  const [favorites, setFavorites] = useState<string[]>([]);
-  const navigate = useNavigate();
+const Ambassadors = () => {
+  const [selectedDate, setSelectedDate] = useState("")
+  const [gender, setGender] = useState<string[]>(["Male"])
+  const [specialties, setSpecialties] = useState<string[]>(["Depression & Anxiety", "Trauma & PTSD"])
+  const [filteredAmbassadors, setFilteredAmbassadors] = useState<Ambassador[]>([])
+  
+  // Sample ambassador data
+  const ambassadors: Ambassador[] = [
+    {
+      id: "1",
+      name: "Dr. Ruby Perrin",
+      credentials: "PhD in Psychology, Licensed Therapist",
+      specialty: "Depression & Anxiety Specialist",
+      rating: 5,
+      totalRatings: 17,
+      feedback: 17,
+      location: "Kigali, Rwanda",
+      isFree: true,
+      therapyTypes: ["Cognitive Behavioral Therapy", "Mindfulness", "Stress Management"],
+      image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80",
+      satisfaction: 98
+    },
+    {
+      id: "2",
+      name: "Dr. Darren Elder",
+      credentials: "MSc in Clinical Psychology, Certified Counselor",
+      specialty: "Trauma & PTSD Specialist",
+      rating: 5,
+      totalRatings: 35,
+      feedback: 35,
+      location: "Musanze, Rwanda",
+      isFree: true,
+      therapyTypes: ["EMDR Therapy", "Trauma-Focused CBT", "Group Therapy"],
+      image: "https://images.unsplash.com/photo-1582750433449-648ed127bb54?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80",
+      satisfaction: 96
+    },
+    {
+      id: "3",
+      name: "Dr. Deborah Angel",
+      credentials: "MA in Counseling Psychology, Licensed Therapist",
+      specialty: "Relationship & Family Specialist",
+      rating: 4,
+      totalRatings: 27,
+      feedback: 27,
+      location: "Kigali, Rwanda",
+      isFree: true,
+      therapyTypes: ["Couples Therapy", "Family Counseling", "Child Psychology"],
+      image: "https://images.unsplash.com/photo-1614608997588-8173059e05e6?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80",
+      satisfaction: 97
+    },
+    {
+      id: "4",
+      name: "Dr. Sofia Brient",
+      credentials: "PhD in Clinical Psychology, Addiction Specialist",
+      specialty: "Addiction & Recovery Specialist",
+      rating: 4,
+      totalRatings: 4,
+      feedback: 4,
+      location: "Rubavu, Rwanda",
+      isFree: true,
+      therapyTypes: ["Substance Abuse", "Behavioral Addiction", "Recovery Support"],
+      image: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80",
+      satisfaction: 94
+    }
+  ]
 
+  // Apply filters in real-time
   useEffect(() => {
-    checkOnboardingStatus();
-    loadAmbassadors();
-    loadFavorites();
-  }, []);
+    // Filter ambassadors based on selected specialties
+    const filtered = ambassadors.filter(ambassador => {
+      // Check if ambassador's specialty matches any selected specialty
+      const hasSpecialty = specialties.some(specialty => {
+        if (specialty === "Depression & Anxiety") {
+          return ambassador.specialty.includes("Depression") || ambassador.specialty.includes("Anxiety");
+        }
+        if (specialty === "Trauma & PTSD") {
+          return ambassador.specialty.includes("Trauma") || ambassador.specialty.includes("PTSD");
+        }
+        if (specialty === "Relationship Issues") {
+          return ambassador.specialty.includes("Relationship");
+        }
+        if (specialty === "Addiction & Recovery") {
+          return ambassador.specialty.includes("Addiction") || ambassador.specialty.includes("Recovery");
+        }
+        return false;
+      });
+      
+      return hasSpecialty;
+    });
+    
+    setFilteredAmbassadors(filtered.length > 0 ? filtered : ambassadors);
+  }, [specialties, gender]);
 
-  const checkOnboardingStatus = async () => {
-    try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
+  const toggleGender = (value: string) => {
+    setGender(
+      gender.includes(value)
+        ? gender.filter(item => item !== value)
+        : [...gender, value]
+    )
+  }
 
-      if (userError) throw userError;
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('first_name, last_name, onboarding_completed')
-        .eq('id', user.id)
-        .single();
-
-      if (error) throw error;
-
-      if (!data.onboarding_completed) {
-        setNeedsOnboarding(true);
-      }
-    } catch (error) {
-      console.error('Error checking onboarding status:', error);
-    }
-  };
-
-  const loadAmbassadors = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('ambassador_profiles')
-        .select(`
-          id,
-          full_name,
-          avatar_url,
-          speciality,
-          country,
-          rating,
-          availability_status
-        `);
-
-      if (error) throw error;
-
-      setAmbassadors(data || []);
-    } catch (error) {
-      toast.error('Failed to load ambassadors');
-      console.error('Error loading ambassadors:', error);
-    }
-  };
-
-  const loadFavorites = async () => {
-    try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError) throw userError;
-
-      const { data, error } = await supabase
-        .from('favorite_ambassadors')
-        .select('ambassador_id')
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-
-      setFavorites((data || []).map((item) => item.ambassador_id));
-    } catch (error) {
-      console.error('Error loading favorites:', error);
-    }
-  };
-
-  const toggleFavorite = async (ambassadorId: string) => {
-    try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError) throw userError;
-
-      const isFavorited = favorites.includes(ambassadorId);
-
-      if (isFavorited) {
-        await supabase
-          .from('favorite_ambassadors')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('ambassador_id', ambassadorId);
-
-        setFavorites(favorites.filter((id) => id !== ambassadorId));
-      } else {
-        await supabase.from('favorite_ambassadors').insert({
-          user_id: user.id,
-          ambassador_id: ambassadorId,
-        });
-
-        setFavorites([...favorites, ambassadorId]);
-      }
-    } catch (error) {
-      toast.error('Failed to update favorites');
-      console.error('Error updating favorites:', error);
-    }
-  };
-
-  const handleBooking = (ambassadorId: string) => {
-    navigate(`/booking?ambassadorId=${ambassadorId}`);
-  };
-
-  if (needsOnboarding) {
-    return <div>Onboarding component</div>;
+  const toggleSpecialty = (value: string) => {
+    setSpecialties(
+      specialties.includes(value)
+        ? specialties.filter(item => item !== value)
+        : [...specialties, value]
+    )
   }
 
   return (
-    <div className="bg-gradient-to-b from-blue-50 to-white min-h-screen">
-      <div className="container mx-auto px-4 pt-8 pb-16">
-        {/* Hero Section */}
-        <div className="text-center max-w-4xl mx-auto mb-16">
-          <span className="inline-block bg-blue-600 text-white text-sm font-medium px-6 py-2 rounded-full mb-6">
-            Mental Health Support
-          </span>
-          <h1 className="text-4xl md:text-5xl font-bold text-[#001A41] mb-6 leading-tight">
-            Our Compassionate Ambassadors
-          </h1>
-          <p className="text-gray-600 text-lg mb-8 leading-relaxed">
-            Connect with our dedicated mental health ambassadors who provide empathetic support and guidance. 
-            Book a free 30-minute session to discuss your concerns in a safe, confidential environment.
-          </p>
+    <div className="w-full bg-gray-50">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-[#0078FF] via-[#20c0f3] to-[#00D2FF] text-white pt-20 pb-24 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute -left-20 -top-20 w-96 h-96 rounded-full bg-white"></div>
+          <div className="absolute right-0 bottom-0 w-80 h-80 rounded-full bg-white"></div>
+          <div className="absolute left-1/3 top-1/3 w-64 h-64 rounded-full bg-white"></div>
         </div>
+        <div className="container mx-auto px-4 relative z-10">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center max-w-3xl mx-auto"
+          >
+            <h1 className="text-4xl md:text-5xl font-bold mb-6">Our Mental Health Ambassadors</h1>
+            <p className="text-lg md:text-xl max-w-2xl mx-auto text-blue-50 mb-8">
+              Our Mental Health Ambassadors are licensed therapists and counselors dedicated to providing
+              compassionate support for your emotional well-being. These professionals specialize in various areas of
+              mental health to help you navigate life's challenges with confidence and resilience.
+            </p>
+          </motion.div>
+        </div>
+        
+        {/* Curved bottom edge */}
+        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gray-50" style={{ 
+          clipPath: "ellipse(75% 100% at 50% 100%)" 
+        }}></div>
+      </div>
 
-        {/* Booking Guide */}
-        <div className="max-w-3xl mx-auto mb-16">
-          <div className="bg-white rounded-2xl shadow-lg p-8 border border-blue-100">
-            <h2 className="text-2xl font-semibold text-[#001A41] mb-6 text-center">
-              How to Book a Session
-            </h2>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="flex items-start space-x-4">
-                <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold">
-                  1
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-900 mb-1">Browse Ambassadors</h3>
-                  <p className="text-gray-600">Explore our available mental health ambassadors</p>
+      <div className="container mx-auto px-4 py-10">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Filters Section */}
+          <div className="w-full lg:w-64 shrink-0">
+            <div className="bg-white p-6 rounded-md shadow-sm">
+              <h2 className="text-lg font-bold text-gray-800 mb-6">Search Filter</h2>
+              
+              <div className="mb-6">
+                <label className="block text-sm mb-2 text-gray-600">Select Date</label>
+                <Input 
+                  type="date" 
+                  value={selectedDate} 
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="w-full border border-gray-200"
+                />
+              </div>
+              
+              <div className="mb-6">
+                <h3 className="font-medium mb-3 text-gray-700">Gender</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center">
+                    <Checkbox 
+                      id="gender-male" 
+                      checked={gender.includes("Male")}
+                      onCheckedChange={() => toggleGender("Male")}
+                      className="text-[#00D2FF] rounded-sm h-4 w-4"
+                    />
+                    <label htmlFor="gender-male" className="ml-2 text-gray-600 text-sm">Male</label>
+                  </div>
+                  <div className="flex items-center">
+                    <Checkbox 
+                      id="gender-female" 
+                      checked={gender.includes("Female")}
+                      onCheckedChange={() => toggleGender("Female")}
+                      className="text-[#00D2FF] rounded-sm h-4 w-4"
+                    />
+                    <label htmlFor="gender-female" className="ml-2 text-gray-600 text-sm">Female</label>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-start space-x-4">
-                <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold">
-                  2
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-900 mb-1">Check Specialties</h3>
-                  <p className="text-gray-600">Find the best match for your needs</p>
+              
+              <div className="mb-6">
+                <h3 className="font-medium mb-3 text-gray-700">Specialities</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center">
+                    <Checkbox 
+                      id="speciality-depression" 
+                      checked={specialties.includes("Depression & Anxiety")}
+                      onCheckedChange={() => toggleSpecialty("Depression & Anxiety")}
+                      className="text-[#00D2FF] rounded-sm h-4 w-4"
+                    />
+                    <label htmlFor="speciality-depression" className="ml-2 text-gray-600 text-sm">Depression & Anxiety</label>
+                  </div>
+                  <div className="flex items-center">
+                    <Checkbox 
+                      id="speciality-trauma" 
+                      checked={specialties.includes("Trauma & PTSD")}
+                      onCheckedChange={() => toggleSpecialty("Trauma & PTSD")}
+                      className="text-[#00D2FF] rounded-sm h-4 w-4"
+                    />
+                    <label htmlFor="speciality-trauma" className="ml-2 text-gray-600 text-sm">Trauma & PTSD</label>
+                  </div>
+                  <div className="flex items-center">
+                    <Checkbox 
+                      id="speciality-eating" 
+                      checked={specialties.includes("Eating Disorders")}
+                      onCheckedChange={() => toggleSpecialty("Eating Disorders")}
+                      className="text-[#00D2FF] rounded-sm h-4 w-4"
+                    />
+                    <label htmlFor="speciality-eating" className="ml-2 text-gray-600 text-sm">Eating Disorders</label>
+                  </div>
+                  <div className="flex items-center">
+                    <Checkbox 
+                      id="speciality-addiction" 
+                      checked={specialties.includes("Addiction & Recovery")}
+                      onCheckedChange={() => toggleSpecialty("Addiction & Recovery")}
+                      className="text-[#00D2FF] rounded-sm h-4 w-4"
+                    />
+                    <label htmlFor="speciality-addiction" className="ml-2 text-gray-600 text-sm">Addiction & Recovery</label>
+                  </div>
+                  <div className="flex items-center">
+                    <Checkbox 
+                      id="speciality-relationship" 
+                      checked={specialties.includes("Relationship Issues")}
+                      onCheckedChange={() => toggleSpecialty("Relationship Issues")}
+                      className="text-[#00D2FF] rounded-sm h-4 w-4"
+                    />
+                    <label htmlFor="speciality-relationship" className="ml-2 text-gray-600 text-sm">Relationship Issues</label>
+                  </div>
+                  <div className="flex items-center">
+                    <Checkbox 
+                      id="speciality-transitions" 
+                      checked={specialties.includes("Life Transitions")}
+                      onCheckedChange={() => toggleSpecialty("Life Transitions")}
+                      className="text-[#00D2FF] rounded-sm h-4 w-4"
+                    />
+                    <label htmlFor="speciality-transitions" className="ml-2 text-gray-600 text-sm">Life Transitions</label>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-start space-x-4">
-                <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold">
-                  3
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-900 mb-1">Book Your Session</h3>
-                  <p className="text-gray-600">Click "Book Now" on your chosen ambassador</p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-4">
-                <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold">
-                  4
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-900 mb-1">Confirm Time</h3>
-                  <p className="text-gray-600">Select a convenient time slot</p>
-                </div>
-              </div>
+              
+              <Button className="w-full bg-[#00D2FF] hover:bg-[#00bfe8] text-white font-normal">
+                Search
+              </Button>
+            </div>
+          </div>
+          
+          {/* Ambassadors List */}
+          <div className="flex-1">
+            <div className="space-y-6">
+              {(filteredAmbassadors.length > 0 ? filteredAmbassadors : ambassadors).map((ambassador) => (
+                <Card key={ambassador.id} className="p-6 flex flex-col md:flex-row gap-6 bg-white border-none shadow-sm">
+                  <div className="flex-shrink-0" style={{ width: '180px' }}>
+                    <img 
+                      src={ambassador.image} 
+                      alt={ambassador.name}
+                      className="w-full h-auto rounded-md object-cover"
+                      style={{ aspectRatio: '1/1' }}
+                    />
+                  </div>
+                  
+                  <div className="flex-1">
+                    <div className="flex flex-col md:flex-row justify-between">
+                      <div>
+                        <h3 className="text-xl font-semibold text-gray-800">{ambassador.name}</h3>
+                        <p className="text-sm text-gray-600 mb-1">{ambassador.credentials}</p>
+                        <p className="text-[#00D2FF] font-medium mb-2">{ambassador.specialty}</p>
+                        
+                        <div className="flex items-center mb-3">
+                          {[...Array(5)].map((_, i) => (
+                            <svg key={i} className={`w-4 h-4 ${i < Math.floor(ambassador.rating) ? "text-amber-400" : "text-gray-200"}`} fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                            </svg>
+                          ))}
+                          <span className="ml-1 text-sm text-gray-500">({ambassador.totalRatings})</span>
+                        </div>
+                        
+                        <div className="flex items-center text-gray-600 mb-2">
+                          <MapPin className="w-4 h-4 mr-1" />
+                          <span className="text-sm">{ambassador.location}</span>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex items-center justify-end mb-2">
+                          <ThumbsUp className="w-4 h-4 text-gray-500 mr-1" />
+                          <span className="text-gray-900 font-semibold">{ambassador.satisfaction}%</span>
+                        </div>
+                        <div className="flex items-center justify-end mb-2">
+                          <MessageSquare className="w-4 h-4 text-gray-500 mr-1" />
+                          <span className="text-sm text-gray-600">{ambassador.feedback} Feedback</span>
+                        </div>
+                        <div className="flex items-center justify-end mb-4">
+                          <DollarSign className="w-4 h-4 text-gray-500 mr-1" />
+                          <span className="text-sm text-gray-600">Free</span>
+                          <Info className="w-4 h-4 text-gray-400 ml-1" />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 mb-6 flex flex-wrap gap-2">
+                      {ambassador.therapyTypes.map((type, index) => (
+                        <Badge key={index} variant="outline" className="rounded-md bg-gray-100 text-gray-700 border-0 text-xs px-3 py-1 font-normal">
+                          {type}
+                        </Badge>
+                      ))}
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row gap-4 justify-end">
+                      <Button 
+                        variant="outline" 
+                        className="border border-[#00D2FF] text-[#00D2FF] hover:bg-[#00D2FF] hover:text-white rounded-md"
+                      >
+                        VIEW PROFILE
+                      </Button>
+                      <Button className="bg-[#00D2FF] hover:bg-[#00bfe8] text-white rounded-md uppercase">
+                        BOOK APPOINTMENT
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))}
             </div>
           </div>
         </div>
-
-        {/* Ambassadors Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {ambassadors.map((ambassador) => (
-            <div
-              key={ambassador.id}
-              className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100"
-            >
-              <div className="relative">
-                <img
-                  src={ambassador.avatar_url || '/default-avatar.png'}
-                  alt={ambassador.full_name}
-                  className="w-full h-64 object-cover"
-                />
-                <button
-                  onClick={() => toggleFavorite(ambassador.id)}
-                  className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
-                >
-                  <svg
-                    className={`w-6 h-6 ${
-                      favorites.includes(ambassador.id)
-                        ? 'text-red-500 fill-current'
-                        : 'text-gray-400'
-                    }`}
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                    />
-                  </svg>
-                </button>
-              </div>
-
-              <div className="p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Badge variant="secondary" className="bg-orange-100 text-orange-700 flex items-center gap-1">
-                    <Star className="w-4 h-4 fill-orange-500" />
-                    {ambassador.rating.toFixed(1)}
-                  </Badge>
-                </div>
-
-                <div className="mb-4">
-                  <div className="text-blue-600 font-medium">
-                    {ambassador.speciality}
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mt-1">
-                    {ambassador.full_name}
-                  </h3>
-                </div>
-
-                <div className="flex items-center gap-2 text-gray-600 mb-4">
-                  <MapPin className="w-4 h-4" />
-                  <span>{ambassador.country}</span>
-                  <span className="mx-2">•</span>
-                  <span>30 Min Session</span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="text-gray-900">
-                    <span className="text-green-600 font-medium">Free Session</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      variant={ambassador.availability_status === 'Available' ? 'success' : 'destructive'}
-                      className="font-normal"
-                    >
-                      {ambassador.availability_status}
-                    </Badge>
-                    <Button
-                      onClick={() => handleBooking(ambassador.id)}
-                      disabled={ambassador.availability_status !== 'Available'}
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      Book Now
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
-  );
+  )
 }
+
+export default Ambassadors

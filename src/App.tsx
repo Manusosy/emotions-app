@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -28,6 +27,23 @@ import ComingSoon from '@/components/ComingSoon';
 import AmbassadorDashboard from "@/features/dashboard/pages/AmbassadorDashboard";
 import { useAuth } from "@/hooks/use-auth";
 import Header from "@/app/layout/Header";
+import Resources from "@/pages/Resources";
+import HelpGroups from "./pages/HelpGroups";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import DataProtection from "./pages/DataProtection";
+import TermsOfService from "./pages/TermsOfService";
+import Contact from "./pages/Contact";
+import FAQs from "./pages/FAQs";
+import About from "./pages/About";
+
+// HomePage component that properly wraps the MoodTracker component
+const HomePage = () => {
+  return (
+    <div className="homepage-wrapper relative pb-12">
+      <MoodTracker />
+    </div>
+  );
+};
 
 const ProtectedRoute = ({ 
   children, 
@@ -44,7 +60,14 @@ const ProtectedRoute = ({
   }, [isAuthenticated, userRole, requiredRole]);
   
   if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-8 h-8 rounded-full border-4 border-t-blue-500 border-b-blue-500 border-r-transparent border-l-transparent animate-spin"></div>
+          <p className="text-sm text-muted-foreground">Checking authentication...</p>
+        </div>
+      </div>
+    );
   }
   
   if (!isAuthenticated) {
@@ -60,6 +83,8 @@ const ProtectedRoute = ({
       return <Navigate to="/ambassador-dashboard" replace />;
     } else if (userRole === 'patient') {
       return <Navigate to="/patient-dashboard" replace />;
+    } else if (userRole === 'admin') {
+      return <Navigate to="/admin-dashboard" replace />;
     } else {
       return <Navigate to="/" replace />;
     }
@@ -72,17 +97,46 @@ const AppContent = () => {
   const [showHeaderFooter, setShowHeaderFooter] = useState(true);
   const location = useLocation();
 
+  // Debug global click events
+  useEffect(() => {
+    const handleGlobalClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const isAnchor = target.tagName === 'A' || target.closest('a');
+      if (isAnchor) {
+        console.log("Link clicked:", target);
+      }
+    };
+
+    document.addEventListener('click', handleGlobalClick);
+    return () => document.removeEventListener('click', handleGlobalClick);
+  }, []);
+
+  // Debug routing to ensure proper navigation
+  useEffect(() => {
+    console.log("Current location:", location.pathname);
+  }, [location.pathname]);
+
   useEffect(() => {
     const pathname = location.pathname;
     // Don't show header/footer on dashboard pages
     const isDashboardPage = pathname.includes('dashboard') || 
-                           pathname.includes('ambassador') || 
-                           pathname.includes('admin') ||
-                           pathname.includes('booking');
+                          pathname.includes('admin') ||
+                          pathname.includes('booking') ||
+                          pathname === '/ambassador-dashboard' ||
+                          pathname.startsWith('/ambassador-dashboard/');
     
     setShowHeaderFooter(!isDashboardPage);
     console.log('Current path:', pathname, 'Show header/footer:', !isDashboardPage);
   }, [location.pathname]);
+
+  // Determine if the contact banner should be shown based on the current route
+  const shouldShowContactBanner = location.pathname === "/" || 
+                                 location.pathname === "/contact" || 
+                                 location.pathname === "/privacy" ||
+                                 location.pathname === "/data-protection" ||
+                                 location.pathname === "/terms" ||
+                                 location.pathname === "/faqs" ||
+                                 location.pathname === "/about";
 
   return (
     <>
@@ -92,8 +146,9 @@ const AppContent = () => {
         <div className="flex flex-col min-h-screen max-w-[100vw] overflow-x-hidden">
           {showHeaderFooter && <Navbar />}
           <div className="flex-grow">
-            <Routes>
-              <Route path="/" element={<MoodTracker />} />
+            {/* We're using a key based on the path to force a complete re-render on route changes */}
+            <Routes key={location.pathname}>
+              <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/journal" element={<JournalPage />} />
@@ -111,21 +166,50 @@ const AppContent = () => {
               />
               <Route 
                 path="/resources" 
-                element={
-                  <ComingSoon 
-                    title="Mental Health Resources" 
-                    description="A comprehensive library of mental health resources, articles, and self-help materials is coming soon to support your well-being journey."
-                  />
-                } 
+                element={<Resources />}
               />
               <Route 
                 path="/help-groups" 
+                element={<HelpGroups />}
+              />
+              <Route 
+                path="/privacy" 
+                element={<PrivacyPolicy />}
+              />
+              
+              <Route 
+                path="/data-protection" 
+                element={<DataProtection />}
+              />
+              
+              <Route 
+                path="/terms" 
+                element={<TermsOfService />}
+              />
+              
+              <Route 
+                path="/contact" 
+                element={<Contact />}
+              />
+              
+              <Route 
+                path="/faqs" 
+                element={<FAQs />}
+              />
+              
+              <Route 
+                path="/therapy" 
                 element={
                   <ComingSoon 
-                    title="Support Groups" 
-                    description="Connect with others who share similar experiences in our moderated support groups. Join the waiting list to be notified when this feature launches!"
+                    title="Therapy Services" 
+                    description="We're working on expanding our therapy services. This feature will be available soon to connect you with qualified therapists who can provide personalized support for your mental health journey."
                   />
                 } 
+              />
+              
+              <Route 
+                path="/about" 
+                element={<About />}
               />
               
               <Route path="/ambassador-dashboard" element={
@@ -186,9 +270,11 @@ const AppContent = () => {
           
           {showHeaderFooter && (
             <>
-              <div className="mb-12">
-                <ContactBanner />
-              </div>
+              {shouldShowContactBanner && (
+                <div className="mb-12">
+                  <ContactBanner />
+                </div>
+              )}
               <Footer />
             </>
           )}

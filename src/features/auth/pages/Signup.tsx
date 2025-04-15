@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -79,7 +78,7 @@ export default function Signup() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (isLoading) return;
+    if (isLoading || signupSuccessful) return;
     
     // Basic validation
     if (formData.password !== formData.confirmPassword) {
@@ -94,6 +93,11 @@ export default function Signup() {
     
     if (!formData.country) {
       toast.error("Please select your country");
+      return;
+    }
+    
+    if (!agreedToTerms) {
+      toast.error("You must agree to the terms and privacy policy");
       return;
     }
     
@@ -123,21 +127,27 @@ export default function Signup() {
       toast.success("Account created successfully!");
       setSignupSuccessful(true);
       
-      // Get the user's role and redirect to the appropriate dashboard
+      // Get the dashboard URL for the user's role
       const dashboardUrl = getDashboardUrlForRole(formData.role);
       console.log(`User signed up as ${formData.role}, redirecting to ${dashboardUrl}`);
       
-      // Add a slightly longer delay to ensure auth state is properly updated
+      // Add a delay to ensure auth state is properly updated
       setTimeout(() => {
-        // Force a fresh session check before navigation
-        supabase.auth.getSession().then(() => {
-          navigate(dashboardUrl);
-        });
-      }, 800);
+        // Navigate to the dashboard
+        navigate(dashboardUrl, { replace: true });
+      }, 1000);
       
     } catch (error: any) {
       console.error("Signup process error:", error);
-      toast.error(error.message || "Failed to create account. Please try again.");
+      
+      // Provide more specific error messages to the user
+      if (error.message.includes("already")) {
+        toast.error("This email is already in use. Please try logging in instead.");
+      } else {
+        toast.error(error.message || "Failed to create account. Please try again.");
+      }
+      
+      setSignupSuccessful(false);
     } finally {
       setIsLoading(false);
       setIsAuthenticating(false);
