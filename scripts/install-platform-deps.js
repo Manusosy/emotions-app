@@ -5,8 +5,8 @@
  * It's used during the Netlify build process to ensure the right dependencies are installed.
  */
 
-const { execSync } = require('child_process');
-const os = require('os');
+import { execSync } from 'child_process';
+import os from 'os';
 
 function installPlatformDeps() {
   const platform = os.platform();

@@ -22,23 +22,7 @@ export const rollupDarwinX64 = {
 
 export const rollupDarwinArm64 = {
   name: 'rollup-darwin-arm64-fallback'
-}; 
-
-// Log that we're using the fallback implementation
-console.log('Using Rollup fallbacks for platform-specific modules');
-
-// Default export for direct imports
-export default {
-  rollupLinuxGnu,
-  rollupLinuxMusl,
-  rollupWin32Msvc,
-  rollupDarwinX64,
-  rollupDarwinArm64
 };
-
-// This is a fallback module for platform-specific Rollup dependencies
-// It provides empty implementations to prevent build failures
-export default {};
 
 // Common Rollup module exports
 export const defineConfig = () => ({});
@@ -47,3 +31,17 @@ export const rollup = async () => ({
   write: async () => ({}),
   close: async () => {}
 });
+
+// Log that we're using the fallback implementation
+console.log('Using Rollup fallbacks for platform-specific modules');
+
+// Default export combining all exports
+export default {
+  rollupLinuxGnu,
+  rollupLinuxMusl,
+  rollupWin32Msvc,
+  rollupDarwinX64,
+  rollupDarwinArm64,
+  defineConfig,
+  rollup
+};
