@@ -1,3 +1,4 @@
+
 console.log("Starting check-radix.js script...");
 
 import fs from 'fs';
@@ -97,4 +98,4 @@ filesToCheck.forEach(filePath => {
   }
 });
 
-console.log('\nCheck complete!'); 
+console.log('\nCheck complete!');

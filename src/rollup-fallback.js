@@ -1,3 +1,4 @@
+
 /**
  * This file provides fallback exports for Rollup native modules
  * and is used by the Vite config when the native modules can't be loaded.
@@ -14,4 +15,4 @@ export default {
   rollupLinuxMusl,
   rollupWin32Msvc,
   rollupDarwinX64
-}; 
+};
