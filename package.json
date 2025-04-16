@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "prebuild": "node -e \"try { require('@rollup/rollup-linux-x64-gnu'); } catch(e) { console.log('Installing Linux binaries'); require('child_process').execSync('npm install --no-save @rollup/rollup-linux-x64-gnu') }\"",
+    "prebuild": "node -e \"if (process.platform !== 'win32') { try { require('@rollup/rollup-linux-x64-gnu'); } catch(e) { console.log('Installing Linux binaries'); require('child_process').execSync('npm install --no-save @rollup/rollup-linux-x64-gnu') } }\"",
     "build": "vite build",
-    "build:netlify": "node install-dependencies.js && rm -rf node_modules/.vite dist && cp index-netlify.html index.html && vite build",
+    "build:netlify": "node scripts/prepare-netlify.js && vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
