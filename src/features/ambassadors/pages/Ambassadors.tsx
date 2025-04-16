@@ -6,6 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { MapPin, ThumbsUp, MessageSquare, DollarSign, Info } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { motion } from "framer-motion"
+import { Link } from "react-router-dom"
 
 type Ambassador = {
   id: string
@@ -334,8 +335,9 @@ const Ambassadors = () => {
                       <Button 
                         variant="outline" 
                         className="border border-[#00D2FF] text-[#00D2FF] hover:bg-[#00D2FF] hover:text-white rounded-md"
+                        asChild
                       >
-                        VIEW PROFILE
+                        <Link to={`/ambassadors/${ambassador.id}`}>VIEW PROFILE</Link>
                       </Button>
                       <Button className="bg-[#00D2FF] hover:bg-[#00bfe8] text-white rounded-md uppercase">
                         BOOK APPOINTMENT

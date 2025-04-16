@@ -25,7 +25,12 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: undefined
-      }
+      },
+      // Explicitly mark these packages as external to avoid bundling issues
+      external: [
+        '@radix-ui/react-toggle',
+        '@radix-ui/react-toggle-group'
+      ]
     }
   },
   define: {

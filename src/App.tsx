@@ -35,6 +35,7 @@ import TermsOfService from "./pages/TermsOfService";
 import Contact from "./pages/Contact";
 import FAQs from "./pages/FAQs";
 import About from "./pages/About";
+import AmbassadorProfile from "@/features/ambassadors/pages/AmbassadorProfile";
 
 // HomePage component that properly wraps the MoodTracker component
 const HomePage = () => {
@@ -153,6 +154,7 @@ const AppContent = () => {
               <Route path="/signup" element={<Signup />} />
               <Route path="/journal" element={<JournalPage />} />
               <Route path="/ambassadors" element={<Ambassadors />} />
+              <Route path="/ambassadors/:id" element={<AmbassadorProfile />} />
               <Route path="/booking" element={<BookingPage />} />
               
               <Route 
