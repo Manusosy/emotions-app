@@ -17,11 +17,15 @@ try {
     fs.unlinkSync(tsBuildInfoPath);
   }
   
-  // Run Vite build using only TypeScript for transpilation
+  // Run Vite build with explicit TypeScript settings
   console.log('Building with Vite...');
   execSync('npx vite build', { 
     stdio: 'inherit',
-    cwd: rootDir
+    cwd: rootDir,
+    env: {
+      ...process.env,
+      TS_NODE_COMPILER_OPTIONS: '{"module":"commonjs","target":"es2019"}'
+    }
   });
   
   console.log('Build completed successfully!');

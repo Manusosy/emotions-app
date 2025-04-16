@@ -18,6 +18,13 @@ try {
     console.log('Removing old dist directory...');
     fs.rmSync(path.join(rootDir, 'dist'), { recursive: true, force: true });
   }
+  
+  // Also remove tsconfig.tsbuildinfo to ensure clean TypeScript compilation
+  const tsBuildInfoPath = path.join(rootDir, 'tsconfig.tsbuildinfo');
+  if (fs.existsSync(tsBuildInfoPath)) {
+    console.log('Removing TypeScript build info...');
+    fs.unlinkSync(tsBuildInfoPath);
+  }
 } catch (error) {
   console.error('Error cleaning directories:', error);
 }
