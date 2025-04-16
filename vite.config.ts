@@ -18,12 +18,7 @@ export default defineConfig({
   },
   build: {
     sourcemap: true,
-    minify: 'terser',
-    terserOptions: {
-      format: {
-        comments: false
-      }
-    }
+    minify: 'esbuild',
   },
   define: {
     'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(process.env.VITE_SUPABASE_URL || "https://ekpiqiatfwozmepkgbbe.supabase.co"),
