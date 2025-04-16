@@ -7,6 +7,9 @@ import { componentTagger } from "lovable-tagger";
 // Determine if building for Netlify
 const isNetlify = process.env.NETLIFY === 'true';
 
+// Create a mock module for platform-specific Rollup dependencies
+const createMockModule = () => 'export default {};';
+
 // More robust handling of missing Rollup binaries
 const handleNativeRollupPlugin = {
   name: 'handle-native-rollup',
@@ -22,7 +25,24 @@ const handleNativeRollupPlugin = {
     // Return empty module for any Rollup platform-specific module
     if (id.startsWith('\0virtual:@rollup/rollup-')) {
       console.log(`Providing empty module for ${id}`);
-      return 'export default {};';
+      return createMockModule();
+    }
+    return null;
+  }
+};
+
+// Plugin to handle platform-specific dependencies
+const platformSpecificPlugin = {
+  name: 'platform-specific-deps',
+  resolveId(id: string) {
+    if (id.includes('@rollup/rollup-linux-x64-gnu')) {
+      return '\0virtual:rollup-linux';
+    }
+    return null;
+  },
+  load(id: string) {
+    if (id === '\0virtual:rollup-linux') {
+      return createMockModule();
     }
     return null;
   }
@@ -60,6 +80,7 @@ export default defineConfig(({ mode }) => ({
     },
     // Enhanced Rollup native module handler
     handleNativeRollupPlugin,
+    platformSpecificPlugin,
     // Use index-netlify.html for Netlify builds if it exists
     {
       name: 'use-netlify-index',
@@ -109,8 +130,8 @@ export default defineConfig(({ mode }) => ({
       plugins: [{
         name: 'ignore-native-modules',
         setup(build) {
-          build.onResolve({ filter: /@rollup\/rollup-.*/ }, args => {
-            return { path: rollupFallbackPath, external: false };
+          build.onResolve({ filter: /@rollup\/rollup-.*/ }, () => {
+            return { path: 'empty-module', external: true };
           });
         }
       }]
@@ -124,7 +145,13 @@ export default defineConfig(({ mode }) => ({
     sourcemap: true,
     minify: 'esbuild',
     rollupOptions: {
-      external: [],
+      external: [
+        '@rollup/rollup-linux-x64-gnu',
+        '@rollup/rollup-linux-x64-musl',
+        '@rollup/rollup-win32-x64-msvc',
+        '@rollup/rollup-darwin-x64',
+        '@rollup/rollup-darwin-arm64'
+      ],
       onwarn(warning, warn) {
         // Ignore warnings about missing rollup dependencies
         if (warning.code === 'MISSING_EXPORT' && warning.message.includes('@rollup/rollup-')) {
