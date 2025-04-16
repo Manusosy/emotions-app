@@ -1,5 +1,5 @@
 [build]
-  command = "npm ci && npm run build"
+  command = "npm ci && npm run build:netlify"
   publish = "dist"
 
 [[redirects]]
@@ -28,7 +28,7 @@
 
 [build.environment]
   NODE_VERSION = "18"
-  NPM_VERSION = "10.2.4"
+  NPM_VERSION = "9.6.0"
   VITE_SUPABASE_URL = "https://ekpiqiatfwozmepkgbbe.supabase.co"
   VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVrcGlxaWF0Zndvem1lcGtnYmJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk2OTc3MzYsImV4cCI6MjA1NTI3MzczNn0.qPD707Lp5FiAjlQwfC1bbG-O2WuNUe_ZYRjox6Dmb-Y"
   # Force SWC to use optimized binaries
