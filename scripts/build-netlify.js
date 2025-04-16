@@ -24,7 +24,9 @@ try {
     cwd: rootDir,
     env: {
       ...process.env,
-      TS_NODE_COMPILER_OPTIONS: '{"module":"commonjs","target":"es2019"}'
+      // Set TypeScript compiler options as environment variables
+      // Avoiding the --build flag that conflicts with noEmit
+      TS_NODE_COMPILER_OPTIONS: '{"module":"commonjs","target":"es2019","noEmit":false}'
     }
   });
   

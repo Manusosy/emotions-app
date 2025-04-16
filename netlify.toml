@@ -37,5 +37,6 @@
   SWCRC = "true"
   # Skip installing platform-specific binaries
   SKIP_INSTALL_DEPS = "true"
-  # Explicitly set TypeScript to avoid build/noEmit conflicts
-  TS_NODE_PROJECT = "tsconfig.build.json"
+  # Use tsconfig.build.json for TypeScript compilation
+  # Setting compiler options directly to avoid conflicts
+  TS_NODE_COMPILER_OPTIONS = "{\"module\":\"commonjs\",\"target\":\"es2019\",\"noEmit\":false}"

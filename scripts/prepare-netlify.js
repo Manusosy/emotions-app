@@ -19,12 +19,33 @@ try {
     fs.rmSync(path.join(rootDir, 'dist'), { recursive: true, force: true });
   }
   
-  // Also remove tsconfig.tsbuildinfo to ensure clean TypeScript compilation
+  // Clean up ALL TypeScript cache files
+  console.log('Cleaning up TypeScript build artifacts...');
+  
+  // Remove tsconfig.tsbuildinfo
   const tsBuildInfoPath = path.join(rootDir, 'tsconfig.tsbuildinfo');
   if (fs.existsSync(tsBuildInfoPath)) {
     console.log('Removing TypeScript build info...');
     fs.unlinkSync(tsBuildInfoPath);
   }
+  
+  // Also check for other TypeScript cache files
+  const cachePaths = [
+    path.join(rootDir, '.tsbuildinfo'),
+    path.join(rootDir, 'src', '.tsbuildinfo'),
+    path.join(rootDir, 'node_modules', '.cache', 'typescript')
+  ];
+  
+  cachePaths.forEach(cachePath => {
+    if (fs.existsSync(cachePath)) {
+      console.log(`Removing TypeScript cache at ${cachePath}...`);
+      if (fs.statSync(cachePath).isDirectory()) {
+        fs.rmSync(cachePath, { recursive: true, force: true });
+      } else {
+        fs.unlinkSync(cachePath);
+      }
+    }
+  });
 } catch (error) {
   console.error('Error cleaning directories:', error);
 }
