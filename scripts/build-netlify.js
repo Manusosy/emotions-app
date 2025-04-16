@@ -17,7 +17,7 @@ try {
     fs.unlinkSync(tsBuildInfoPath);
   }
   
-  // Run Vite build without TypeScript build mode
+  // Run Vite build using only TypeScript for transpilation
   console.log('Building with Vite...');
   execSync('npx vite build', { 
     stdio: 'inherit',
