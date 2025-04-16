@@ -10,7 +10,14 @@ const rootDir = path.resolve(__dirname, '..');
 console.log('Starting Netlify build process...');
 
 try {
-  // Run Vite build
+  // Clear any TypeScript build cache that might cause issues
+  const tsBuildInfoPath = path.join(rootDir, 'tsconfig.tsbuildinfo');
+  if (fs.existsSync(tsBuildInfoPath)) {
+    console.log('Removing TypeScript build cache...');
+    fs.unlinkSync(tsBuildInfoPath);
+  }
+  
+  // Run Vite build without TypeScript build mode
   console.log('Building with Vite...');
   execSync('npx vite build', { 
     stdio: 'inherit',
