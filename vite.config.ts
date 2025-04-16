@@ -10,8 +10,9 @@ const isNetlify = process.env.NETLIFY === 'true';
 const handleNativeRollupPlugin = {
   name: 'handle-native-rollup',
   resolveId(id: string) {
-    // If trying to resolve these modules, return a virtual module
-    if (id.includes('@rollup/rollup-linux-x64-gnu') || id.includes('@rollup/rollup-linux-x64-musl')) {
+    // Handle all platform-specific Rollup modules
+    if (id.includes('@rollup/rollup-') && 
+        (id.includes('-gnu') || id.includes('-musl') || id.includes('-msvc') || id.includes('-darwin'))) {
       console.log(`Creating virtual module for ${id}`);
       return '\0virtual:' + id;
     }
@@ -19,7 +20,7 @@ const handleNativeRollupPlugin = {
   },
   load(id: string) {
     // Return empty module for native modules if they can't be loaded
-    if (id.startsWith('\0virtual:@rollup/rollup-linux-')) {
+    if (id.startsWith('\0virtual:@rollup/rollup-')) {
       console.log(`Providing empty module for ${id}`);
       return 'export default {};';
     }
@@ -87,7 +88,9 @@ export default defineConfig({
   optimizeDeps: {
     exclude: [
       '@rollup/rollup-linux-x64-gnu',
-      '@rollup/rollup-linux-x64-musl'
+      '@rollup/rollup-linux-x64-musl',
+      '@rollup/rollup-win32-x64-msvc',
+      '@rollup/rollup-darwin-x64'
     ]
   },
   server: {
@@ -101,7 +104,7 @@ export default defineConfig({
       external: [],
       onwarn(warning, warn) {
         // Ignore warnings about missing rollup dependencies
-        if (warning.code === 'MISSING_EXPORT' && warning.message.includes('@rollup/rollup-linux')) {
+        if (warning.code === 'MISSING_EXPORT' && warning.message.includes('@rollup/rollup-')) {
           return;
         }
         warn(warning);
