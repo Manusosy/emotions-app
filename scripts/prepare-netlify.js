@@ -1,4 +1,3 @@
-
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -21,51 +20,65 @@ try {
     console.log('Removing old dist directory...');
     fs.rmSync(path.join(rootDir, 'dist'), { recursive: true, force: true });
   }
-  
-  // Clean up ALL TypeScript cache files
-  console.log('Cleaning up TypeScript build artifacts...');
-  
-  // Remove tsconfig.tsbuildinfo
-  const tsBuildInfoPath = path.join(rootDir, 'tsconfig.tsbuildinfo');
-  if (fs.existsSync(tsBuildInfoPath)) {
-    console.log('Removing TypeScript build info...');
-    fs.unlinkSync(tsBuildInfoPath);
-  }
-  
-  // Also check for other TypeScript cache files
-  const cachePaths = [
-    path.join(rootDir, '.tsbuildinfo'),
-    path.join(rootDir, 'src', '.tsbuildinfo'),
-    path.join(rootDir, 'node_modules', '.cache', 'typescript')
-  ];
-  
-  cachePaths.forEach(cachePath => {
-    if (fs.existsSync(cachePath)) {
-      console.log(`Removing TypeScript cache at ${cachePath}...`);
-      if (fs.statSync(cachePath).isDirectory()) {
-        fs.rmSync(cachePath, { recursive: true, force: true });
-      } else {
-        fs.unlinkSync(cachePath);
-      }
-    }
-  });
 } catch (error) {
   console.error('Error cleaning directories:', error);
 }
 
-// Copy index-netlify.html to index.html if it exists
+// Make sure index.html exists and is valid
 try {
-  const netlifyIndexPath = path.join(rootDir, 'index-netlify.html');
   const indexPath = path.join(rootDir, 'index.html');
   
-  if (fs.existsSync(netlifyIndexPath)) {
-    console.log('Copying index-netlify.html to index.html...');
-    fs.copyFileSync(netlifyIndexPath, indexPath);
+  // Check for existing index.html
+  if (!fs.existsSync(indexPath)) {
+    console.log('index.html not found, creating a default one...');
+    // Create a basic index.html if none exists
+    const defaultHTML = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Emotions App</title>
+    <meta name="description" content="Track and manage your emotions with our emotional wellness platform" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>`;
+    fs.writeFileSync(indexPath, defaultHTML);
+    console.log('Created default index.html');
   } else {
-    console.log('index-netlify.html not found, skipping copy...');
+    console.log('Existing index.html found');
+    // Validate HTML file
+    try {
+      const content = fs.readFileSync(indexPath, 'utf8');
+      if (!content.includes('<!doctype html>') || !content.includes('<div id="root"></div>')) {
+        console.log('index.html appears invalid, replacing with a default one...');
+        // Replace with a simple valid HTML
+        const defaultHTML = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Emotions App</title>
+    <meta name="description" content="Track and manage your emotions with our emotional wellness platform" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>`;
+        fs.writeFileSync(indexPath, defaultHTML);
+        console.log('Replaced index.html with a valid one');
+      }
+    } catch (e) {
+      console.error('Error validating HTML:', e);
+    }
   }
 } catch (error) {
-  console.error('Error copying index file:', error);
+  console.error('Error handling index.html:', error);
 }
 
 // Replace problematic files with our clean versions
@@ -205,4 +218,4 @@ export default { Root, Item };`
   console.error(error.stack);
 }
 
-console.log('Netlify build preparation completed!');
+console.log('Netlify build preparation completed.');

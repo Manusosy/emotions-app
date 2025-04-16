@@ -1,5 +1,5 @@
 [build]
-  command = "npm ci && npm run build:netlify"
+  command = "NODE_ENV=production npm ci && npm run build:netlify"
   publish = "dist"
   ignore = "git diff --quiet HEAD^ HEAD -- . ':(exclude)src/components/ui/toggle.tsx' ':(exclude)src/components/ui/toggle-group.tsx'"
 
@@ -37,6 +37,10 @@
   SKIP_INSTALL_DEPS = "false"
   # Setting compiler options directly to avoid conflicts
   TS_NODE_COMPILER_OPTIONS = "{\"module\":\"commonjs\",\"target\":\"es2019\",\"noEmit\":false}"
+  # Vite specific environment variables
+  VITE_BUILD_TARGET = "es2019"
+  VITE_DROP_CONSOLE = "true"
+  VITE_BUILD_MINIFY = "terser"
 
 [functions]
   node_bundler = "esbuild"
