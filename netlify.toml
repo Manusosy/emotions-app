@@ -35,6 +35,8 @@
   VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVrcGlxaWF0Zndvem1lcGtnYmJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk2OTc3MzYsImV4cCI6MjA1NTI3MzczNn0.qPD707Lp5FiAjlQwfC1bbG-O2WuNUe_ZYRjox6Dmb-Y"
   # We'll install necessary dependencies in the build script
   SKIP_INSTALL_DEPS = "false"
+  # Setting compiler options directly to avoid conflicts
+  TS_NODE_COMPILER_OPTIONS = "{\"module\":\"commonjs\",\"target\":\"es2019\",\"noEmit\":false}"
 
 [functions]
   node_bundler = "esbuild"
