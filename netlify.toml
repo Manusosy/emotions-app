@@ -43,5 +43,6 @@
 [[plugins]]
   package = "netlify-plugin-inline-functions-env"
   [plugins.inputs]
-    buildDir = "dist"
-    functionsDir = ".netlify/functions-internal"
+    verbose = true
+    include = ["VITE_*", "NODE_*", "NPM_*"]
+    exclude = ["AWS_*", "GITHUB_*"]
