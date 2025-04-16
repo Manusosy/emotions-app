@@ -1,7 +1,7 @@
-
 [build]
-  command = "node scripts/update-package-scripts.js && node scripts/install-dependencies.js && node scripts/fix-netlify-toggle.js && npm run build:netlify"
+  command = "npm run build:netlify"
   publish = "dist"
+  functions = ".netlify/functions-internal"
 
 [[redirects]]
   from = "/*"
@@ -36,11 +36,12 @@
   VITE_USE_FALLBACKS = "true"
 
 [functions]
+  directory = ".netlify/functions-internal"
   node_bundler = "esbuild"
-
-# Direct Netlify build commands
-[build.lifecycle]
-  onPreBuild = "node scripts/install-dependencies.js && node scripts/fix-netlify-toggle.js"
+  included_files = ["src/functions/**"]
 
 [[plugins]]
   package = "netlify-plugin-inline-functions-env"
+  [plugins.inputs]
+    buildDir = "dist"
+    functionsDir = ".netlify/functions-internal"
