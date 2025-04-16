@@ -45,3 +45,6 @@ export default {
   defineConfig,
   rollup
 };
+
+// Fallback module for Rollup native dependencies
+module.exports = {};
