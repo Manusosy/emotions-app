@@ -1,3 +1,4 @@
+
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -118,4 +119,4 @@ try {
   console.error('Error replacing component files:', error);
 }
 
-console.log('Netlify build preparation completed.'); 
+console.log('Netlify build preparation completed!');
