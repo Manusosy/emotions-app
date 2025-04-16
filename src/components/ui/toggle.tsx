@@ -24,43 +24,43 @@ const toggleVariants = cva(
   }
 )
 
-// Simple toggle component using a button instead of Radix UI
-const Toggle = React.forwardRef<
-  HTMLButtonElement,
-  React.ButtonHTMLAttributes<HTMLButtonElement> &
-    VariantProps<typeof toggleVariants> & {
-      pressed?: boolean;
-      onPressedChange?: (pressed: boolean) => void;
+interface ToggleProps extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+  VariantProps<typeof toggleVariants> {
+  pressed?: boolean
+  onPressedChange?: (pressed: boolean) => void
+}
+
+const Toggle = React.forwardRef<HTMLButtonElement, ToggleProps>(
+  ({ className, variant, size, pressed, onPressedChange, ...props }, ref) => {
+    const [isPressed, setIsPressed] = React.useState(pressed || false)
+
+    React.useEffect(() => {
+      if (pressed !== undefined) {
+        setIsPressed(pressed)
+      }
+    }, [pressed])
+
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+      const newPressed = !isPressed
+      setIsPressed(newPressed)
+      onPressedChange?.(newPressed)
+      props.onClick?.(e)
     }
->(({ className, variant, size, pressed, onPressedChange, ...props }, ref) => {
-  const [isPressed, setIsPressed] = React.useState(pressed || false);
 
-  React.useEffect(() => {
-    if (pressed !== undefined) {
-      setIsPressed(pressed);
-    }
-  }, [pressed]);
+    return (
+      <button
+        ref={ref}
+        type="button"
+        aria-pressed={isPressed}
+        data-state={isPressed ? "on" : "off"}
+        className={cn(toggleVariants({ variant, size, className }))}
+        onClick={handleClick}
+        {...props}
+      />
+    )
+  }
+)
 
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const newPressed = !isPressed;
-    setIsPressed(newPressed);
-    onPressedChange?.(newPressed);
-    props.onClick?.(e);
-  };
+Toggle.displayName = "Toggle"
 
-  return (
-    <button
-      ref={ref}
-      type="button"
-      aria-pressed={isPressed}
-      data-state={isPressed ? "on" : "off"}
-      className={cn(toggleVariants({ variant, size, className }))}
-      onClick={handleClick}
-      {...props}
-    />
-  );
-});
-
-Toggle.displayName = "Toggle";
-
-export { Toggle, toggleVariants }
+export { Toggle, toggleVariants, type ToggleProps }
