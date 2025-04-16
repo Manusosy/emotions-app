@@ -1,5 +1,5 @@
 [build]
-  command = "cp -f src/components/ui/pure-toggle.tsx src/components/ui/toggle.tsx && cp -f src/components/ui/pure-toggle-group.tsx src/components/ui/toggle-group.tsx && sed -i 's|from \"@/components/ui/pure-toggle\"|from \"@/components/ui/toggle\"|g' src/components/ui/toggle-group.tsx && npm ci && npm run build"
+  command = "node scripts/prepare-netlify.js && npm ci && npm run build"
   publish = "dist"
 
 [[redirects]]
