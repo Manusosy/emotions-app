@@ -8,26 +8,32 @@ import { componentTagger } from "lovable-tagger";
 // Determine if building for Netlify
 const isNetlify = process.env.NETLIFY === 'true';
 
-// Handle missing Rollup binaries by creating a plugin
+// Enhanced handling of missing Rollup binaries
 const handleNativeRollupPlugin = {
   name: 'handle-native-rollup',
   resolveId(id: string) {
-    // If trying to resolve these modules, return a virtual module
-    if (id.includes('@rollup/rollup-linux-x64-gnu') || id.includes('@rollup/rollup-linux-x64-musl')) {
+    // For any Rollup platform-specific module
+    if (id.includes('@rollup/rollup-')) {
       console.log(`Creating virtual module for ${id}`);
       return '\0virtual:' + id;
     }
     return null;
   },
   load(id: string) {
-    // Return empty module for native modules if they can't be loaded
-    if (id.startsWith('\0virtual:@rollup/rollup-linux-')) {
+    // Return empty module for any Rollup platform-specific module
+    if (id.startsWith('\0virtual:@rollup/rollup-')) {
       console.log(`Providing empty module for ${id}`);
       return 'export default {};';
     }
     return null;
   }
 };
+
+// Load the local fallback module for debugging
+const rollupFallbackPath = path.resolve(__dirname, 'src/rollup-fallback.js');
+if (!fs.existsSync(rollupFallbackPath)) {
+  console.warn('Rollup fallback module not found at ' + rollupFallbackPath);
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -55,7 +61,7 @@ export default defineConfig(({ mode }) => ({
         return null;
       }
     },
-    // Handle native Rollup modules
+    // Enhanced Rollup native module handler
     handleNativeRollupPlugin,
     // Use index-netlify.html for Netlify builds if it exists
     {
@@ -85,13 +91,31 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // Add fallback for Rollup native modules
+      '@rollup/rollup-linux-x64-gnu': path.resolve(__dirname, 'src/rollup-fallback.js'),
+      '@rollup/rollup-linux-x64-musl': path.resolve(__dirname, 'src/rollup-fallback.js'),
+      '@rollup/rollup-win32-x64-msvc': path.resolve(__dirname, 'src/rollup-fallback.js'),
+      '@rollup/rollup-darwin-x64': path.resolve(__dirname, 'src/rollup-fallback.js')
     }
   },
   optimizeDeps: {
     exclude: [
       '@rollup/rollup-linux-x64-gnu',
-      '@rollup/rollup-linux-x64-musl'
-    ]
+      '@rollup/rollup-linux-x64-musl',
+      '@rollup/rollup-win32-x64-msvc',
+      '@rollup/rollup-darwin-x64'
+    ],
+    esbuildOptions: {
+      // Prevent esbuild from attempting to bundle native modules
+      plugins: [{
+        name: 'ignore-native-modules',
+        setup(build) {
+          build.onResolve({ filter: /@rollup\/rollup-.*/ }, args => {
+            return { path: rollupFallbackPath, external: false };
+          });
+        }
+      }]
+    }
   },
   server: {
     port: 8080,
@@ -104,7 +128,7 @@ export default defineConfig(({ mode }) => ({
       external: [],
       onwarn(warning, warn) {
         // Ignore warnings about missing rollup dependencies
-        if (warning.code === 'MISSING_EXPORT' && warning.message.includes('@rollup/rollup-linux')) {
+        if (warning.code === 'MISSING_EXPORT' && warning.message.includes('@rollup/rollup-')) {
           return;
         }
         warn(warning);
