@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build:netlify"
+  command = "npm install --no-save @rollup/rollup-linux-x64-gnu@4.9.1 @rollup/rollup-linux-x64-musl@4.9.1 && npm run build:netlify"
   publish = "dist"
 
 [[redirects]]
