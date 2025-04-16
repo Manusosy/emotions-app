@@ -34,28 +34,88 @@ try {
   console.error('Error copying index file:', error);
 }
 
-// Replace imports of @radix-ui components in toggle.tsx and toggle-group.tsx with custom implementations
+// Replace problematic files with our clean versions
 try {
-  const filesToCheck = [
-    path.join(rootDir, 'src', 'components', 'ui', 'toggle.tsx'),
-    path.join(rootDir, 'src', 'components', 'ui', 'toggle-group.tsx')
+  // List of files to replace with clean versions
+  const replacements = [
+    {
+      source: path.join(rootDir, 'src', 'components', 'ui', 'pure-toggle.tsx'),
+      target: path.join(rootDir, 'src', 'components', 'ui', 'toggle.tsx')
+    },
+    {
+      source: path.join(rootDir, 'src', 'components', 'ui', 'pure-toggle-group.tsx'),
+      target: path.join(rootDir, 'src', 'components', 'ui', 'toggle-group.tsx')
+    }
   ];
   
-  filesToCheck.forEach(filePath => {
-    if (fs.existsSync(filePath)) {
-      console.log(`Checking imports in ${filePath}...`);
-      let content = fs.readFileSync(filePath, 'utf8');
+  replacements.forEach(({ source, target }) => {
+    if (fs.existsSync(source) && fs.existsSync(target)) {
+      console.log(`Replacing ${target} with ${source}...`);
+      const sourceContent = fs.readFileSync(source, 'utf8');
       
-      // Replace Radix UI imports with our custom ones
-      content = content.replace(/import\s+\*\s+as\s+TogglePrimitive\s+from\s+["']@radix-ui\/react-toggle["'];?/g, '');
-      content = content.replace(/import\s+\*\s+as\s+ToggleGroupPrimitive\s+from\s+["']@radix-ui\/react-toggle-group["'];?/g, '');
+      // For toggle-group.tsx, update the import path
+      let modifiedContent = sourceContent;
+      if (target.includes('toggle-group.tsx')) {
+        modifiedContent = sourceContent.replace(
+          /from\s+["']@\/components\/ui\/pure-toggle["']/g, 
+          'from "@/components/ui/toggle"'
+        );
+      }
       
-      // Write the modified content back
-      fs.writeFileSync(filePath, content);
+      fs.writeFileSync(target, modifiedContent);
     }
   });
+  
+  // Create mock modules for Radix UI packages
+  const mockDir = path.join(rootDir, 'node_modules', '@radix-ui');
+  
+  // Create base directories if they don't exist
+  if (!fs.existsSync(mockDir)) {
+    fs.mkdirSync(mockDir, { recursive: true });
+  }
+  
+  const mockToggleDir = path.join(mockDir, 'react-toggle');
+  if (!fs.existsSync(mockToggleDir)) {
+    fs.mkdirSync(mockToggleDir, { recursive: true });
+  }
+  
+  const mockToggleGroupDir = path.join(mockDir, 'react-toggle-group');
+  if (!fs.existsSync(mockToggleGroupDir)) {
+    fs.mkdirSync(mockToggleGroupDir, { recursive: true });
+  }
+  
+  // Create package.json files
+  fs.writeFileSync(
+    path.join(mockToggleDir, 'package.json'),
+    JSON.stringify({
+      name: "@radix-ui/react-toggle",
+      version: "1.0.0",
+      main: "index.js"
+    }, null, 2)
+  );
+  
+  fs.writeFileSync(
+    path.join(mockToggleGroupDir, 'package.json'),
+    JSON.stringify({
+      name: "@radix-ui/react-toggle-group",
+      version: "1.0.0",
+      main: "index.js"
+    }, null, 2)
+  );
+  
+  // Create index.js files that export nothing
+  fs.writeFileSync(
+    path.join(mockToggleDir, 'index.js'),
+    "export default {};"
+  );
+  
+  fs.writeFileSync(
+    path.join(mockToggleGroupDir, 'index.js'),
+    "export default {};"
+  );
+  
 } catch (error) {
-  console.error('Error processing component files:', error);
+  console.error('Error replacing component files:', error);
 }
 
 console.log('Netlify build preparation completed.'); 

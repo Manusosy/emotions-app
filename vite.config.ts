@@ -10,6 +10,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@radix-ui/react-toggle': path.resolve(__dirname, './src/components/ui/pure-toggle'),
+      '@radix-ui/react-toggle-group': path.resolve(__dirname, './src/components/ui/pure-toggle-group'),
     },
   },
   server: {

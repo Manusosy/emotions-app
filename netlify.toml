@@ -1,5 +1,5 @@
 [build]
-  command = "CI=false npm run build:netlify"
+  command = "CI=false npm ci --omit=dev && npm run build:netlify"
   publish = "dist"
 
 [[redirects]]
@@ -27,10 +27,12 @@
     """
 
 [build.environment]
-  NPM_FLAGS = "--legacy-peer-deps"
+  NPM_FLAGS = "--legacy-peer-deps --no-optional"
   NODE_VERSION = "18.18.0"
   NPM_VERSION = "9.6.0"
   VITE_SUPABASE_URL = "https://ekpiqiatfwozmepkgbbe.supabase.co"
   VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVrcGlxaWF0Zndvem1lcGtnYmJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk2OTc3MzYsImV4cCI6MjA1NTI3MzczNn0.qPD707Lp5FiAjlQwfC1bbG-O2WuNUe_ZYRjox6Dmb-Y"
   # Force SWC to use optimized binaries
   SWCRC = "true"
+  # Skip installing platform-specific binaries
+  SKIP_INSTALL_DEPS = "true"
