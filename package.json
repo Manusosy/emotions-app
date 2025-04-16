@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node -e \"try { require('@rollup/rollup-linux-x64-gnu'); require('@swc/core-linux-x64-gnu'); } catch(e) { console.log('Installing Linux binaries'); require('child_process').execSync('npm install --no-save @rollup/rollup-linux-x64-gnu @swc/core-linux-x64-gnu @swc/core-linux-x64-musl') }\"",
     "build": "vite build",
-    "build:netlify": "npm install --no-save @rollup/rollup-linux-x64-gnu @swc/core-linux-x64-gnu @swc/core-linux-x64-musl && vite build",
+    "build:netlify": "rm -rf node_modules/.vite dist && npm install --no-save @rollup/rollup-linux-x64-gnu @swc/core-linux-x64-gnu @swc/core-linux-x64-musl && vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",

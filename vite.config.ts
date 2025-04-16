@@ -1,4 +1,3 @@
-
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 import path from 'path'
@@ -21,14 +20,18 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     sourcemap: true,
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 1500,
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
-          ui: ['@radix-ui/react-dialog', '@radix-ui/react-toast']
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-avatar', '@radix-ui/react-checkbox', '@radix-ui/react-label', '@radix-ui/react-popover']
         }
       }
+    },
+    // Ensure SWC is correctly configured
+    commonjsOptions: {
+      transformMixedEsModules: true,
     }
   },
   define: {
