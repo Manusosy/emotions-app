@@ -1,5 +1,6 @@
+
 [build]
-  command = "CI=false npm ci --omit=dev && npm run build:netlify"
+  command = "CI=false npm ci --omit=dev && npm run build"
   publish = "dist"
 
 [[redirects]]
