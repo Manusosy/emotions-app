@@ -11,15 +11,15 @@ const handleNativeRollupPlugin = {
   name: 'handle-native-rollup',
   resolveId(id: string) {
     // If trying to resolve these modules, return a virtual module
-    if (id.includes('@rollup/rollup-') && id.includes('-gnu')) {
+    if (id.includes('@rollup/rollup-linux-x64-gnu') || id.includes('@rollup/rollup-linux-x64-musl')) {
       console.log(`Creating virtual module for ${id}`);
-      return id;
+      return '\0virtual:' + id;
     }
     return null;
   },
   load(id: string) {
     // Return empty module for native modules if they can't be loaded
-    if (id.includes('@rollup/rollup-') && id.includes('-gnu')) {
+    if (id.startsWith('\0virtual:@rollup/rollup-linux-')) {
       console.log(`Providing empty module for ${id}`);
       return 'export default {};';
     }
@@ -82,7 +82,13 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-    },
+    }
+  },
+  optimizeDeps: {
+    exclude: [
+      '@rollup/rollup-linux-x64-gnu',
+      '@rollup/rollup-linux-x64-musl'
+    ]
   },
   server: {
     port: 8080,
@@ -92,13 +98,14 @@ export default defineConfig({
     sourcemap: true,
     minify: 'esbuild',
     rollupOptions: {
-      // Don't externalize platform-specific dependencies
-      // This ensures they're properly bundled or ignored
-      external: [
-        // Don't externalize these, they should be installed directly
-        // '@rollup/rollup-linux-x64-gnu',
-        // '@rollup/rollup-win32-x64-msvc'
-      ]
+      external: [],
+      onwarn(warning, warn) {
+        // Ignore warnings about missing rollup dependencies
+        if (warning.code === 'MISSING_EXPORT' && warning.message.includes('@rollup/rollup-linux')) {
+          return;
+        }
+        warn(warning);
+      }
     }
   },
   define: {
