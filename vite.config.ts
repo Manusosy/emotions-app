@@ -6,6 +6,27 @@ import fs from 'fs'
 // Determine if building for Netlify
 const isNetlify = process.env.NETLIFY === 'true';
 
+// Handle missing Rollup binaries by creating a plugin
+const handleNativeRollupPlugin = {
+  name: 'handle-native-rollup',
+  resolveId(id: string) {
+    // If trying to resolve these modules, return a virtual module
+    if (id.includes('@rollup/rollup-') && id.includes('-gnu')) {
+      console.log(`Creating virtual module for ${id}`);
+      return id;
+    }
+    return null;
+  },
+  load(id: string) {
+    // Return empty module for native modules if they can't be loaded
+    if (id.includes('@rollup/rollup-') && id.includes('-gnu')) {
+      console.log(`Providing empty module for ${id}`);
+      return 'export default {};';
+    }
+    return null;
+  }
+};
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
@@ -13,14 +34,14 @@ export default defineConfig({
     // Plugin to handle Radix UI toggle dependencies
     {
       name: 'replace-radix-toggle-imports',
-      resolveId(id) {
+      resolveId(id: string) {
         // Replace Radix UI toggle imports with virtual empty modules
         if (id === '@radix-ui/react-toggle' || id === '@radix-ui/react-toggle-group') {
           return id;
         }
         return null;
       },
-      load(id) {
+      load(id: string) {
         // Return empty module for Radix toggle imports
         if (id === '@radix-ui/react-toggle') {
           return 'export default {}; export const Root = () => null;';
@@ -31,10 +52,12 @@ export default defineConfig({
         return null;
       }
     },
+    // Handle native Rollup modules
+    handleNativeRollupPlugin,
     // Use index-netlify.html for Netlify builds if it exists
     {
       name: 'use-netlify-index',
-      config(config) {
+      config(config: any) {
         if (isNetlify || process.env.USE_NETLIFY_INDEX) {
           const netifyIndexPath = path.resolve(__dirname, 'index-netlify.html');
           if (fs.existsSync(netifyIndexPath)) {
@@ -69,10 +92,12 @@ export default defineConfig({
     sourcemap: true,
     minify: 'esbuild',
     rollupOptions: {
-      // Externalize dependencies that might cause platform-specific issues
+      // Don't externalize platform-specific dependencies
+      // This ensures they're properly bundled or ignored
       external: [
-        '@rollup/rollup-linux-x64-gnu',
-        '@rollup/rollup-win32-x64-msvc'
+        // Don't externalize these, they should be installed directly
+        // '@rollup/rollup-linux-x64-gnu',
+        // '@rollup/rollup-win32-x64-msvc'
       ]
     }
   },

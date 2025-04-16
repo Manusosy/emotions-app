@@ -3,11 +3,25 @@
 /**
  * This script prepares files for the Netlify build
  * by ensuring there are no Radix UI dependencies in toggle components
+ * and installing the required platform-specific Rollup dependencies
  */
 
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
+
+console.log('Starting prepare-netlify.js...');
+
+// First, install the platform-specific Rollup dependencies
+try {
+  console.log('Installing Linux-specific Rollup dependencies...');
+  execSync('npm install --no-save @rollup/rollup-linux-x64-gnu@4.9.1 @rollup/rollup-linux-x64-musl@4.9.1', { stdio: 'inherit' });
+  console.log('✅ Linux Rollup dependencies installed successfully!');
+} catch (error) {
+  console.error('Error installing Rollup dependencies:', error);
+  console.log('⚠️ Continuing despite installation errors...');
+}
 
 // Get the directory of the current module
 const __filename = fileURLToPath(import.meta.url);

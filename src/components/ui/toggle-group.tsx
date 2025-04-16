@@ -108,4 +108,4 @@ const ToggleGroupItem = React.forwardRef<HTMLButtonElement, ToggleGroupItemProps
 
 ToggleGroupItem.displayName = "ToggleGroupItem"
 
-export { ToggleGroup, ToggleGroupItem, type ToggleGroupProps, type ToggleGroupItemProps } 
+export { ToggleGroup, ToggleGroupItem, type ToggleGroupProps, type ToggleGroupItemProps }

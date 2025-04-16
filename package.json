@@ -7,13 +7,14 @@
     "dev": "node scripts/fix-radix.js && vite",
     "prebuild": "node scripts/fix-radix.js",
     "build": "vite build",
-    "build:netlify": "node scripts/prepare-netlify.js && vite build",
+    "build:netlify": "npm install --no-save @rollup/rollup-linux-x64-gnu@4.9.1 @rollup/rollup-linux-x64-musl@4.9.1 && node scripts/prepare-netlify.js && vite build --mode production",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "fix-radix": "node scripts/fix-radix.js",
     "install-platform-deps": "node scripts/install-platform-deps.js",
+    "postinstall": "node -e \"try { require('child_process').execSync('npm install --no-save @rollup/rollup-linux-x64-gnu@4.9.1 @rollup/rollup-linux-x64-musl@4.9.1', {stdio:'inherit'}); } catch(e) { console.log('Platform deps installation skipped'); }\"",
     "_note": "toggle and toggle-group components use pure React implementations, not Radix UI"
   },
   "dependencies": {
@@ -81,6 +82,8 @@
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "4.9.1",
-    "@rollup/rollup-win32-x64-msvc": "4.9.1"
+    "@rollup/rollup-linux-x64-musl": "4.9.1",
+    "@rollup/rollup-win32-x64-msvc": "4.9.1",
+    "@rollup/rollup-darwin-x64": "4.9.1"
   }
 }

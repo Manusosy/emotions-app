@@ -1,3 +1,10 @@
+#!/usr/bin/env node
+
+/**
+ * This script ensures the toggle components have no Radix UI dependencies
+ * by directly overwriting them with our pure implementations.
+ */
+
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -10,9 +17,11 @@ const __dirname = path.dirname(__filename);
 const componentsDir = path.join(__dirname, '..', 'src', 'components', 'ui');
 const togglePath = path.join(componentsDir, 'toggle.tsx');
 const toggleGroupPath = path.join(componentsDir, 'toggle-group.tsx');
-const distDir = path.join(__dirname, '..', 'dist');
 
-// Pure toggle implementation
+console.log('Starting fix-radix.js...');
+console.log('Fixing Radix UI dependencies in toggle components...');
+
+// Pure Toggle Implementation (without Radix UI)
 const pureToggle = `import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 
@@ -81,7 +90,7 @@ Toggle.displayName = "Toggle"
 
 export { Toggle, toggleVariants, type ToggleProps }`;
 
-// Pure toggle group implementation
+// Pure Toggle Group Implementation (without Radix UI)
 const pureToggleGroup = `import * as React from "react"
 import { type VariantProps } from "class-variance-authority"
 
@@ -194,86 +203,42 @@ ToggleGroupItem.displayName = "ToggleGroupItem"
 
 export { ToggleGroup, ToggleGroupItem, type ToggleGroupProps, type ToggleGroupItemProps }`;
 
-// Function to ensure directory exists
-function ensureDirectoryExists(dirPath) {
-  if (!fs.existsSync(dirPath)) {
-    console.log(`Creating directory: ${dirPath}`);
-    fs.mkdirSync(dirPath, { recursive: true });
-  }
-}
-
-// Function to verify file doesn't contain Radix UI imports
-function verifyNoRadixImports(filePath, fileLabel) {
-  try {
-    if (!fs.existsSync(filePath)) {
-      console.log(`⚠️ ${fileLabel} doesn't exist, skipping verification`);
-      return true;
-    }
-    
-    const content = fs.readFileSync(filePath, 'utf8');
-    const hasRadixImports = content.includes('@radix-ui/react-toggle') || 
-                            content.includes('@radix-ui/react-toggle-group') ||
-                            content.includes('TogglePrimitive') ||
-                            content.includes('ToggleGroupPrimitive');
-    
-    if (hasRadixImports) {
-      console.log(`❌ ${fileLabel} still contains Radix UI imports!`);
-      return false;
-    } else {
-      console.log(`✅ ${fileLabel} verified - no Radix UI imports`);
-      return true;
-    }
-  } catch (error) {
-    console.error(`Error verifying ${fileLabel}:`, error);
-    return false;
-  }
-}
-
-// Function to clean up the dist directory
-function cleanupDistDirectory() {
-  if (fs.existsSync(distDir)) {
-    console.log('Cleaning up dist directory...');
-    try {
-      fs.rmSync(distDir, { recursive: true });
-      console.log('✅ Dist directory cleaned successfully');
-    } catch (error) {
-      console.error('Error cleaning dist directory:', error);
-    }
-  } else {
-    console.log('Dist directory does not exist yet, skipping cleanup');
-  }
-}
-
-console.log('Starting fix-netlify-toggle.js...');
-console.log('Ensuring toggle components have no Radix UI dependencies...');
-
+// Write the fixed files
 try {
-  // Clean up dist directory to ensure no cached builds
-  cleanupDistDirectory();
-  
-  // Ensure the components/ui directory exists
-  ensureDirectoryExists(componentsDir);
-  
-  // Always replace the toggle files to be safe
-  console.log('Writing toggle.tsx...');
-  fs.writeFileSync(togglePath, pureToggle);
-  console.log('✅ toggle.tsx fixed!');
-  
-  console.log('Writing toggle-group.tsx...');
-  fs.writeFileSync(toggleGroupPath, pureToggleGroup);
-  console.log('✅ toggle-group.tsx fixed!');
-  
-  // Verify the files
-  const toggleVerified = verifyNoRadixImports(togglePath, 'toggle.tsx');
-  const toggleGroupVerified = verifyNoRadixImports(toggleGroupPath, 'toggle-group.tsx');
-  
-  if (toggleVerified && toggleGroupVerified) {
-    console.log('All files prepared successfully for Netlify build!');
-  } else {
-    throw new Error('Verification failed! Some files still contain Radix UI imports');
+  // Check if the current toggle has Radix UI imports
+  let currentToggle = '';
+  try {
+    currentToggle = fs.readFileSync(togglePath, 'utf8');
+  } catch (err) {
+    console.log(`Toggle file not found at ${togglePath}, creating new file...`);
   }
+
+  if (currentToggle.includes('@radix-ui/react-toggle') || !currentToggle) {
+    console.log('Fixing toggle.tsx (removing Radix UI dependencies)...');
+    fs.writeFileSync(togglePath, pureToggle);
+    console.log('✅ toggle.tsx fixed and saved!');
+  } else {
+    console.log('✅ toggle.tsx already looks good!');
+  }
+
+  // Check if the current toggle-group has Radix UI imports
+  let currentToggleGroup = '';
+  try {
+    currentToggleGroup = fs.readFileSync(toggleGroupPath, 'utf8');
+  } catch (err) {
+    console.log(`Toggle group file not found at ${toggleGroupPath}, creating new file...`);
+  }
+
+  if (currentToggleGroup.includes('@radix-ui/react-toggle-group') || !currentToggleGroup) {
+    console.log('Fixing toggle-group.tsx (removing Radix UI dependencies)...');
+    fs.writeFileSync(toggleGroupPath, pureToggleGroup);
+    console.log('✅ toggle-group.tsx fixed and saved!');
+  } else {
+    console.log('✅ toggle-group.tsx already looks good!');
+  }
+
+  console.log('All files fixed successfully!');
 } catch (error) {
-  console.error('Error preparing files:', error);
-  // Don't exit with error code to allow build to continue
-  console.log('Continuing with build despite preparation errors...');
-} 
+  console.error('Error fixing files:', error);
+  process.exit(1);
+}

@@ -2,7 +2,7 @@ import * as React from "react"
 import { type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
-import { toggleVariants, type ToggleProps } from "@/components/ui/pure-toggle"
+import { toggleVariants, type ToggleProps } from "@/components/ui/toggle"
 
 type ToggleGroupContextType = VariantProps<typeof toggleVariants> & {
   value?: string[]
@@ -108,4 +108,4 @@ const ToggleGroupItem = React.forwardRef<HTMLButtonElement, ToggleGroupItemProps
 
 ToggleGroupItem.displayName = "ToggleGroupItem"
 
-export { ToggleGroup, ToggleGroupItem, type ToggleGroupProps, type ToggleGroupItemProps } 
+export { ToggleGroup, ToggleGroupItem, type ToggleGroupProps, type ToggleGroupItemProps }

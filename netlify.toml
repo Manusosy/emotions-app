@@ -1,5 +1,5 @@
 [build]
-  command = "npm install && node scripts/install-platform-deps.js && node scripts/fix-netlify-toggle.js && npm run build:netlify"
+  command = "npm run build:netlify"
   publish = "dist"
 
 [[redirects]]
@@ -27,11 +27,33 @@
     """
 
 [build.environment]
-  NPM_FLAGS = "--legacy-peer-deps"
-  NODE_VERSION = "18.18.0"
+  NODE_VERSION = "20"
   NPM_VERSION = "9.6.0"
   VITE_SUPABASE_URL = "https://ekpiqiatfwozmepkgbbe.supabase.co"
   VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVrcGlxaWF0Zndvem1lcGtnYmJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk2OTc3MzYsImV4cCI6MjA1NTI3MzczNn0.qPD707Lp5FiAjlQwfC1bbG-O2WuNUe_ZYRjox6Dmb-Y"
 
 [functions]
   node_bundler = "esbuild"
+
+# Remove these plugins and add a direct onPreBuild command
+# [[plugins]]
+#   package = "@netlify/plugin-nextjs"
+
+# [[plugins]]
+#   package = "netlify-plugin-inline-functions-env"
+
+# [[plugins]]
+#   package = "netlify-plugin-inline-critical-css"
+
+# [[plugins]]
+#   package = "@netlify/plugin-functions"
+
+# [[plugins.inputs]]
+#   preBuild = "node scripts/install-platform-deps.js"
+
+# [build.commands]
+#   preBuild = "npm install --no-save @rollup/rollup-linux-x64-gnu@4.9.1"
+
+# Direct Netlify build commands
+[build.lifecycle]
+  onPreBuild = "npm install --no-save @rollup/rollup-linux-x64-gnu@4.9.1 @rollup/rollup-linux-x64-musl@4.9.1"

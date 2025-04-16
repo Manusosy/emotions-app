@@ -23,6 +23,21 @@ import {
   ArrowRight,
   Star
 } from "lucide-react"
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { toast } from "sonner";
 
 type HelpGroup = {
   id: string;
@@ -49,6 +64,10 @@ const HelpGroups = () => {
   const [showFilters, setShowFilters] = useState(false)
   const [hoveredGroupId, setHoveredGroupId] = useState<string | null>(null)
   const [expandedGroupId, setExpandedGroupId] = useState<string | null>(null)
+  const [selectedMeetingTypes, setSelectedMeetingTypes] = useState<string[]>([])
+  const [selectedAvailability, setSelectedAvailability] = useState<string[]>([])
+  const [topicFilter, setTopicFilter] = useState("")
+  const [showLeadershipDialog, setShowLeadershipDialog] = useState(false)
   
   const fadeInUp = {
     hidden: { opacity: 0, y: 20 },
@@ -197,6 +216,21 @@ const HelpGroups = () => {
         !group.description.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
     }
+    if (selectedMeetingTypes.length > 0 && !selectedMeetingTypes.includes(group.meetingType)) {
+      return false;
+    }
+    if (selectedAvailability.length > 0) {
+      if (selectedAvailability.includes("open") && !group.isOpen) {
+        return false;
+      }
+      if (selectedAvailability.includes("closed") && group.isOpen) {
+        return false;
+      }
+    }
+    if (topicFilter && !group.topics.some(topic => 
+      topic.toLowerCase().includes(topicFilter.toLowerCase()))) {
+      return false;
+    }
     return true;
   });
   
@@ -225,6 +259,67 @@ const HelpGroups = () => {
       case "hybrid": return "bg-purple-100 text-purple-700";
       default: return "bg-gray-100 text-gray-700";
     }
+  };
+
+  const toggleFilter = (type: string, category: 'meetingType' | 'availability') => {
+    if (category === 'meetingType') {
+      if (selectedMeetingTypes.includes(type)) {
+        setSelectedMeetingTypes(selectedMeetingTypes.filter(t => t !== type));
+      } else {
+        setSelectedMeetingTypes([...selectedMeetingTypes, type]);
+      }
+    } else if (category === 'availability') {
+      if (selectedAvailability.includes(type)) {
+        setSelectedAvailability(selectedAvailability.filter(t => t !== type));
+      } else {
+        setSelectedAvailability([...selectedAvailability, type]);
+      }
+    }
+  };
+
+  const resetFilters = () => {
+    setSelectedMeetingTypes([]);
+    setSelectedAvailability([]);
+    setTopicFilter("");
+    setShowFilters(false);
+  };
+
+  // Define schema for the leadership application form
+  const leadershipFormSchema = z.object({
+    name: z.string().min(2, { message: "Name must be at least 2 characters." }),
+    email: z.string().email({ message: "Please enter a valid email address." }),
+    phone: z.string().min(10, { message: "Please enter a valid phone number." }),
+    experience: z.string().min(20, { message: "Please describe your experience in at least 20 characters." }),
+    groupType: z.string().min(2, { message: "Please specify what type of group you want to lead." }),
+    motivation: z.string().min(20, { message: "Please describe your motivation in at least 20 characters." }),
+  });
+
+  // Create the form
+  const leadershipForm = useForm<z.infer<typeof leadershipFormSchema>>({
+    resolver: zodResolver(leadershipFormSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      experience: "",
+      groupType: "",
+      motivation: "",
+    },
+  });
+
+  // Handle form submission
+  const onLeadershipSubmit = (data: z.infer<typeof leadershipFormSchema>) => {
+    // In a real application, this would send the data to the server
+    console.log("Leadership application data:", data);
+    
+    // Show success toast
+    toast.success("Your application has been submitted! We'll contact you soon.");
+    
+    // Close the dialog
+    setShowLeadershipDialog(false);
+    
+    // Reset the form
+    leadershipForm.reset();
   };
 
   return (
@@ -310,21 +405,77 @@ const HelpGroups = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Meeting Type</label>
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline" className="cursor-pointer hover:bg-blue-50 hover:text-[#20c0f3] hover:border-[#20c0f3] px-3 py-1">Online</Badge>
-                  <Badge variant="outline" className="cursor-pointer hover:bg-blue-50 hover:text-[#20c0f3] hover:border-[#20c0f3] px-3 py-1">In-Person</Badge>
-                  <Badge variant="outline" className="cursor-pointer hover:bg-blue-50 hover:text-[#20c0f3] hover:border-[#20c0f3] px-3 py-1">Hybrid</Badge>
+                  <Badge 
+                    variant="outline" 
+                    className={`cursor-pointer px-3 py-1 ${
+                      selectedMeetingTypes.includes("online") 
+                        ? "bg-blue-50 text-[#20c0f3] border-[#20c0f3]" 
+                        : "hover:bg-blue-50 hover:text-[#20c0f3] hover:border-[#20c0f3]"
+                    }`}
+                    onClick={() => toggleFilter("online", 'meetingType')}
+                  >
+                    Online
+                  </Badge>
+                  <Badge 
+                    variant="outline" 
+                    className={`cursor-pointer px-3 py-1 ${
+                      selectedMeetingTypes.includes("in-person") 
+                        ? "bg-blue-50 text-[#20c0f3] border-[#20c0f3]" 
+                        : "hover:bg-blue-50 hover:text-[#20c0f3] hover:border-[#20c0f3]"
+                    }`}
+                    onClick={() => toggleFilter("in-person", 'meetingType')}
+                  >
+                    In-Person
+                  </Badge>
+                  <Badge 
+                    variant="outline" 
+                    className={`cursor-pointer px-3 py-1 ${
+                      selectedMeetingTypes.includes("hybrid") 
+                        ? "bg-blue-50 text-[#20c0f3] border-[#20c0f3]" 
+                        : "hover:bg-blue-50 hover:text-[#20c0f3] hover:border-[#20c0f3]"
+                    }`}
+                    onClick={() => toggleFilter("hybrid", 'meetingType')}
+                  >
+                    Hybrid
+                  </Badge>
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Availability</label>
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline" className="cursor-pointer hover:bg-blue-50 hover:text-[#20c0f3] hover:border-[#20c0f3] px-3 py-1">Open Groups</Badge>
-                  <Badge variant="outline" className="cursor-pointer hover:bg-blue-50 hover:text-[#20c0f3] hover:border-[#20c0f3] px-3 py-1">Closed Groups</Badge>
+                  <Badge 
+                    variant="outline" 
+                    className={`cursor-pointer px-3 py-1 ${
+                      selectedAvailability.includes("open") 
+                        ? "bg-blue-50 text-[#20c0f3] border-[#20c0f3]" 
+                        : "hover:bg-blue-50 hover:text-[#20c0f3] hover:border-[#20c0f3]"
+                    }`}
+                    onClick={() => toggleFilter("open", 'availability')}
+                  >
+                    Open Groups
+                  </Badge>
+                  <Badge 
+                    variant="outline" 
+                    className={`cursor-pointer px-3 py-1 ${
+                      selectedAvailability.includes("closed") 
+                        ? "bg-blue-50 text-[#20c0f3] border-[#20c0f3]" 
+                        : "hover:bg-blue-50 hover:text-[#20c0f3] hover:border-[#20c0f3]"
+                    }`}
+                    onClick={() => toggleFilter("closed", 'availability')}
+                  >
+                    Closed Groups
+                  </Badge>
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Topics</label>
-                <Input type="text" placeholder="Search topics..." className="text-sm bg-gray-50 border-0" />
+                <Input 
+                  type="text" 
+                  placeholder="Search topics..." 
+                  className="text-sm bg-gray-50 border-0"
+                  value={topicFilter}
+                  onChange={(e) => setTopicFilter(e.target.value)}
+                />
               </div>
             </div>
             <div className="mt-5 flex justify-end">
@@ -332,13 +483,14 @@ const HelpGroups = () => {
                 variant="outline" 
                 size="sm" 
                 className="mr-2 text-gray-500"
-                onClick={() => setShowFilters(false)}
+                onClick={resetFilters}
               >
                 Cancel
               </Button>
               <Button 
                 size="sm" 
                 className="bg-[#20c0f3] hover:bg-[#0bb2e8] text-white"
+                onClick={() => setShowFilters(false)}
               >
                 Apply Filters
               </Button>
@@ -518,7 +670,10 @@ const HelpGroups = () => {
                     </div>
                   </div>
                 </div>
-                <Button className="mt-8 bg-[#20c0f3] hover:bg-[#0bb2e8] text-white shadow-md">
+                <Button 
+                  className="mt-8 bg-[#20c0f3] hover:bg-[#0bb2e8] text-white shadow-md"
+                  onClick={() => setShowLeadershipDialog(true)}
+                >
                   Apply to Lead a Group <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -534,6 +689,124 @@ const HelpGroups = () => {
           </div>
         </div>
       </div>
+
+      {/* Add the dialog component at the end of the component (before the last closing tag) */}
+      <Dialog open={showLeadershipDialog} onOpenChange={setShowLeadershipDialog}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-gray-800">Apply to Lead a Support Group</DialogTitle>
+            <DialogDescription className="text-gray-600">
+              Complete this form to apply to become a support group leader. We'll review your application and contact you soon.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...leadershipForm}>
+            <form onSubmit={leadershipForm.handleSubmit(onLeadershipSubmit)} className="space-y-4">
+              <FormField
+                control={leadershipForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Full Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Your full name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={leadershipForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="Your email address" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={leadershipForm.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Your phone number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <FormField
+                control={leadershipForm.control}
+                name="groupType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>What type of group would you like to lead?</FormLabel>
+                    <FormControl>
+                      <Input placeholder="E.g., Anxiety support, Grief companions, etc." {...field} />
+                    </FormControl>
+                    <FormDescription>Specify the focus of your proposed support group</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={leadershipForm.control}
+                name="experience"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Relevant Experience</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Please describe your experience in mental health support, facilitation, or related fields..." 
+                        className="min-h-[100px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={leadershipForm.control}
+                name="motivation"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Motivation</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Why do you want to lead a support group? What do you hope to achieve?" 
+                        className="min-h-[100px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter className="mt-6">
+                <DialogClose asChild>
+                  <Button type="button" variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button type="submit" className="bg-[#20c0f3] hover:bg-[#0bb2e8] text-white">Submit Application</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

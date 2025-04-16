@@ -64,4 +64,4 @@ const Toggle = React.forwardRef<HTMLButtonElement, ToggleProps>(
 
 Toggle.displayName = "Toggle"
 
-export { Toggle, toggleVariants, type ToggleProps } 
+export { Toggle, toggleVariants, type ToggleProps }
