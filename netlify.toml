@@ -1,6 +1,6 @@
 
 [build]
-  command = "node scripts/install-dependencies.js && node scripts/fix-netlify-toggle.js && npm run build:netlify"
+  command = "node scripts/update-package-scripts.js && node scripts/install-dependencies.js && node scripts/fix-netlify-toggle.js && npm run build:netlify"
   publish = "dist"
 
 [[redirects]]
@@ -32,6 +32,8 @@
   NPM_VERSION = "9.6.0"
   VITE_SUPABASE_URL = "https://ekpiqiatfwozmepkgbbe.supabase.co"
   VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVrcGlxaWF0Zndvem1lcGtnYmJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk2OTc3MzYsImV4cCI6MjA1NTI3MzczNn0.qPD707Lp5FiAjlQwfC1bbG-O2WuNUe_ZYRjox6Dmb-Y"
+  SKIP_INSTALL_DEPS = "true"
+  VITE_USE_FALLBACKS = "true"
 
 [functions]
   node_bundler = "esbuild"
@@ -39,3 +41,6 @@
 # Direct Netlify build commands
 [build.lifecycle]
   onPreBuild = "node scripts/install-dependencies.js && node scripts/fix-netlify-toggle.js"
+
+[[plugins]]
+  package = "netlify-plugin-inline-functions-env"

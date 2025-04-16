@@ -8,7 +8,7 @@ import { componentTagger } from "lovable-tagger";
 // Determine if building for Netlify
 const isNetlify = process.env.NETLIFY === 'true';
 
-// Enhanced handling of missing Rollup binaries
+// More robust handling of missing Rollup binaries
 const handleNativeRollupPlugin = {
   name: 'handle-native-rollup',
   resolveId(id: string) {
@@ -29,7 +29,7 @@ const handleNativeRollupPlugin = {
   }
 };
 
-// Load the local fallback module for debugging
+// Check for fallback module
 const rollupFallbackPath = path.resolve(__dirname, 'src/rollup-fallback.js');
 if (!fs.existsSync(rollupFallbackPath)) {
   console.warn('Rollup fallback module not found at ' + rollupFallbackPath);
@@ -44,14 +44,12 @@ export default defineConfig(({ mode }) => ({
     {
       name: 'replace-radix-toggle-imports',
       resolveId(id: string) {
-        // Replace Radix UI toggle imports with virtual empty modules
         if (id === '@radix-ui/react-toggle' || id === '@radix-ui/react-toggle-group') {
           return id;
         }
         return null;
       },
       load(id: string) {
-        // Return empty module for Radix toggle imports
         if (id === '@radix-ui/react-toggle') {
           return 'export default {}; export const Root = () => null;';
         }
@@ -91,7 +89,7 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      // Add fallbacks for ALL Rollup native modules - more comprehensive
+      // More comprehensive fallbacks for ALL Rollup native modules
       '@rollup/rollup-linux-x64-gnu': path.resolve(__dirname, 'src/rollup-fallback.js'),
       '@rollup/rollup-linux-x64-musl': path.resolve(__dirname, 'src/rollup-fallback.js'),
       '@rollup/rollup-win32-x64-msvc': path.resolve(__dirname, 'src/rollup-fallback.js'),

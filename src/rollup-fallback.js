@@ -1,19 +1,34 @@
 
 /**
  * This file provides fallback exports for Rollup native modules
- * and is used by the Vite config when the native modules can't be loaded.
+ * that might be missing during build time.
  */
 
-// Export empty objects as fallback implementations for platform-specific modules
-export const rollupLinuxGnu = {};
-export const rollupLinuxMusl = {};
-export const rollupWin32Msvc = {};
-export const rollupDarwinX64 = {};
-export const rollupDarwinArm64 = {}; // Add ARM64 support for newer Macs
+// Export dummy objects for all potential platform-specific modules
+export const rollupLinuxGnu = {
+  name: 'rollup-linux-x64-gnu-fallback'
+};
+
+export const rollupLinuxMusl = {
+  name: 'rollup-linux-x64-musl-fallback'
+};
+
+export const rollupWin32Msvc = {
+  name: 'rollup-win32-x64-msvc-fallback'
+};
+
+export const rollupDarwinX64 = {
+  name: 'rollup-darwin-x64-fallback'
+};
+
+export const rollupDarwinArm64 = {
+  name: 'rollup-darwin-arm64-fallback'
+}; 
 
 // Log that we're using the fallback implementation
 console.log('Using Rollup fallbacks for platform-specific modules');
 
+// Default export for direct imports
 export default {
   rollupLinuxGnu,
   rollupLinuxMusl,
