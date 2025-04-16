@@ -10,8 +10,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@radix-ui/react-toggle': path.resolve(__dirname, './src/components/ui/pure-toggle'),
-      '@radix-ui/react-toggle-group': path.resolve(__dirname, './src/components/ui/pure-toggle-group'),
     },
   },
   server: {
@@ -20,32 +18,12 @@ export default defineConfig({
   },
   build: {
     sourcemap: true,
-    chunkSizeWarningLimit: 2000,
-    // Disable manual chunks completely to avoid dependency issues
-    rollupOptions: {
-      output: {
-        manualChunks: undefined
-      },
-      // Explicitly mark these packages as external to avoid bundling issues
-      external: [
-        '@radix-ui/react-toggle',
-        '@radix-ui/react-toggle-group'
-      ]
-    },
-    // Disable minification options that could cause issues
     minify: 'terser',
     terserOptions: {
       format: {
         comments: false
       }
-    },
-    // Don't process HTML directly
-    emptyOutDir: true,
-    // Configure HTML processing
-    assetsInlineLimit: 0,
-    cssCodeSplit: true,
-    modulePreload: true,
-    reportCompressedSize: false
+    }
   },
   define: {
     'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(process.env.VITE_SUPABASE_URL || "https://ekpiqiatfwozmepkgbbe.supabase.co"),

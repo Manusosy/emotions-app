@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "prebuild": "node -e \"if (process.platform !== 'win32') { try { require('@rollup/rollup-linux-x64-gnu'); } catch(e) { console.log('Installing Linux binaries'); require('child_process').execSync('npm install --no-save @rollup/rollup-linux-x64-gnu') } }\"",
+    "prebuild": "node scripts/check-radix.js",
     "build": "vite build",
-    "build:netlify": "node scripts/prepare-netlify.js && VITE_BUILD_MINIFY=terser vite build --mode production",
+    "build:netlify": "node scripts/check-radix.js && vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
