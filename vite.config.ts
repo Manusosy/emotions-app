@@ -60,13 +60,17 @@ export default defineConfig({
   build: {
     sourcemap: true,
     minify: 'esbuild',
+    outDir: 'dist',
     rollupOptions: {
-      onwarn(warning, warn) {
-        // Ignore warnings about missing rollup dependencies
-        if (warning.code === 'MISSING_EXPORT' && warning.message.includes('@rollup/rollup-')) {
-          return;
+      output: {
+        manualChunks: {
+          vendor: [
+            'react',
+            'react-dom',
+            'react-router-dom',
+            '@supabase/supabase-js'
+          ]
         }
-        warn(warning);
       }
     }
   },

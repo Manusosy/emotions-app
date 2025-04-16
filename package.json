@@ -5,16 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build --debug",
+    "build": "vite build --emptyOutDir",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "prebuild": "node scripts/install-platform-deps.js && node scripts/fix-radix.js",
-    "build:vercel": "vite build --debug",
+    "prebuild": "node scripts/fix-radix.js",
+    "build:vercel": "vite build --emptyOutDir",
     "build:dev": "vite build --mode development",
     "fix-radix": "node scripts/fix-radix.js",
-    "install-platform-deps": "node scripts/install-platform-deps.js",
-    "postinstall": "node scripts/install-platform-deps.js",
     "_note": "toggle and toggle-group components use pure React implementations, not Radix UI"
   },
   "dependencies": {
@@ -63,6 +61,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",
+    "@rollup/rollup-linux-x64-gnu": "4.6.1",
+    "@rollup/rollup-linux-x64-musl": "4.6.1",
     "@types/node": "^20.11.24",
     "@types/react": "^18.2.61",
     "@types/react-dom": "^18.2.19",
@@ -75,14 +75,10 @@
     "eslint-plugin-react-refresh": "^0.4.5",
     "globals": "^16.0.0",
     "postcss": "^8.4.35",
-    "rollup": "4.40.0",
+    "rollup": "^4.6.1",
     "tailwindcss": "^3.4.1",
     "terser": "^5.24.0",
     "typescript": "5.3.3",
     "vite": "5.4.18"
-  },
-  "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "4.40.0",
-    "@rollup/rollup-linux-x64-musl": "4.40.0"
   }
 }
