@@ -12,7 +12,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "fix-radix": "node scripts/fix-radix.js"
+    "fix-radix": "node scripts/fix-radix.js",
+    "install-platform-deps": "node scripts/install-platform-deps.js",
+    "_note": "toggle and toggle-group components use pure React implementations, not Radix UI"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
@@ -76,5 +78,9 @@
     "typescript": "5.3.3",
     "vite": "^6.2.2",
     "terser": "^5.24.0"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.9.1",
+    "@rollup/rollup-win32-x64-msvc": "4.9.1"
   }
 }

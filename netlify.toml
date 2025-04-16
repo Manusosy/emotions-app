@@ -1,5 +1,5 @@
 [build]
-  command = "node scripts/fix-netlify-toggle.js && npm run build:netlify"
+  command = "npm install && node scripts/install-platform-deps.js && node scripts/fix-netlify-toggle.js && npm run build:netlify"
   publish = "dist"
 
 [[redirects]]
