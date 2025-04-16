@@ -2,24 +2,24 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import fs from 'fs'
+import { componentTagger } from "lovable-tagger";
 
 // Determine if building for Netlify
 const isNetlify = process.env.NETLIFY === 'true';
 
-// Handle missing Rollup binaries by creating a plugin
+// More robust handling of missing Rollup binaries
 const handleNativeRollupPlugin = {
   name: 'handle-native-rollup',
   resolveId(id: string) {
-    // Handle all platform-specific Rollup modules
-    if (id.includes('@rollup/rollup-') && 
-        (id.includes('-gnu') || id.includes('-musl') || id.includes('-msvc') || id.includes('-darwin'))) {
+    // Handle any Rollup platform-specific module
+    if (id.includes('@rollup/rollup-')) {
       console.log(`Creating virtual module for ${id}`);
       return '\0virtual:' + id;
     }
     return null;
   },
   load(id: string) {
-    // Return empty module for native modules if they can't be loaded
+    // Return empty module for any Rollup platform-specific module
     if (id.startsWith('\0virtual:@rollup/rollup-')) {
       console.log(`Providing empty module for ${id}`);
       return 'export default {};';
@@ -28,22 +28,27 @@ const handleNativeRollupPlugin = {
   }
 };
 
+// Check for fallback module
+const rollupFallbackPath = path.resolve(__dirname, 'src/rollup-fallback.js');
+if (!fs.existsSync(rollupFallbackPath)) {
+  console.warn('Rollup fallback module not found at ' + rollupFallbackPath);
+}
+
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
+    mode === 'development' && componentTagger(),
     // Plugin to handle Radix UI toggle dependencies
     {
       name: 'replace-radix-toggle-imports',
       resolveId(id: string) {
-        // Replace Radix UI toggle imports with virtual empty modules
         if (id === '@radix-ui/react-toggle' || id === '@radix-ui/react-toggle-group') {
           return id;
         }
         return null;
       },
       load(id: string) {
-        // Return empty module for Radix toggle imports
         if (id === '@radix-ui/react-toggle') {
           return 'export default {}; export const Root = () => null;';
         }
@@ -53,7 +58,7 @@ export default defineConfig({
         return null;
       }
     },
-    // Handle native Rollup modules
+    // Enhanced Rollup native module handler
     handleNativeRollupPlugin,
     // Use index-netlify.html for Netlify builds if it exists
     {
@@ -79,10 +84,16 @@ export default defineConfig({
         return null;
       }
     }
-  ],
+  ].filter(Boolean),
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // More comprehensive fallbacks for ALL Rollup native modules
+      '@rollup/rollup-linux-x64-gnu': path.resolve(__dirname, 'src/rollup-fallback.js'),
+      '@rollup/rollup-linux-x64-musl': path.resolve(__dirname, 'src/rollup-fallback.js'),
+      '@rollup/rollup-win32-x64-msvc': path.resolve(__dirname, 'src/rollup-fallback.js'),
+      '@rollup/rollup-darwin-x64': path.resolve(__dirname, 'src/rollup-fallback.js'),
+      '@rollup/rollup-darwin-arm64': path.resolve(__dirname, 'src/rollup-fallback.js')
     }
   },
   optimizeDeps: {
@@ -90,8 +101,20 @@ export default defineConfig({
       '@rollup/rollup-linux-x64-gnu',
       '@rollup/rollup-linux-x64-musl',
       '@rollup/rollup-win32-x64-msvc',
-      '@rollup/rollup-darwin-x64'
-    ]
+      '@rollup/rollup-darwin-x64',
+      '@rollup/rollup-darwin-arm64'
+    ],
+    esbuildOptions: {
+      // Prevent esbuild from attempting to bundle native modules
+      plugins: [{
+        name: 'ignore-native-modules',
+        setup(build) {
+          build.onResolve({ filter: /@rollup\/rollup-.*/ }, args => {
+            return { path: rollupFallbackPath, external: false };
+          });
+        }
+      }]
+    }
   },
   server: {
     port: 8080,
@@ -115,4 +138,4 @@ export default defineConfig({
     'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(process.env.VITE_SUPABASE_URL || "https://ekpiqiatfwozmepkgbbe.supabase.co"),
     'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(process.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVrcGlxaWF0Zndvem1lcGtnYmJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk2OTc3MzYsImV4cCI6MjA1NTI3MzczNn0.qPD707Lp5FiAjlQwfC1bbG-O2WuNUe_ZYRjox6Dmb-Y")
   }
-})
+}));
