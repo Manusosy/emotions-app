@@ -62,16 +62,7 @@ The build output will be in the `dist` directory.
 
 ## Deployment
 
-This project can be deployed to any static hosting service like Netlify, Vercel, or GitHub Pages. The build command is `npm run build` and the publish directory is `dist`.
-
-### Deploying to Netlify
-
-1. Push your code to a Git repository
-2. Connect your repository to Netlify
-3. Configure the build settings:
-   - Build command: `npm run build`
-   - Publish directory: `dist`
-4. Deploy!
+This project can be deployed to any static hosting service. The build command is `npm run build` and the publish directory is `dist`.
 
 ## Project Structure
 
