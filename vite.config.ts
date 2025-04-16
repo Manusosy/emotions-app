@@ -12,7 +12,7 @@ const isNetlify = process.env.NETLIFY === 'true';
 const handleNativeRollupPlugin = {
   name: 'handle-native-rollup',
   resolveId(id: string) {
-    // For any Rollup platform-specific module
+    // Handle any Rollup platform-specific module
     if (id.includes('@rollup/rollup-')) {
       console.log(`Creating virtual module for ${id}`);
       return '\0virtual:' + id;
@@ -91,11 +91,12 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      // Add fallback for Rollup native modules
+      // Add fallbacks for ALL Rollup native modules - more comprehensive
       '@rollup/rollup-linux-x64-gnu': path.resolve(__dirname, 'src/rollup-fallback.js'),
       '@rollup/rollup-linux-x64-musl': path.resolve(__dirname, 'src/rollup-fallback.js'),
       '@rollup/rollup-win32-x64-msvc': path.resolve(__dirname, 'src/rollup-fallback.js'),
-      '@rollup/rollup-darwin-x64': path.resolve(__dirname, 'src/rollup-fallback.js')
+      '@rollup/rollup-darwin-x64': path.resolve(__dirname, 'src/rollup-fallback.js'),
+      '@rollup/rollup-darwin-arm64': path.resolve(__dirname, 'src/rollup-fallback.js')
     }
   },
   optimizeDeps: {
@@ -103,7 +104,8 @@ export default defineConfig(({ mode }) => ({
       '@rollup/rollup-linux-x64-gnu',
       '@rollup/rollup-linux-x64-musl',
       '@rollup/rollup-win32-x64-msvc',
-      '@rollup/rollup-darwin-x64'
+      '@rollup/rollup-darwin-x64',
+      '@rollup/rollup-darwin-arm64'
     ],
     esbuildOptions: {
       // Prevent esbuild from attempting to bundle native modules

@@ -1,5 +1,6 @@
+
 [build]
-  command = "npm install --no-save @rollup/rollup-linux-x64-gnu@4.9.1 @rollup/rollup-linux-x64-musl@4.9.1 && npm run build:netlify"
+  command = "node scripts/install-dependencies.js && node scripts/fix-netlify-toggle.js && npm run build:netlify"
   publish = "dist"
 
 [[redirects]]
@@ -15,7 +16,7 @@
     Cache-Control = "public, max-age=3600"
     Content-Security-Policy = """
       default-src 'self' https://*.supabase.co;
-      script-src 'self' 'unsafe-inline' 'unsafe-eval';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.gpteng.co;
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
       img-src 'self' data: blob: https://*;
       font-src 'self' https://fonts.gstatic.com;
@@ -35,25 +36,6 @@
 [functions]
   node_bundler = "esbuild"
 
-# Remove these plugins and add a direct onPreBuild command
-# [[plugins]]
-#   package = "@netlify/plugin-nextjs"
-
-# [[plugins]]
-#   package = "netlify-plugin-inline-functions-env"
-
-# [[plugins]]
-#   package = "netlify-plugin-inline-critical-css"
-
-# [[plugins]]
-#   package = "@netlify/plugin-functions"
-
-# [[plugins.inputs]]
-#   preBuild = "node scripts/install-platform-deps.js"
-
-# [build.commands]
-#   preBuild = "npm install --no-save @rollup/rollup-linux-x64-gnu@4.9.1"
-
 # Direct Netlify build commands
 [build.lifecycle]
-  onPreBuild = "npm install --no-save @rollup/rollup-linux-x64-gnu@4.9.1 @rollup/rollup-linux-x64-musl@4.9.1"
+  onPreBuild = "node scripts/install-dependencies.js && node scripts/fix-netlify-toggle.js"

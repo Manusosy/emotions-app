@@ -10,11 +10,35 @@ const rootDir = path.resolve(__dirname, '..');
 console.log('Starting Netlify build process...');
 
 try {
+  // First, ensure we have the platform-specific dependencies
+  console.log('Installing platform-specific dependencies for Netlify...');
+  try {
+    execSync('npm install --no-save @rollup/rollup-linux-x64-gnu@4.9.1 @rollup/rollup-linux-x64-musl@4.9.1', { 
+      stdio: 'inherit',
+      cwd: rootDir
+    });
+    console.log('✅ Platform-specific dependencies installed');
+  } catch (error) {
+    console.warn('⚠️ Could not install platform-specific dependencies, but continuing with fallbacks:', error.message);
+  }
+  
   // Clear any TypeScript build cache that might cause issues
   const tsBuildInfoPath = path.join(rootDir, 'tsconfig.tsbuildinfo');
   if (fs.existsSync(tsBuildInfoPath)) {
     console.log('Removing TypeScript build cache...');
     fs.unlinkSync(tsBuildInfoPath);
+  }
+  
+  // Ensure toggle components are properly set up
+  console.log('Fixing toggle components for Netlify...');
+  try {
+    execSync('node scripts/fix-radix.js', { 
+      stdio: 'inherit',
+      cwd: rootDir
+    });
+    console.log('✅ Toggle components fixed');
+  } catch (error) {
+    console.warn('⚠️ Could not fix toggle components, but continuing:', error.message);
   }
   
   // Copy fallback implementations for Rollup platform-specific modules
