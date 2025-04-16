@@ -1,80 +1,95 @@
 # Emotions App
 
-A modern web application built with React and Vite for tracking and managing emotions.
+A React application for tracking and visualizing emotions using React, TypeScript, and Supabase.
 
 ## Technologies Used
 
-- Vite
+- React 18
 - TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-- Supabase (for backend)
+- Vite
+- Supabase
+- TailwindCSS
+- React Router
+- React Query
+- React Hook Form
+- Zod
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js (v16 or higher)
-- npm (v7 or higher)
+- Node.js 16+
+- npm or yarn
 
 ### Installation
 
 1. Clone the repository:
-```sh
-git clone <YOUR_GIT_URL>
-```
-
-2. Navigate to the project directory:
-```sh
+```bash
+git clone https://github.com/yourusername/emotions-app.git
 cd emotions-app
 ```
 
-3. Install dependencies:
-```sh
+2. Install dependencies:
+```bash
 npm install
+# or
+yarn install
 ```
 
-4. Start the development server:
-```sh
-npm run dev
+3. Create a `.env` file in the root directory with your Supabase credentials:
+```
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-The application will be available at `http://localhost:8080`
-
-## Available Scripts
+### Available Scripts
 
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build locally
 - `npm run lint` - Run ESLint
-- `npm run typecheck` - Run TypeScript type checking
+- `npm run test` - Run tests
 
-## Building for Production
+## Production Build
 
 To create a production build:
 
-```sh
+```bash
 npm run build
 ```
 
-The build output will be in the `dist` directory.
+The build artifacts will be stored in the `dist/` directory.
 
 ## Deployment
 
-This project can be deployed to any static hosting service. The build command is `npm run build` and the publish directory is `dist`.
+The application can be deployed to any static hosting service that supports single-page applications (SPAs). Some popular options include:
+
+- Vercel
+- GitHub Pages
+- Firebase Hosting
+- AWS S3 + CloudFront
+
+Make sure to:
+1. Set up your environment variables in your hosting platform
+2. Configure your build command as `npm run build`
+3. Set the output directory as `dist`
+4. Configure redirects to handle client-side routing
 
 ## Project Structure
 
 ```
 emotions-app/
 ├── src/
-│   ├── components/    # Reusable UI components
-│   ├── lib/          # Utility functions and configurations
-│   ├── pages/        # Page components
-│   ├── styles/       # Global styles and Tailwind configuration
-│   └── App.tsx       # Root component
-├── public/           # Static assets
+│   ├── components/     # Reusable UI components
+│   ├── hooks/         # Custom React hooks
+│   ├── pages/         # Page components
+│   ├── services/      # API and external service integrations
+│   ├── types/         # TypeScript type definitions
+│   ├── utils/         # Utility functions
+│   ├── App.tsx        # Root component
+│   └── main.tsx       # Entry point
+├── public/            # Static assets
+├── tests/            # Test files
 └── vite.config.ts    # Vite configuration
 ```
 
@@ -85,3 +100,7 @@ emotions-app/
 3. Commit your changes (`git commit -m 'Add some amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License.
