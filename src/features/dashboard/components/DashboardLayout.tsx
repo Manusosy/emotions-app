@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -43,16 +42,8 @@ const patientNavigation = [
     ]
   },
   {
-    section: "Health",
-    items: [
-      { name: "M.Health Records", href: "/patient-dashboard/health-records", icon: FileText },
-      { name: "Medications", href: "/patient-dashboard/medications", icon: Shield },
-    ]
-  },
-  {
     section: "Personal",
     items: [
-      { name: "Therapists", href: "/patient-dashboard/therapists", icon: Users },
       { name: "Favorites", href: "/patient-dashboard/favorites", icon: Heart },
       { 
         name: "Profile", 

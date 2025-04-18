@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -117,6 +116,8 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       items: [
         { name: "Resources", href: "/ambassador-dashboard/resources", icon: FileText },
         { name: "Support Groups", href: "/ambassador-dashboard/groups", icon: BookOpen },
+        { name: "Reviews", href: "/ambassador-dashboard/reviews", icon: Heart },
+        { name: "Availability", href: "/ambassador-dashboard/availability", icon: Clock },
       ]
     },
     {

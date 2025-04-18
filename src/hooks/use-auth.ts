@@ -14,7 +14,6 @@ export const useAuth = () => {
   
   // Use a callback for getting dashboard URL for a role
   const getDashboardUrlForRole = useCallback((role: UserRole | null): string => {
-    console.log(`Getting dashboard URL for role: ${role}`);
     if (!role) return '/';
     
     switch (role) {
@@ -34,34 +33,34 @@ export const useAuth = () => {
     return getDashboardUrlForRole(userRole);
   }, [userRole, getDashboardUrlForRole]);
 
+  // This function handles state updates when auth changes
+  const handleAuthChange = useCallback((session: any) => {
+    if (!session) {
+      setUser(null);
+      setIsAuthenticated(false);
+      setUserRole(null);
+      return;
+    }
+    
+    setUser(session.user);
+    setIsAuthenticated(true);
+    
+    // Fetch user role from metadata
+    const role = session.user.user_metadata?.role || 'patient';
+    setUserRole(role as UserRole);
+  }, []);
+
   useEffect(() => {
-    console.log("Setting up auth state listener");
     let isMounted = true;
     
     // Set up auth state change listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log(`Auth state changed: ${event}`, session?.user?.id);
-        
         if (!isMounted) return;
         
-        if (event === 'SIGNED_IN' && session) {
-          setUser(session.user);
-          setIsAuthenticated(true);
-          
-          // Fetch user role from metadata
-          const role = session.user.user_metadata?.role || 'patient';
-          setUserRole(role as UserRole);
-          console.log(`User signed in with role: ${role}`);
-          
-          if (event !== 'TOKEN_REFRESHED') {
-            toast.success('Signed in successfully!');
-          }
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-          setIsAuthenticated(false);
-          setUserRole(null);
-          toast.info('Signed out successfully');
+        // Only process relevant auth events - ignore others to avoid interference
+        if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
+          handleAuthChange(session);
         }
         
         if (event !== 'TOKEN_REFRESHED') {
@@ -70,37 +69,23 @@ export const useAuth = () => {
       }
     );
 
-    // Then check for existing session
+    // Initial session check - only done once on component mount
     const checkSession = async () => {
       try {
-        console.log("Checking initial Supabase session...");
         setIsLoading(true);
         const { data, error } = await supabase.auth.getSession();
         
-        if (error) {
-          console.error('Error checking session:', error);
+        if (error || !data.session) {
           if (isMounted) setIsLoading(false);
           return;
         }
         
-        console.log("Initial session check result:", data.session?.user?.id);
-        
-        if (data.session) {
-          if (isMounted) {
-            setUser(data.session.user);
-            setIsAuthenticated(true);
-            
-            // Fetch user role from metadata
-            const role = data.session.user.user_metadata?.role || 'patient';
-            setUserRole(role as UserRole);
-            console.log(`User has existing session with role: ${role}`);
-          }
-        } else {
-          console.log("No authenticated user found");
+        if (isMounted) {
+          handleAuthChange(data.session);
+          setIsLoading(false);
         }
       } catch (error) {
         console.error('Session check error:', error);
-      } finally {
         if (isMounted) setIsLoading(false);
       }
     };
@@ -111,20 +96,16 @@ export const useAuth = () => {
     return () => {
       isMounted = false;
       subscription.unsubscribe();
-      console.log("Auth state listener cleaned up");
     };
-  }, []);
+  }, [handleAuthChange]);
 
   const logout = async () => {
     setIsAuthenticating(true);
     try {
       const { error } = await supabase.auth.signOut();
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
     } catch (error) {
       console.error('Logout error:', error);
-      toast.error('Failed to sign out.');
     } finally {
       setIsAuthenticating(false);
     }

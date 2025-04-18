@@ -7,6 +7,7 @@ import AuthLayout from "../components/AuthLayout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { Mail, Lock } from "lucide-react";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -118,42 +119,53 @@ export default function Login() {
       <form onSubmit={handleLogin} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="Enter your email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            disabled={redirecting || isLoading}
-          />
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              id="email"
+              type="email"
+              placeholder="Enter your email"
+              className="pl-10"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={redirecting || isLoading}
+            />
+          </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            type="password"
-            placeholder="Enter your password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            disabled={redirecting || isLoading}
-          />
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              id="password"
+              type="password"
+              placeholder="Enter your password"
+              className="pl-10"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={redirecting || isLoading}
+            />
+          </div>
         </div>
         <Button 
           type="submit" 
-          className="w-full" 
+          className="w-full mt-6" 
           disabled={isLoading || redirecting}
           variant="brand"
         >
           {isLoading ? "Logging in..." : redirecting ? "Redirecting..." : "Login"}
         </Button>
-        <p className="text-center text-sm text-gray-600">
-          Don't have an account?{" "}
-          <Link to="/signup" className="text-blue-600 hover:underline">
-            Sign up
+        
+        <div className="flex items-center justify-between mt-4">
+          <Link to="/signup" className="text-sm text-primary hover:underline">
+            Don't have an account? Sign up
           </Link>
-        </p>
+          <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+            Forgot password?
+          </Link>
+        </div>
       </form>
     </AuthLayout>
   );

@@ -1,19 +1,19 @@
-
 import { useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { OnboardingDialog } from './OnboardingDialog';
 
 export function AmbassadorOnboardingDialog() {
-  // Set initial state to false to disable the dialog
+  // Force the dialog to always be closed (disabled)
   const [open, setOpen] = useState(false);
   
-  // Function to handle dialog state
+  // Always return false to ensure dialog never opens
   const handleOpenChange = (isOpen: boolean) => {
-    setOpen(isOpen);
+    setOpen(false);
   };
 
+  // Return the dialog with forced closed state
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={false} onOpenChange={handleOpenChange}>
       <DialogContent className="p-0 border-0 max-w-none w-screen h-screen flex items-center justify-center">
         <OnboardingDialog />
       </DialogContent>

@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import MoodTracker from "@/features/mood-tracking/pages/MoodTracker";
 import Login from "@/features/auth/pages/Login";
 import Signup from "@/features/auth/pages/Signup";
+import ForgotPassword from "@/features/auth/pages/ForgotPassword";
+import ResetPassword from "@/features/auth/pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import JournalPage from "@/features/journal/pages/JournalPage";
 import Footer from "@/components/layout/Footer";
@@ -21,6 +23,7 @@ import PatientAppointmentsPage from "@/features/dashboard/pages/AppointmentsPage
 import FavoritesPage from "@/features/dashboard/pages/FavoritesPage";
 import Settings from "@/features/dashboard/pages/Settings";
 import Profile from "@/features/dashboard/pages/Profile";
+import DeleteAccount from "@/features/dashboard/pages/DeleteAccount";
 import { toast } from "sonner";
 import Navbar from "@/components/layout/Navbar";
 import ComingSoon from '@/components/ComingSoon';
@@ -36,6 +39,8 @@ import Contact from "./pages/Contact";
 import FAQs from "./pages/FAQs";
 import About from "./pages/About";
 import AmbassadorProfile from "@/features/ambassadors/pages/AmbassadorProfile";
+import ReviewsPage from "@/features/ambassadors/pages/ReviewsPage";
+import AvailabilityPage from "@/features/ambassadors/pages/AvailabilityPage";
 import './styles/App.css';
 
 // HomePage component that properly wraps the MoodTracker component
@@ -152,6 +157,8 @@ const AppContent = () => {
               <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/journal" element={<JournalPage />} />
               <Route path="/ambassadors" element={<Ambassadors />} />
               <Route path="/ambassadors/:id" element={<AmbassadorProfile />} />
@@ -239,6 +246,31 @@ const AppContent = () => {
                   <ResourcesPage />
                 </ProtectedRoute>
               } />
+              <Route path="/ambassador-dashboard/reviews" element={
+                <ProtectedRoute requiredRole="ambassador">
+                  <ReviewsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/ambassador-dashboard/availability" element={
+                <ProtectedRoute requiredRole="ambassador">
+                  <AvailabilityPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/ambassador-dashboard/profile" element={
+                <ProtectedRoute requiredRole="ambassador">
+                  <Profile />
+                </ProtectedRoute>
+              } />
+              <Route path="/ambassador-dashboard/settings" element={
+                <ProtectedRoute requiredRole="ambassador">
+                  <Settings />
+                </ProtectedRoute>
+              } />
+              <Route path="/ambassador-dashboard/settings/delete-account" element={
+                <ProtectedRoute requiredRole="ambassador">
+                  <DeleteAccount />
+                </ProtectedRoute>
+              } />
               
               <Route path="/patient-dashboard" element={
                 <ProtectedRoute requiredRole="patient">
@@ -255,9 +287,19 @@ const AppContent = () => {
                   <FavoritesPage />
                 </ProtectedRoute>
               } />
+              <Route path="/patient-dashboard/journal" element={
+                <ProtectedRoute requiredRole="patient">
+                  <JournalPage />
+                </ProtectedRoute>
+              } />
               <Route path="/patient-dashboard/settings" element={
                 <ProtectedRoute requiredRole="patient">
                   <Settings />
+                </ProtectedRoute>
+              } />
+              <Route path="/patient-dashboard/settings/delete-account" element={
+                <ProtectedRoute requiredRole="patient">
+                  <DeleteAccount />
                 </ProtectedRoute>
               } />
               <Route path="/patient-dashboard/profile" element={

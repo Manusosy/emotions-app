@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -58,12 +57,8 @@ export function OnboardingDialog() {
   });
 
   useEffect(() => {
-    // Set open to true after 5 seconds
-    const timer = setTimeout(() => {
-      setOpen(true);
-    }, 5000);
-
-    return () => clearTimeout(timer);
+    // Disabled - never show the dialog
+    return () => {}; 
   }, []);
 
   useEffect(() => {
@@ -138,7 +133,7 @@ export function OnboardingDialog() {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={false} onOpenChange={() => setOpen(false)}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">
