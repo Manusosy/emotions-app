@@ -51,12 +51,16 @@ const JournalEditor = ({ onBackToWelcome }: { onBackToWelcome: () => void }) => 
   const [showPrompts, setShowPrompts] = useState(false);
   const [showMoodReminder, setShowMoodReminder] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
-  const todayDate = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+  const formattedDate = () => {
+    const date = new Date();
+    const day = date.getDate();
+    const month = date.toLocaleString('en-US', { month: 'short' });
+    const year = date.getFullYear();
+    const weekday = date.toLocaleString('en-US', { weekday: 'short' });
+    return `${weekday}, ${month} ${day}, ${year}`;
+  };
+  
+  const todayDate = formattedDate();
   const isMobile = useMediaQuery("(max-width: 768px)");
   const { toast } = useToast();
 
@@ -259,7 +263,7 @@ const JournalEditor = ({ onBackToWelcome }: { onBackToWelcome: () => void }) => 
         <div className="flex justify-between items-center mb-6">
           <button 
             onClick={onBackToWelcome}
-            className="text-primary hover:text-primary/80 flex items-center gap-2 font-medium"
+            className="text-primary hover:text-primary/80 flex items-center gap-2 font-medium text-left"
           >
             <ArrowRight className="h-4 w-4 rotate-180" />
             Back to Welcome
@@ -270,7 +274,7 @@ const JournalEditor = ({ onBackToWelcome }: { onBackToWelcome: () => void }) => 
           {isMobile && (
             <button 
               onClick={() => setShowSidebar(!showSidebar)} 
-              className="mb-4 px-4 py-2 bg-primary/10 rounded-lg text-primary text-sm font-medium"
+              className="mb-4 px-4 py-2 bg-primary/10 rounded-lg text-primary text-sm font-medium text-left"
             >
               {showSidebar ? "Hide Sidebar" : "Show Sidebar"}
             </button>
@@ -283,19 +287,20 @@ const JournalEditor = ({ onBackToWelcome }: { onBackToWelcome: () => void }) => 
           )}
           
           <div className="flex-1">
-            <Card className="p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
-                <div className="relative mb-2 sm:mb-0" style={{ minHeight: "2.5rem" }}>
+            <Card className="p-4 sm:p-6 text-left">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 w-full">
+                <div className="relative mb-2 sm:mb-0 w-full sm:w-4/5" style={{ minHeight: "2.5rem" }}>
                   <div style={{ 
                     position: "absolute", 
                     top: 0, 
                     left: 0,
                     width: "100%",
-                    fontSize: "1.5rem",
+                    fontSize: "1.4rem",
                     lineHeight: "2.5rem",
                     color: "rgba(100, 116, 139, 0.6)",
                     pointerEvents: "none",
-                    fontWeight: "bold"
+                    fontWeight: "bold",
+                    textAlign: "left"
                   }} id="title-typewriter"></div>
                   <input
                     ref={titleInputRef}
@@ -309,14 +314,15 @@ const JournalEditor = ({ onBackToWelcome }: { onBackToWelcome: () => void }) => 
                         typewriterEl.style.opacity = e.target.value ? '0' : '1';
                       }
                     }}
-                    className="w-full text-xl sm:text-2xl font-bold bg-transparent border-none outline-none z-10 relative"
+                    className="w-full text-xl sm:text-2xl font-bold bg-transparent border-none outline-none z-10 relative text-left"
                     style={{ minHeight: "100%" }}
+                    placeholder=""
                   />
                 </div>
                 
-                <div className="text-sm text-muted-foreground flex items-center gap-1">
-                  <Calendar className="h-3.5 w-3.5" />
-                  <span>{todayDate}</span>
+                <div className="text-sm text-muted-foreground flex items-center gap-1 sm:ml-auto">
+                  <Calendar className="h-3.5 w-3.5 mr-0.5" />
+                  <span className="text-xs whitespace-nowrap">{todayDate}</span>
                 </div>
               </div>
               
@@ -331,21 +337,21 @@ const JournalEditor = ({ onBackToWelcome }: { onBackToWelcome: () => void }) => 
               
               <EditorContent editor={editor} className="min-h-[40vh]" />
               
-              <div className="mt-4">
+              <div className="mt-4 text-left">
                 <div className="bg-amber-50 p-4 rounded-lg border-l-4 border-amber-400">
-                  <h3 className="font-medium text-amber-800 mb-2 text-sm">Tomorrow's intention:</h3>
+                  <h3 className="font-medium text-amber-800 mb-2 text-sm text-left">Tomorrow's intention:</h3>
                   <textarea
                     placeholder="I will..."
                     value={tomorrowsIntention}
                     onChange={(e) => setTomorrowsIntention(e.target.value)}
-                    className="w-full bg-amber-50 border border-amber-200 rounded p-2 text-amber-800 placeholder:text-amber-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
+                    className="w-full bg-amber-50 border border-amber-200 rounded p-2 text-amber-800 placeholder:text-amber-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 text-left"
                     rows={2}
                   />
                 </div>
               </div>
               
               {lastSaved && (
-                <div className="mt-3 text-xs text-muted-foreground">
+                <div className="mt-3 text-xs text-muted-foreground text-left">
                   Last saved: {lastSaved.toLocaleTimeString()}
                 </div>
               )}
@@ -465,7 +471,7 @@ const JournalWelcome = ({ onStartJournaling }: { onStartJournaling: () => void }
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="bg-white rounded-xl p-6 overflow-hidden shadow-md hover:shadow-lg transition-all border border-gray-100"
+            className="bg-white rounded-xl p-6 overflow-hidden shadow-md hover:shadow-lg transition-all border border-gray-100 text-left"
             onClick={onStartJournaling}
             style={{ cursor: 'pointer' }}
           >
@@ -498,7 +504,7 @@ const JournalWelcome = ({ onStartJournaling }: { onStartJournaling: () => void }
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="bg-white rounded-xl p-6 overflow-hidden shadow-md hover:shadow-lg transition-all border border-gray-100"
+            className="bg-white rounded-xl p-6 overflow-hidden shadow-md hover:shadow-lg transition-all border border-gray-100 text-left"
             onClick={onStartJournaling}
             style={{ cursor: 'pointer' }}
           >
@@ -533,7 +539,7 @@ const JournalWelcome = ({ onStartJournaling }: { onStartJournaling: () => void }
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="bg-white rounded-xl p-6 overflow-hidden shadow-md hover:shadow-lg transition-all border border-gray-100"
+            className="bg-white rounded-xl p-6 overflow-hidden shadow-md hover:shadow-lg transition-all border border-gray-100 text-left"
             onClick={onStartJournaling}
             style={{ cursor: 'pointer' }}
           >
@@ -570,15 +576,15 @@ const JournalWelcome = ({ onStartJournaling }: { onStartJournaling: () => void }
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          className="text-center mb-12"
+          className="text-left mb-12"
         >
           <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-3">See Your Thoughts Come to Life</h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
+          <p className="text-gray-600 max-w-2xl">
             Express yourself freely and document your personal growth journey
           </p>
         </motion.div>
 
-        <div className="flex flex-col lg:flex-row items-center gap-12 max-w-5xl mx-auto">
+        <div className="flex flex-col lg:flex-row items-start gap-12 max-w-5xl mx-auto">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -587,7 +593,7 @@ const JournalWelcome = ({ onStartJournaling }: { onStartJournaling: () => void }
             className="lg:w-1/2"
           >
             <div className="relative">
-              <div className="bg-white rounded-xl shadow-md p-6 border-t-4 border-[#20C0F3] relative z-10">
+              <div className="bg-white rounded-xl shadow-md p-6 border-t-4 border-[#20C0F3] relative z-10 text-left">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xl font-bold text-[#0078FF]">Tuesday, July 12, 2023</h3>
                   <span className="px-3 py-1 bg-blue-100 text-[#20C0F3] rounded-full text-xs font-medium">Feeling Hopeful</span>
@@ -643,7 +649,7 @@ const JournalWelcome = ({ onStartJournaling }: { onStartJournaling: () => void }
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="lg:w-1/2"
+            className="lg:w-1/2 text-left"
           >
             <h2 className="text-2xl font-bold text-gray-800 mb-4">Express Yourself</h2>
             <p className="text-gray-600 mb-6">
@@ -691,7 +697,7 @@ const JournalWelcome = ({ onStartJournaling }: { onStartJournaling: () => void }
             <motion.div
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.98 }}
-              className="text-center lg:text-left"
+              className="text-left"
             >
               <button 
                 onClick={onStartJournaling}

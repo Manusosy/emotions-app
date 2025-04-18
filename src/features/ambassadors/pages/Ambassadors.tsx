@@ -7,6 +7,7 @@ import { MapPin, ThumbsUp, MessageSquare, DollarSign, Info } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { motion } from "framer-motion"
 import { Link } from "react-router-dom"
+import BookingButton from "@/features/booking/components/BookingButton"
 
 type Ambassador = {
   id: string
@@ -148,8 +149,8 @@ const Ambassadors = () => {
             transition={{ duration: 0.6 }}
             className="text-center max-w-3xl mx-auto"
           >
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">Our Mental Health Ambassadors</h1>
-            <p className="text-lg md:text-xl max-w-2xl mx-auto text-blue-50 mb-8">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 text-center">Our Mental Health Ambassadors</h1>
+            <p className="text-lg md:text-xl max-w-2xl mx-auto text-blue-50 mb-8 text-center">
               Our Mental Health Ambassadors are licensed therapists and counselors dedicated to providing
               compassionate support for your emotional well-being. These professionals specialize in various areas of
               mental health to help you navigate life's challenges with confidence and resilience.
@@ -167,11 +168,11 @@ const Ambassadors = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Filters Section */}
           <div className="w-full lg:w-64 shrink-0">
-            <div className="bg-white p-6 rounded-md shadow-sm">
-              <h2 className="text-lg font-bold text-gray-800 mb-6">Search Filter</h2>
+            <div className="bg-white p-6 rounded-md shadow-sm text-left">
+              <h2 className="text-lg font-bold text-gray-800 mb-6 text-left">Search Filter</h2>
               
               <div className="mb-6">
-                <label className="block text-sm mb-2 text-gray-600">Select Date</label>
+                <label className="block text-sm mb-2 text-gray-600 text-left">Select Date</label>
                 <Input 
                   type="date" 
                   value={selectedDate} 
@@ -181,7 +182,7 @@ const Ambassadors = () => {
               </div>
               
               <div className="mb-6">
-                <h3 className="font-medium mb-3 text-gray-700">Gender</h3>
+                <h3 className="font-medium mb-3 text-gray-700 text-left">Gender</h3>
                 <div className="space-y-2">
                   <div className="flex items-center">
                     <Checkbox 
@@ -190,7 +191,7 @@ const Ambassadors = () => {
                       onCheckedChange={() => toggleGender("Male")}
                       className="text-[#00D2FF] rounded-sm h-4 w-4"
                     />
-                    <label htmlFor="gender-male" className="ml-2 text-gray-600 text-sm">Male</label>
+                    <label htmlFor="gender-male" className="ml-2 text-gray-600 text-sm text-left">Male</label>
                   </div>
                   <div className="flex items-center">
                     <Checkbox 
@@ -199,13 +200,13 @@ const Ambassadors = () => {
                       onCheckedChange={() => toggleGender("Female")}
                       className="text-[#00D2FF] rounded-sm h-4 w-4"
                     />
-                    <label htmlFor="gender-female" className="ml-2 text-gray-600 text-sm">Female</label>
+                    <label htmlFor="gender-female" className="ml-2 text-gray-600 text-sm text-left">Female</label>
                   </div>
                 </div>
               </div>
               
               <div className="mb-6">
-                <h3 className="font-medium mb-3 text-gray-700">Specialities</h3>
+                <h3 className="font-medium mb-3 text-gray-700 text-left">Specialities</h3>
                 <div className="space-y-2">
                   <div className="flex items-center">
                     <Checkbox 
@@ -214,7 +215,7 @@ const Ambassadors = () => {
                       onCheckedChange={() => toggleSpecialty("Depression & Anxiety")}
                       className="text-[#00D2FF] rounded-sm h-4 w-4"
                     />
-                    <label htmlFor="speciality-depression" className="ml-2 text-gray-600 text-sm">Depression & Anxiety</label>
+                    <label htmlFor="speciality-depression" className="ml-2 text-gray-600 text-sm text-left">Depression & Anxiety</label>
                   </div>
                   <div className="flex items-center">
                     <Checkbox 
@@ -223,7 +224,7 @@ const Ambassadors = () => {
                       onCheckedChange={() => toggleSpecialty("Trauma & PTSD")}
                       className="text-[#00D2FF] rounded-sm h-4 w-4"
                     />
-                    <label htmlFor="speciality-trauma" className="ml-2 text-gray-600 text-sm">Trauma & PTSD</label>
+                    <label htmlFor="speciality-trauma" className="ml-2 text-gray-600 text-sm text-left">Trauma & PTSD</label>
                   </div>
                   <div className="flex items-center">
                     <Checkbox 
@@ -232,7 +233,7 @@ const Ambassadors = () => {
                       onCheckedChange={() => toggleSpecialty("Eating Disorders")}
                       className="text-[#00D2FF] rounded-sm h-4 w-4"
                     />
-                    <label htmlFor="speciality-eating" className="ml-2 text-gray-600 text-sm">Eating Disorders</label>
+                    <label htmlFor="speciality-eating" className="ml-2 text-gray-600 text-sm text-left">Eating Disorders</label>
                   </div>
                   <div className="flex items-center">
                     <Checkbox 
@@ -241,7 +242,7 @@ const Ambassadors = () => {
                       onCheckedChange={() => toggleSpecialty("Addiction & Recovery")}
                       className="text-[#00D2FF] rounded-sm h-4 w-4"
                     />
-                    <label htmlFor="speciality-addiction" className="ml-2 text-gray-600 text-sm">Addiction & Recovery</label>
+                    <label htmlFor="speciality-addiction" className="ml-2 text-gray-600 text-sm text-left">Addiction & Recovery</label>
                   </div>
                   <div className="flex items-center">
                     <Checkbox 
@@ -250,7 +251,7 @@ const Ambassadors = () => {
                       onCheckedChange={() => toggleSpecialty("Relationship Issues")}
                       className="text-[#00D2FF] rounded-sm h-4 w-4"
                     />
-                    <label htmlFor="speciality-relationship" className="ml-2 text-gray-600 text-sm">Relationship Issues</label>
+                    <label htmlFor="speciality-relationship" className="ml-2 text-gray-600 text-sm text-left">Relationship Issues</label>
                   </div>
                   <div className="flex items-center">
                     <Checkbox 
@@ -259,12 +260,12 @@ const Ambassadors = () => {
                       onCheckedChange={() => toggleSpecialty("Life Transitions")}
                       className="text-[#00D2FF] rounded-sm h-4 w-4"
                     />
-                    <label htmlFor="speciality-transitions" className="ml-2 text-gray-600 text-sm">Life Transitions</label>
+                    <label htmlFor="speciality-transitions" className="ml-2 text-gray-600 text-sm text-left">Life Transitions</label>
                   </div>
                 </div>
               </div>
               
-              <Button className="w-full bg-[#00D2FF] hover:bg-[#00bfe8] text-white font-normal">
+              <Button className="w-full bg-[#00D2FF] hover:bg-[#00bfe8] text-white font-normal text-left">
                 Search
               </Button>
             </div>
@@ -286,10 +287,10 @@ const Ambassadors = () => {
                   
                   <div className="flex-1">
                     <div className="flex flex-col md:flex-row justify-between">
-                      <div>
-                        <h3 className="text-xl font-semibold text-gray-800">{ambassador.name}</h3>
-                        <p className="text-sm text-gray-600 mb-1">{ambassador.credentials}</p>
-                        <p className="text-[#00D2FF] font-medium mb-2">{ambassador.specialty}</p>
+                      <div className="text-left">
+                        <h3 className="text-xl font-semibold text-gray-800 text-left">{ambassador.name}</h3>
+                        <p className="text-sm text-gray-600 mb-1 text-left">{ambassador.credentials}</p>
+                        <p className="text-[#00D2FF] font-medium mb-2 text-left">{ambassador.specialty}</p>
                         
                         <div className="flex items-center mb-3">
                           {[...Array(5)].map((_, i) => (
@@ -339,9 +340,12 @@ const Ambassadors = () => {
                       >
                         <Link to={`/ambassadors/${ambassador.id}`}>VIEW PROFILE</Link>
                       </Button>
-                      <Button className="bg-[#00D2FF] hover:bg-[#00bfe8] text-white rounded-md uppercase">
-                        BOOK APPOINTMENT
-                      </Button>
+                      <BookingButton 
+                        ambassadorId={parseInt(ambassador.id)}
+                        buttonText="BOOK APPOINTMENT"
+                        className="rounded-md uppercase bg-[#007BFF] hover:bg-blue-600"
+                        variant="default"
+                      />
                     </div>
                   </div>
                 </Card>

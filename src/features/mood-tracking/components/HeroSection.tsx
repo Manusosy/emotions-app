@@ -24,7 +24,7 @@ const HeroSection = ({ scrollToEmotions, emotionsRef }: HeroSectionProps) => {
       
       <div className="container mx-auto px-4 relative">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 py-12">
-          <div className="flex flex-col justify-center space-y-6">
+          <div className="flex flex-col justify-start text-left space-y-6">
             <div className="relative">
               <motion.div 
                 className="mb-6"
@@ -59,17 +59,17 @@ const HeroSection = ({ scrollToEmotions, emotionsRef }: HeroSectionProps) => {
               <div className="absolute -left-4 -top-4 w-20 h-20 bg-blue-500/10 rounded-full blur-2xl" />
               <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-purple-500/10 rounded-full blur-2xl" />
               
-              <h1 className="font-jakarta text-5xl md:text-6xl font-bold text-[#001A41] mb-6 relative">
+              <h1 className="font-jakarta text-5xl md:text-6xl font-bold text-[#001A41] mb-6 relative text-left">
                 Welcome to{" "}
                 <span className="text-blue-500 relative inline-block">
                   Emotions
                   <div className="absolute -bottom-2 left-0 w-full h-1 bg-blue-500/20 rounded-full" />
                 </span>
               </h1>
-              <p className="font-jakarta text-xl text-gray-600 mb-8">
+              <p className="font-jakarta text-xl text-gray-600 mb-8 text-left">
                 You are worthy of happiness & peace of mind and we are here to support you reach the goal.
               </p>
-              <div className="flex flex-wrap items-center gap-6">
+              <div className="flex flex-wrap items-start gap-6">
                 <Button size="lg" className="bg-blue-500 hover:bg-blue-600 text-white font-jakarta text-lg px-8 shadow-lg shadow-blue-500/25 transform transition-all duration-200 hover:scale-105">
                   Start Consultation
                 </Button>
@@ -157,11 +157,6 @@ const HeroSection = ({ scrollToEmotions, emotionsRef }: HeroSectionProps) => {
           </div>
         </div>
       </div>
-      
-      {/* Curved bottom edge */}
-      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-br from-brand-purple-light via-white to-brand-blue-light" style={{ 
-        clipPath: "ellipse(75% 100% at 50% 100%)" 
-      }}></div>
     </div>
   );
 };

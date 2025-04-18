@@ -1,98 +1,113 @@
-
-import { Card } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
-import { useState } from "react";
 
-interface QuestionCardProps {
+export interface QuestionCardProps {
   question: string;
-  options: {
-    text: string;
-    points: number;
-  }[];
-  onSelect: (points: number) => void;
-  progress: number;
-  isLastQuestion: boolean;
+  options: string[];
+  onNext: (selectedOptionIndex: number) => void;
+  questionNumber: number;
+  totalQuestions: number;
 }
 
-const QuestionCard = ({ question, options, onSelect, progress, isLastQuestion }: QuestionCardProps) => {
+const QuestionCard = ({
+  question,
+  options,
+  onNext,
+  questionNumber,
+  totalQuestions
+}: QuestionCardProps) => {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const progress = (questionNumber / totalQuestions) * 100;
 
-  const handleNext = () => {
+  useEffect(() => {
+    setSelectedOption(null);
+  }, [question]);
+
+  const handleOptionClick = (index: number) => {
+    setSelectedOption(index);
+  };
+
+  const handleNextClick = () => {
     if (selectedOption !== null) {
-      onSelect(selectedOption);
-      setSelectedOption(null); // Reset selection after submitting
+      onNext(selectedOption);
     }
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      transition={{ duration: 0.3 }}
-      key={question} // This ensures the animation triggers on question change
-      className="w-full max-w-3xl mx-auto"
-    >
-      <Card className="p-8 bg-white shadow-lg border-0">
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-yellow-400 rounded-full transition-all duration-500"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <div className="mt-2 text-right text-sm text-gray-500">
-            Question {Math.ceil(progress / (100 / 2))}/2
-          </div>
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={question}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.3 }}
+        className="space-y-4"
+      >
+        <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+          <motion.div
+            className="h-full bg-[#007BFF]"
+            initial={{ width: `${(questionNumber - 1) / totalQuestions * 100}%` }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+          />
         </div>
-
-        {/* Question */}
-        <h3 className="text-2xl font-semibold text-gray-900 mb-8">
+        
+        <div className="text-center mb-2">
+          <p className="text-xs text-gray-500 font-medium">
+            Question {questionNumber} of {totalQuestions}
+          </p>
+        </div>
+        
+        <h3 className="text-lg md:text-xl font-bold text-center mb-4 text-[#001A41]">
           {question}
         </h3>
-
-        {/* Options */}
-        <RadioGroup 
-          className="space-y-4" 
-          value={selectedOption?.toString() || ""}
-          onValueChange={(value) => setSelectedOption(Number(value))}
-        >
-          {options.map((option) => (
-            <div
-              key={option.text}
-              className="flex items-center space-x-4 p-4 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors"
+        
+        <div className="space-y-2.5">
+          {options.map((option, index) => (
+            <motion.div
+              key={option}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.1 }}
+              className={`p-3 rounded-lg border transition-all cursor-pointer hover:border-[#007BFF] hover:bg-blue-50 ${
+                selectedOption === index
+                  ? "border-[#007BFF] bg-blue-50 shadow-sm"
+                  : "border-gray-200 bg-white"
+              }`}
+              onClick={() => handleOptionClick(index)}
             >
-              <RadioGroupItem
-                value={option.points.toString()}
-                id={option.text}
-                className="h-5 w-5 border-2 border-gray-300"
-              />
-              <Label
-                htmlFor={option.text}
-                className="flex-1 cursor-pointer text-gray-700"
-              >
-                {option.text}
-              </Label>
-            </div>
+              <div className="flex items-center">
+                <div 
+                  className={`w-5 h-5 mr-3 rounded-full border flex items-center justify-center flex-shrink-0 ${
+                    selectedOption === index 
+                      ? "border-[#007BFF] bg-[#007BFF]" 
+                      : "border-gray-300"
+                  }`}
+                >
+                  {selectedOption === index && (
+                    <div className="w-2 h-2 bg-white rounded-full" />
+                  )}
+                </div>
+                <p className="text-sm text-gray-700">{option}</p>
+              </div>
+            </motion.div>
           ))}
-        </RadioGroup>
-
-        {/* Navigation Button */}
-        <div className="mt-8 flex justify-end">
+        </div>
+        
+        <div className="pt-2">
           <Button
-            onClick={handleNext}
+            onClick={handleNextClick}
             disabled={selectedOption === null}
-            className="bg-blue-500 hover:bg-blue-600 text-white"
+            className="w-full bg-[#007BFF] hover:bg-blue-600 text-white"
           >
-            {isLastQuestion ? "Submit" : "Next"}
+            Next Question
+            <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
-      </Card>
-    </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 };
 

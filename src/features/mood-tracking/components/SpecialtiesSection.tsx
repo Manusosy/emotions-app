@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -70,13 +69,13 @@ const SpecialtiesSection = () => {
   return (
     <section className="py-16 bg-white">
       <div className="container mx-auto px-4">
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-start">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
-            className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-full mb-6"
+            className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-full mb-6 mx-auto"
           >
             <span className="w-2 h-2 bg-white rounded-full mr-2"></span>
             <span className="font-medium text-sm">Top Specialties</span>
@@ -84,7 +83,7 @@ const SpecialtiesSection = () => {
           </motion.div>
           
           <motion.h2 
-            className="text-3xl md:text-4xl font-bold text-[#001A41] mb-12 text-center" 
+            className="text-3xl md:text-4xl font-bold text-[#001A41] mb-12 text-center w-full" 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
@@ -125,7 +124,7 @@ const SpecialtiesSection = () => {
                       </div>
                     </div>
                   </Card>
-                  <div className="mt-4 text-center">
+                  <div className="mt-4 text-left">
                     <h3 className="text-lg font-semibold text-[#001A41]">{specialty.name}</h3>
                   </div>
                 </motion.div>

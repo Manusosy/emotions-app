@@ -3,7 +3,7 @@ import { useState, RefObject } from "react";
 import EmotionButton from "./EmotionButton";
 import QuestionCard from "./QuestionCard";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Book, Heart, LifeBuoy, FileText } from "lucide-react";
+import { ArrowRight, Book, Heart, LifeBuoy, FileText, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 // Emotion data
@@ -82,6 +82,10 @@ const MoodAssessment = ({ emotionsRef }: MoodAssessmentProps) => {
     }
   };
 
+  const handleClickOutside = () => {
+    setSelectedEmotion(null);
+  };
+
   const handleAnswerSelect = (points: number) => {
     setScore(prev => prev + points);
     if (currentQuestion < questions.length - 1) {
@@ -107,8 +111,8 @@ const MoodAssessment = ({ emotionsRef }: MoodAssessmentProps) => {
     navigate("/resources");
   };
 
-  const navigateToTherapists = () => {
-    navigate("/therapists");
+  const navigateToAmbassadors = () => {
+    navigate("/ambassadors");
   };
 
   const navigateToHelpGroups = () => {
@@ -116,61 +120,63 @@ const MoodAssessment = ({ emotionsRef }: MoodAssessmentProps) => {
   };
 
   return (
-    <div className="relative py-12 bg-[#e6f5ff]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-brand-purple-light/20 via-transparent to-brand-blue-light/20" />
+    <div className="relative py-10 bg-[#EBF5FF]">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-brand-purple-light/10 via-transparent to-brand-blue-light/10" />
       
       <div className="container mx-auto px-4">
         <div ref={emotionsRef} className="max-w-4xl mx-auto relative z-20">
           <div className="relative">
-            <div className="absolute -top-10 -left-10 w-40 h-40 bg-brand-purple-light rounded-full blur-3xl opacity-20" />
-            <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-brand-blue-light rounded-full blur-3xl opacity-20" />
+            <div className="absolute -top-10 -left-10 w-40 h-40 bg-brand-purple-light rounded-full blur-3xl opacity-10" />
+            <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-brand-blue-light rounded-full blur-3xl opacity-10" />
             
             <motion.div 
-              className="flex justify-center mb-6"
+              className="flex justify-center mb-4"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <div className="bg-blue-500 text-white py-2 px-6 rounded-full font-medium text-sm flex items-center shadow-md">
-                <span className="w-2 h-2 bg-white rounded-full mr-2"></span>
+              <div className="bg-[#007BFF] text-white py-1.5 px-6 rounded-full font-medium text-xs flex items-center shadow-md">
+                <span className="w-1.5 h-1.5 bg-white rounded-full mr-2"></span>
                 <span>Start Assessment</span>
-                <span className="w-2 h-2 bg-white rounded-full ml-2"></span>
+                <span className="w-1.5 h-1.5 bg-white rounded-full ml-2"></span>
               </div>
             </motion.div>
             
-            <div className="relative bg-white/60 backdrop-blur-md rounded-3xl shadow-sm p-5 sm:p-6 border border-white/40">
-              <div className="text-center space-y-6">
+            <div className="relative bg-white rounded-2xl shadow-sm p-8 border border-gray-100">
+              <div className="text-center space-y-4">
                 <div className="space-y-2">
-                  <h2 className="font-jakarta text-3xl md:text-4xl font-bold text-[#001A41] leading-tight">
-                    How Are You Feeling
-                    <span className="text-brand-blue"> Right Now?</span>
+                  <h2 className="font-jakarta text-2xl md:text-3xl font-bold text-[#001A41] leading-tight">
+                    How Are You Feeling <span className="text-[#007BFF]">Right Now?</span>
                   </h2>
-                  <p className="text-sm text-gray-600 font-jakarta font-light max-w-2xl mx-auto">
+                  <p className="text-sm md:text-base text-gray-600 font-jakarta font-light">
                     Select your current mood by clicking one of the emojis below
                   </p>
                 </div>
 
                 <AnimatePresence mode="wait">
                   {!showQuestions && (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
+                    <div className="flex justify-center mt-6">
+                      <div className="grid grid-cols-5 gap-6 max-w-3xl w-full">
                       {emotions.map(emotion => (
                         <EmotionButton
                           key={emotion.name}
                           emotion={emotion}
                           selected={selectedEmotion === emotion.name}
                           onClick={() => handleEmotionSelect(emotion.name)}
+                            onClickOutside={handleClickOutside}
                         />
                       ))}
+                      </div>
                     </div>
                   )}
 
                   {showQuestions && !showResults && (
                     <QuestionCard
                       question={questions[currentQuestion].text}
-                      options={questions[currentQuestion].options}
-                      onSelect={handleAnswerSelect}
-                      progress={(currentQuestion + 1) / questions.length * 100}
-                      isLastQuestion={currentQuestion === questions.length - 1}
+                      options={questions[currentQuestion].options.map(option => option.text)}
+                      onNext={(index) => handleAnswerSelect(questions[currentQuestion].options[index].points)}
+                      questionNumber={currentQuestion + 1}
+                      totalQuestions={questions.length}
                     />
                   )}
 
@@ -181,14 +187,14 @@ const MoodAssessment = ({ emotionsRef }: MoodAssessmentProps) => {
                       transition={{ duration: 0.5 }}
                       className="space-y-8"
                     >
-                      <div className="p-8 rounded-2xl bg-white shadow-lg border border-[#20C0F3]/20">
-                        <div className="flex items-center justify-center mb-6">
-                          <div className="w-16 h-16 bg-gradient-to-r from-[#0078FF] to-[#20C0F3] rounded-full flex items-center justify-center shadow-lg shadow-blue-500/20">
-                            <Heart className="h-8 w-8 text-white" />
+                      <div className="p-6 rounded-2xl bg-white shadow-lg border border-[#20C0F3]/20">
+                        <div className="flex justify-center mb-6">
+                          <div className="w-14 h-14 bg-gradient-to-r from-[#0078FF] to-[#20C0F3] rounded-full flex items-center justify-center shadow-lg shadow-blue-500/20">
+                            <Heart className="h-7 w-7 text-white" />
                           </div>
                         </div>
                         
-                        <h2 className="text-2xl font-bold bg-gradient-to-r from-[#0078FF] via-[#20C0F3] to-[#00D2FF] bg-clip-text text-transparent mb-4">
+                        <h2 className="text-xl font-bold text-center bg-gradient-to-r from-[#0078FF] via-[#20C0F3] to-[#00D2FF] bg-clip-text text-transparent mb-4">
                           Your Assessment Results
                         </h2>
                         
@@ -254,25 +260,25 @@ const MoodAssessment = ({ emotionsRef }: MoodAssessmentProps) => {
                             </div>
                             
                             <p className="text-gray-700">
-                              It's important to address these feelings. Consider connecting with a therapist, joining support groups, or using our journaling tool to process your emotions.
+                              It's important to address these feelings. Consider connecting with a mental health ambassador, joining support groups, or using our journaling tool to process your emotions.
                             </p>
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                               <div className="bg-gray-50 p-5 rounded-xl border border-gray-100">
                                 <div className="flex items-center mb-3">
                                   <div className="bg-[#20C0F3]/10 p-2 rounded-full mr-3">
-                                    <LifeBuoy className="h-5 w-5 text-[#20C0F3]" />
+                                    <Users className="h-5 w-5 text-[#20C0F3]" />
                                   </div>
-                                  <h3 className="font-semibold text-gray-800">Talk to a Therapist</h3>
+                                  <h3 className="font-semibold text-gray-800">Talk to a Mental Health Ambassador</h3>
                                 </div>
                                 <p className="text-gray-600 text-sm mb-4">
-                                  Connect with a professional therapist for personalized support.
+                                  Connect with a trusted mental health ambassador for personalized support.
                                 </p>
                                 <Button 
-                                  onClick={navigateToTherapists} 
+                                  onClick={navigateToAmbassadors} 
                                   className="w-full bg-gradient-to-r from-[#0078FF] to-[#20C0F3] hover:from-[#0062CC] hover:to-[#1AB6E8] text-white shadow-md hover:shadow-lg transition-all"
                                 >
-                                  Find a Therapist
+                                  Find an Ambassador
                                   <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
                               </div>

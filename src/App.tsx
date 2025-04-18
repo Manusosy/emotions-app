@@ -36,6 +36,7 @@ import Contact from "./pages/Contact";
 import FAQs from "./pages/FAQs";
 import About from "./pages/About";
 import AmbassadorProfile from "@/features/ambassadors/pages/AmbassadorProfile";
+import './styles/App.css';
 
 // HomePage component that properly wraps the MoodTracker component
 const HomePage = () => {
@@ -119,10 +120,9 @@ const AppContent = () => {
 
   useEffect(() => {
     const pathname = location.pathname;
-    // Don't show header/footer on dashboard pages
+    // Don't show header/footer on dashboard pages - removed booking from the list
     const isDashboardPage = pathname.includes('dashboard') || 
                           pathname.includes('admin') ||
-                          pathname.includes('booking') ||
                           pathname === '/ambassador-dashboard' ||
                           pathname.startsWith('/ambassador-dashboard/');
     

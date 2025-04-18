@@ -127,15 +127,35 @@ export default function Signup() {
       toast.success("Account created successfully!");
       setSignupSuccessful(true);
       
-      // Get the dashboard URL for the user's role
-      const dashboardUrl = getDashboardUrlForRole(formData.role);
-      console.log(`User signed up as ${formData.role}, redirecting to ${dashboardUrl}`);
+      // Check for booking intent
+      const bookingIntent = localStorage.getItem("bookingIntent");
+      const bookingData = localStorage.getItem("bookingData");
       
-      // Add a delay to ensure auth state is properly updated
-      setTimeout(() => {
-        // Navigate to the dashboard
-        navigate(dashboardUrl, { replace: true });
-      }, 1000);
+      if (bookingIntent && bookingData) {
+        // Parse the booking intent
+        const { ambassadorId } = JSON.parse(bookingIntent);
+        
+        // Clear booking intent from localStorage but keep bookingData
+        localStorage.removeItem("bookingIntent");
+        
+        console.log(`User signed up, redirecting to booking with ambassador ID: ${ambassadorId}`);
+        
+        // Add a delay to ensure auth state is properly updated
+        setTimeout(() => {
+          // Navigate to the booking page
+          navigate(`/booking?ambassadorId=${ambassadorId}`, { replace: true });
+        }, 1000);
+      } else {
+        // Get the dashboard URL for the user's role
+        const dashboardUrl = getDashboardUrlForRole(formData.role);
+        console.log(`User signed up as ${formData.role}, redirecting to ${dashboardUrl}`);
+        
+        // Add a delay to ensure auth state is properly updated
+        setTimeout(() => {
+          // Navigate to the dashboard
+          navigate(dashboardUrl, { replace: true });
+        }, 1000);
+      }
       
     } catch (error: any) {
       console.error("Signup process error:", error);

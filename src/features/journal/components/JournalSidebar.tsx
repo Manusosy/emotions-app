@@ -96,14 +96,14 @@ const JournalSidebar = ({ onPromptSelect }: JournalSidebarProps = {}) => {
     <div className="flex flex-col gap-4">
       <Card className="w-full p-3 md:p-4 flex flex-col gap-4 h-[500px] md:h-[calc(100vh-120px)] md:sticky md:top-24">
         <div>
-          <h3 className="font-semibold mb-2 md:mb-3 text-base">
+          <h3 className="font-semibold mb-2 md:mb-3 text-base text-left">
             Not sure what to write? Try these:
           </h3>
           <ScrollArea className="h-40 md:h-56">
             {JOURNAL_PROMPTS.map((prompt, index) => (
               <div 
                 key={index} 
-                className="mb-2 px-2 py-1.5 md:px-3 md:py-2 rounded-lg hover:bg-accent hover:text-foreground transition-colors cursor-pointer flex items-start"
+                className="mb-2 px-2 py-1.5 md:px-3 md:py-2 rounded-lg hover:bg-accent hover:text-foreground transition-colors cursor-pointer flex items-start text-left"
                 onClick={() => handlePromptClick(prompt)}
               >
                 <span className="inline-block w-5 h-5 rounded-full bg-primary/10 text-primary mr-2 flex-shrink-0 text-xs flex items-center justify-center">
@@ -117,19 +117,21 @@ const JournalSidebar = ({ onPromptSelect }: JournalSidebarProps = {}) => {
           </ScrollArea>
         </div>
         <div className="flex-1 overflow-hidden">
-          <h3 className="font-semibold mb-2 md:mb-3 text-base">Past Entries</h3>
+          <h3 className="font-semibold mb-2 md:mb-3 text-base text-left">
+            Past Entries
+          </h3>
           <ScrollArea className="h-[calc(100%-2rem)]">
             {isLoading ? (
-              <p className="text-xs md:text-sm text-muted-foreground px-2">Loading entries...</p>
+              <p className="text-xs md:text-sm text-muted-foreground px-2 text-left">Loading entries...</p>
             ) : entries.length === 0 ? (
-              <p className="text-xs md:text-sm text-muted-foreground px-2">No entries yet</p>
+              <p className="text-xs md:text-sm text-muted-foreground px-2 text-left">No entries yet</p>
             ) : (
               <div className="space-y-2">
                 {entries.map((entry) => (
                   <Card 
                     key={entry.id} 
                     className={cn(
-                      "p-2 md:p-3 cursor-pointer hover:bg-accent transition-colors",
+                      "p-2 md:p-3 cursor-pointer hover:bg-accent transition-colors text-left",
                       selectedEntry?.id === entry.id && "bg-accent/50 border-primary"
                     )}
                     onClick={() => setSelectedEntry(selectedEntry?.id === entry.id ? null : entry)}
@@ -157,7 +159,7 @@ const JournalSidebar = ({ onPromptSelect }: JournalSidebarProps = {}) => {
       </Card>
 
       {selectedEntry && (
-        <Card className="w-full p-4 mt-2">
+        <Card className="w-full p-4 mt-2 text-left">
           <div className="flex justify-between items-center mb-3">
             <h2 className="text-lg font-semibold">{selectedEntry.title || "Untitled"}</h2>
             {selectedEntry.mood && (
@@ -178,7 +180,7 @@ const JournalSidebar = ({ onPromptSelect }: JournalSidebarProps = {}) => {
           />
           
           {selectedEntry.tomorrows_intention && (
-            <div className="bg-amber-50 p-3 rounded-lg border-l-3 border-amber-400 mt-3">
+            <div className="bg-amber-50 p-3 rounded-lg border-l-3 border-amber-400 mt-3 text-left">
               <div className="flex items-center gap-1 text-amber-800 font-medium text-xs mb-1">
                 <Sparkles className="h-3.5 w-3.5" />
                 <span>Tomorrow's intention:</span>

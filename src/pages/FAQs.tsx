@@ -178,37 +178,47 @@ const FAQs = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-purple-light via-white to-brand-blue-light py-16">
-      <div className="container mx-auto px-4">
-        {/* Page Header */}
-        <div className="text-center mb-12">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="inline-flex items-center px-4 py-2 bg-[#007BFF] rounded-full text-white text-sm font-medium mb-6 mx-auto"
-          >
-            <span className="text-white">Help Center</span>
-          </motion.div>
-          
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-3xl md:text-4xl font-bold text-[#001A41] mb-4 font-jakarta"
-          >
-            Frequently Asked Questions
-          </motion.h1>
-          
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-gray-500 max-w-2xl mx-auto mb-10"
-          >
-            Find answers to common questions about the Emotions app, our features, privacy practices, and more.
-          </motion.p>
-          
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Background gradient - updated to match legal pages */}
+      <div className="absolute inset-0 bg-gradient-to-r from-[#E7E1FF] to-[#FEFEFF] opacity-80 z-0"></div>
+      <div className="absolute inset-0 bg-gradient-to-tr from-transparent to-[#D4E6FF] opacity-90 z-0"></div>
+      
+      {/* Content with relative positioning */}
+      <div className="relative z-10">
+        {/* Hero Section - Centered */}
+        <div className="w-full flex justify-center items-center py-16">
+          <div className="text-center max-w-3xl">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="inline-flex items-center px-4 py-2 bg-[#007BFF] rounded-full text-white text-sm font-medium mb-6"
+            >
+              <span className="text-white">Help Center</span>
+            </motion.div>
+            
+            <motion.h1 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-4xl md:text-5xl font-bold text-[#001A41] mb-3 font-jakarta"
+            >
+              Frequently Asked Questions
+            </motion.h1>
+            
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-gray-500"
+            >
+              Find answers to common questions about the Emotions app, our features, privacy practices, and more.
+            </motion.p>
+          </div>
+        </div>
+        
+        {/* Main Content - Left aligned like legal pages */}
+        <div className="container mx-auto px-4 pb-16">
           {/* Search Bar */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -225,116 +235,102 @@ const FAQs = () => {
               className="pl-10 py-6 rounded-lg border-gray-200 focus:ring-blue-500 focus:border-blue-500"
             />
           </motion.div>
-        </div>
-        
-        {/* Category Filters */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="flex flex-wrap justify-center gap-2 mb-10"
-        >
-          {(["all", "general", "account", "features", "privacy", "support", "payment"] as FAQCategory[]).map(category => (
-            <Button
-              key={category}
-              variant={activeCategory === category ? "default" : "outline"}
-              className={`rounded-full px-4 py-2 capitalize ${activeCategory === category ? "bg-[#007BFF]" : "text-gray-600 hover:bg-gray-100"}`}
-              onClick={() => setActiveCategory(category)}
-            >
-              {category}
-            </Button>
-          ))}
-        </motion.div>
-        
-        {/* FAQ Items */}
-        <motion.div 
-          className="max-w-3xl mx-auto"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {filteredFAQs.length === 0 ? (
-            <motion.div 
-              className="text-center py-12"
-              variants={itemVariants}
-            >
-              <h3 className="text-xl font-bold text-gray-500 mb-2">No results found</h3>
-              <p className="text-gray-400">Try adjusting your search or filter to find what you're looking for.</p>
-            </motion.div>
-          ) : (
-            filteredFAQs.map((faq, index) => (
-              <motion.div 
-                key={faq.id} 
-                className="mb-4"
-                variants={itemVariants}
+          
+          {/* Category Filters */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="flex flex-wrap justify-center gap-2 mb-10"
+          >
+            {(["all", "general", "account", "features", "privacy", "support", "payment"] as FAQCategory[]).map(category => (
+              <Button
+                key={category}
+                variant={activeCategory === category ? "default" : "outline"}
+                className={`rounded-full px-4 py-2 capitalize ${activeCategory === category ? "bg-[#007BFF]" : "text-gray-600 hover:bg-gray-100"}`}
+                onClick={() => setActiveCategory(category)}
               >
-                <div 
-                  className={`border rounded-lg shadow-sm overflow-hidden transition-all duration-300 ${
-                    activeIndex === index ? "border-blue-300 bg-white" : "border-gray-200 bg-white hover:border-blue-200"
-                  }`}
+                {category}
+              </Button>
+            ))}
+          </motion.div>
+          
+          {/* FAQ Items */}
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="max-w-4xl mx-auto bg-white rounded-2xl shadow-sm p-8 mb-8"
+          >
+            {filteredFAQs.length > 0 ? (
+              filteredFAQs.map((faq, index) => (
+                <motion.div 
+                  key={faq.id}
+                  variants={itemVariants}
+                  className={`border-b border-gray-200 py-6 last:border-b-0 ${index === filteredFAQs.length - 1 ? 'mb-0' : ''}`}
                 >
                   <button
-                    className="flex justify-between items-center w-full p-5 text-left"
-                    onClick={() => toggleFAQ(index)}
+                    className="flex justify-between items-center w-full text-left focus:outline-none"
+                    onClick={() => toggleFAQ(faq.id)}
+                    aria-expanded={activeIndex === faq.id}
                   >
-                    <h3 className="font-semibold text-lg text-[#001A41]">{faq.question}</h3>
-                    <div className="flex-shrink-0 ml-4">
-                      {activeIndex === index ? (
-                        <Minus className="h-5 w-5 text-blue-600" />
-                      ) : (
-                        <Plus className="h-5 w-5 text-gray-400" />
-                      )}
-                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900">{faq.question}</h3>
+                    <span className="ml-4">
+                      {activeIndex === faq.id ? 
+                        <Minus className="h-5 w-5 text-blue-500" /> : 
+                        <Plus className="h-5 w-5 text-gray-500" />
+                      }
+                    </span>
                   </button>
-                  
-                  <div 
-                    className={`overflow-hidden transition-all duration-300 ${
-                      activeIndex === index ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-                    }`}
-                  >
-                    <div className="p-5 pt-0 text-gray-600 border-t border-gray-100">
-                      <p>{faq.answer}</p>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {faq.category.map((cat) => (
-                          <span 
-                            key={cat} 
-                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 capitalize cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveCategory(cat);
-                            }}
-                          >
-                            {cat}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))
-          )}
-        </motion.div>
-        
-        {/* Contact Section */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          className="max-w-3xl mx-auto mt-16 text-center bg-gradient-to-r from-blue-600 to-blue-400 rounded-xl p-8 text-white shadow-md"
-        >
-          <h2 className="text-2xl font-bold mb-4 font-jakarta">Still have questions?</h2>
-          <p className="mb-6 text-white/90">
-            If you couldn't find the answer to your question, our support team is here to help.
-          </p>
-          <Button 
-            variant="secondary" 
-            className="bg-white text-blue-600 hover:bg-white/90"
-            onClick={() => safeNavigate("/contact")}
+                  {activeIndex === faq.id && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="mt-3"
+                    >
+                      <p className="text-gray-700 leading-relaxed">{faq.answer}</p>
+                    </motion.div>
+                  )}
+                </motion.div>
+              ))
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-gray-600 text-lg">No results found for "{searchQuery}"</p>
+                <p className="text-gray-500 mt-2">Try a different search term or category</p>
+                <Button 
+                  className="mt-4 bg-blue-500 hover:bg-blue-600 text-white"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setActiveCategory("all");
+                  }}
+                >
+                  Clear filters
+                </Button>
+              </div>
+            )}
+          </motion.div>
+          
+          {/* Need more help */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="text-center max-w-2xl mx-auto"
           >
-            Contact Support
-          </Button>
-        </motion.div>
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Still need help?</h3>
+            <p className="text-gray-700 mb-6">
+              If you couldn't find what you were looking for, our support team is here to help.
+            </p>
+            <Button 
+              className="bg-blue-500 hover:bg-blue-600 text-white"
+              onClick={() => safeNavigate("/contact")}
+            >
+              Contact Support
+            </Button>
+          </motion.div>
+        </div>
       </div>
     </div>
   );

@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Star, MapPin, Clock, Globe2, GraduationCap } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import BookingButton from "@/features/booking/components/BookingButton";
 // Import supabase conditionally to handle potential errors better
 let supabaseClient: any;
 try {
@@ -103,21 +103,36 @@ export default function AmbassadorsGrid() {
         try {
           const { data, error } = await supabaseClient
             .from('users')
-            .select('*');
+            .select('*, ambassador_profiles:ambassador_profiles(*)')
+            .eq('role', 'ambassador');
           
           if (error) throw error;
           
-          // Filter ambassador users 
-          const ambassadorUsers = data?.filter((user: any) => 
-            user?.role === 'ambassador'
-          ) || [];
-          
-          if (ambassadorUsers.length > 0) {
-            setAmbassadors(ambassadorUsers);
+          if (data && data.length > 0) {
+            const mappedAmbassadors = data.map(user => ({
+              id: user.id,
+              full_name: user.user_metadata?.full_name || 'Ambassador',
+              avatar_url: user.user_metadata?.avatar_url || '/default-avatar.png',
+              specialties: user.ambassador_profiles?.speciality?.split(',') || [],
+              location: user.ambassador_profiles?.location || 'Location not specified',
+              duration: user.ambassador_profiles?.session_duration || '30 Min',
+              rating: user.ambassador_profiles?.rating || 5.0,
+              // Explicitly check for 'Available' status to determine availability
+              available: user.ambassador_profiles?.availability_status === 'Available',
+              languages: user.ambassador_profiles?.languages?.split(',') || ['English'],
+              education: user.ambassador_profiles?.education || '',
+              experience: user.ambassador_profiles?.experience || ''
+            }));
+            
+            setAmbassadors(mappedAmbassadors);
+          } else {
+            // Fallback to mock data if no real data available
+            setAmbassadors(mockAmbassadors);
           }
         } catch (error: any) {
           console.error("Failed to fetch from Supabase:", error);
           // No need to show an error toast - just silently fallback to mock data
+          setAmbassadors(mockAmbassadors);
         } finally {
           setIsLoading(false);
         }
@@ -128,23 +143,22 @@ export default function AmbassadorsGrid() {
     }
   };
 
-  const handleBooking = (ambassador: Ambassador) => {
-    if (!ambassador.available) {
-      toast.error("This ambassador is currently unavailable");
-      return;
-    }
-
-    navigate({
-      pathname: "/booking",
-      search: `?ambassadorId=${ambassador.id}&ambassadorName=${encodeURIComponent(ambassador.full_name)}&duration=${encodeURIComponent(ambassador.duration || '30 Min')}`
-    });
+  const viewAmbassadorProfile = (ambassadorId: string) => {
+    navigate(`/ambassadors/${ambassadorId}`);
   };
 
   // Show loading state
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <h2 className="text-2xl font-bold text-center mb-8">Our Ambassadors</h2>
+        <div className="flex flex-col items-center mb-8">
+          <div className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-full mb-4">
+            <span className="w-2 h-2 bg-white rounded-full mr-2"></span>
+            <span className="font-medium text-sm">Meet Our Team</span>
+            <span className="w-2 h-2 bg-white rounded-full ml-2"></span>
+          </div>
+          <h2 className="text-3xl md:text-4xl font-bold text-[#001A41]">Our Ambassadors</h2>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((n) => (
             <Card key={n} className="overflow-hidden animate-pulse">
@@ -169,13 +183,20 @@ export default function AmbassadorsGrid() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h2 className="text-2xl font-bold text-center mb-8">Our Ambassadors</h2>
+      <div className="flex flex-col items-center mb-8">
+        <div className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-full mb-4">
+          <span className="w-2 h-2 bg-white rounded-full mr-2"></span>
+          <span className="font-medium text-sm">Meet Our Team</span>
+          <span className="w-2 h-2 bg-white rounded-full ml-2"></span>
+        </div>
+        <h2 className="text-3xl md:text-4xl font-bold text-[#001A41]">Our Ambassadors</h2>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {ambassadors.map((ambassador) => (
           <Card key={ambassador.id} className="overflow-hidden hover:shadow-lg transition-shadow">
             <div className="flex flex-col gap-4 p-6">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 cursor-pointer" onClick={() => viewAmbassadorProfile(ambassador.id)}>
                 <img
                   src={ambassador.avatar_url || '/default-avatar.png'}
                   alt={ambassador.full_name}
@@ -244,13 +265,13 @@ export default function AmbassadorsGrid() {
                 </span>
               </div>
 
-              <Button
-                onClick={() => handleBooking(ambassador)}
+              <BookingButton
+                ambassadorId={parseInt(ambassador.id)}
                 className="w-full mt-2"
+                buttonText={ambassador.available ? "Book Session" : "Unavailable"}
                 disabled={!ambassador.available}
-              >
-                {ambassador.available ? "Book Session" : "Unavailable"}
-              </Button>
+                variant="default"
+              />
             </div>
           </Card>
         ))}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/select";
 import { useRef } from "react";
 import HeroSection from "../components/HeroSection";
+import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 const steps = [
   { id: 1, name: "Specialty" },
@@ -60,41 +62,76 @@ const BookingPage = () => {
   
   const [user, setUser] = useState<any>(null);
   const [ambassador, setAmbassador] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
   
   useEffect(() => {
     const checkAuth = async () => {
       const { data } = await supabase.auth.getSession();
-      if (!data.session) {
-        // Redirect to login if not authenticated
-        toast("Please log in to book an appointment", {
-          description: "You'll be redirected to the login page",
-        });
-        // Store booking intent in localStorage
-        if (ambassadorId) {
-          localStorage.setItem("bookingIntent", JSON.stringify({ ambassadorId }));
+      if (data.session) {
+        setUser(data.session.user);
+        
+        // Pre-fill user data if available
+        const userData = data.session.user.user_metadata;
+        if (userData) {
+          setFormData(prev => ({
+            ...prev,
+            name: `${userData.first_name || ""} ${userData.last_name || ""}`.trim(),
+            email: data.session.user.email || "",
+          }));
         }
-        navigate("/login");
-        return;
+        
+        // Check for saved booking data
+        const savedBookingData = localStorage.getItem("bookingData");
+        if (savedBookingData) {
+          try {
+            const parsedData = JSON.parse(savedBookingData);
+            
+            // Restore saved form data
+            if (parsedData.specialty) setSelectedSpecialty(parsedData.specialty);
+            if (parsedData.appointmentType) setSelectedAppointmentType(parsedData.appointmentType);
+            if (parsedData.time) setSelectedTime(parsedData.time);
+            
+            // Restore date (needs special handling)
+            if (parsedData.date) {
+              setSelectedDate(new Date(parsedData.date));
+            }
+            
+            // Restore form data (merge with user data)
+            if (parsedData.formData) {
+              setFormData(prev => ({
+                ...prev,
+                ...parsedData.formData,
+                // Keep email from authenticated user
+                email: prev.email || parsedData.formData.email,
+              }));
+            }
+            
+            // Determine which step to navigate to
+            if (parsedData.appointmentType && parsedData.date && parsedData.time) {
+              // Skip to review step if most data is filled
+              setCurrentStep(5);
+            } else if (parsedData.appointmentType) {
+              // Skip to date/time step
+              setCurrentStep(3);
+            } else if (parsedData.specialty) {
+              // Skip to appointment type
+              setCurrentStep(2);
+            }
+            
+            // Remove saved booking data
+            localStorage.removeItem("bookingData");
+          } catch (error) {
+            console.error("Error restoring booking data:", error);
+            // If there's an error parsing, just remove the data
+            localStorage.removeItem("bookingData");
+          }
+        }
       }
-      
-      setUser(data.session.user);
       
       // If we have an ambassador ID, fetch ambassador details
       if (ambassadorId) {
         fetchAmbassadorDetails(ambassadorId);
-      } else {
-        setLoading(false);
-      }
-      
-      // Pre-fill user data if available
-      const userData = data.session.user.user_metadata;
-      if (userData) {
-        setFormData(prev => ({
-          ...prev,
-          name: `${userData.first_name || ""} ${userData.last_name || ""}`.trim(),
-          email: data.session.user.email || "",
-        }));
       }
     };
     
@@ -118,8 +155,6 @@ const BookingPage = () => {
         console.error("Error fetching ambassador details:", error);
         // Fallback to placeholder
         setAmbassador({ name: "Mental Health Ambassador" });
-      } finally {
-        setLoading(false);
       }
     };
     
@@ -175,11 +210,25 @@ const BookingPage = () => {
   
   const handleBookingSubmit = async () => {
     try {
-      setLoading(true);
+      // Check if user is authenticated
+      if (!user) {
+        // Store booking data in localStorage
+        localStorage.setItem("bookingData", JSON.stringify({
+          ambassadorId,
+          specialty: selectedSpecialty,
+          appointmentType: selectedAppointmentType,
+          date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : null,
+          time: selectedTime,
+          formData
+        }));
+        
+        // Show auth dialog
+        setShowAuthDialog(true);
+        return;
+      }
       
-      if (!user || !ambassadorId || !selectedDate) {
+      if (!ambassadorId || !selectedDate) {
         toast.error("Missing required booking information");
-        setLoading(false);
         return;
       }
       
@@ -205,9 +254,37 @@ const BookingPage = () => {
     } catch (error) {
       console.error("Error booking appointment:", error);
       toast.error("Failed to book appointment. Please try again.");
-    } finally {
-      setLoading(false);
     }
+  };
+
+  const redirectToLogin = () => {
+    // Store booking intent and data in localStorage
+    localStorage.setItem("bookingIntent", JSON.stringify({ ambassadorId }));
+    localStorage.setItem("bookingData", JSON.stringify({
+      ambassadorId,
+      specialty: selectedSpecialty,
+      appointmentType: selectedAppointmentType,
+      date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : null,
+      time: selectedTime,
+      formData
+    }));
+    
+    navigate("/login");
+  };
+  
+  const redirectToSignup = () => {
+    // Store booking intent and data in localStorage
+    localStorage.setItem("bookingIntent", JSON.stringify({ ambassadorId }));
+    localStorage.setItem("bookingData", JSON.stringify({
+      ambassadorId,
+      specialty: selectedSpecialty,
+      appointmentType: selectedAppointmentType,
+      date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : null,
+      time: selectedTime,
+      formData
+    }));
+    
+    navigate("/signup");
   };
   
   // Render current step content
@@ -409,6 +486,33 @@ const BookingPage = () => {
                   </div>
                 </div>
                 
+                <div className="border-t border-b py-4 my-2">
+                  <h4 className="font-medium mb-3">Your Information:</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Name:</span>
+                      <span className="font-medium">{formData.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Email:</span>
+                      <span className="font-medium">{formData.email}</span>
+                    </div>
+                    {formData.phone && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Phone:</span>
+                        <span className="font-medium">{formData.phone}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {formData.concerns && (
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Notes:</h4>
+                    <p className="text-gray-700 bg-gray-50 p-3 rounded-md italic">"{formData.concerns}"</p>
+                  </div>
+                )}
+                
                 <div className="pt-4 border-t">
                   <p className="text-center text-sm text-gray-500">
                     By proceeding, you confirm your appointment with the mental health ambassador.
@@ -457,7 +561,7 @@ const BookingPage = () => {
               </Card>
               
               <div className="mt-8">
-                <Button onClick={() => navigate("/")} variant="default">
+                <Button onClick={() => navigate("/")} variant="default" className="bg-[#007BFF] hover:bg-blue-600">
                   Back to Home
                 </Button>
               </div>
@@ -472,8 +576,16 @@ const BookingPage = () => {
   
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+      <div className="min-h-screen bg-gradient-to-br from-brand-purple-light via-white to-brand-blue-light">
+        <div className="container mx-auto px-4">
+          {/* Page heading */}
+          <div className="text-center my-8 pt-8">
+            <h1 className="text-3xl md:text-4xl font-bold text-[#001A41] mb-3">Book Your Appointment</h1>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Schedule a session with one of our mental health ambassadors. Complete all steps to confirm your booking.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -482,45 +594,60 @@ const BookingPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-brand-purple-light via-white to-brand-blue-light">
       <div className="pt-20 pb-16">
         <div className="container mx-auto px-4">
+          {/* Page heading */}
+          <div className="text-center my-8">
+            <h1 className="text-3xl md:text-4xl font-bold text-[#001A41] mb-3">Book Your Appointment</h1>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Schedule a session with one of our mental health ambassadors. Complete all steps to confirm your booking.
+            </p>
+          </div>
+          
           {/* Progress Steps */}
           <div className="overflow-x-auto pb-6">
-            <div className="flex justify-between min-w-[900px]">
-              {steps.map((step, index) => (
-                <div key={step.id} className="flex items-center">
-                  <div className="flex flex-col items-center">
-                    <div 
-                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        step.id === currentStep 
-                          ? "bg-[#0078FF] text-white" 
-                          : step.id < currentStep 
-                            ? "bg-green-500 text-white" 
-                            : "bg-gray-200 text-gray-500"
-                      }`}
-                    >
-                      {step.id < currentStep ? (
-                        <CheckCircle2 className="w-5 h-5" />
-                      ) : (
-                        step.id
-                      )}
+            <div className="max-w-3xl mx-auto px-2">
+              <div className="flex items-center">
+                {steps.map((step, index) => (
+                  <div key={step.id} className="flex items-center flex-1">
+                    <div className="flex flex-col items-center relative z-10">
+                      <div 
+                        className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center ${
+                          step.id === currentStep 
+                            ? "bg-[#0078FF] text-white" 
+                            : step.id < currentStep 
+                              ? "bg-green-500 text-white" 
+                              : "bg-gray-200 text-gray-500"
+                        }`}
+                      >
+                        {step.id < currentStep ? (
+                          <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5" />
+                        ) : (
+                          <span className="text-xs md:text-sm">{step.id}</span>
+                        )}
+                      </div>
+                      <span 
+                        className={`mt-2 text-[10px] md:text-xs font-medium ${
+                          step.id === currentStep ? "text-[#0078FF]" : "text-gray-500"
+                        }`}
+                      >
+                        {step.name}
+                      </span>
                     </div>
-                    <span 
-                      className={`mt-2 text-sm font-medium ${
-                        step.id === currentStep ? "text-[#0078FF]" : "text-gray-500"
-                      }`}
-                    >
-                      {step.name}
-                    </span>
+                    
+                    {index < steps.length - 1 && (
+                      <div className="flex-1 mx-0.5 md:mx-2 relative">
+                        <div className="h-[2px] bg-gray-200 w-full absolute top-4 md:top-5"></div>
+                        <div 
+                          className={`h-[2px] bg-green-500 w-full absolute top-4 md:top-5 transition-all duration-300 ease-in-out`}
+                          style={{ 
+                            width: step.id < currentStep ? '100%' : '0%', 
+                            opacity: step.id < currentStep ? 1 : 0 
+                          }}
+                        ></div>
+                      </div>
+                    )}
                   </div>
-                  
-                  {index < steps.length - 1 && (
-                    <div 
-                      className={`w-full max-w-[100px] h-[2px] mx-2 ${
-                        step.id < currentStep ? "bg-green-500" : "bg-gray-200"
-                      }`}
-                    />
-                  )}
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
           
@@ -528,7 +655,7 @@ const BookingPage = () => {
             {renderStepContent()}
             
             {currentStep < 6 && (
-              <div className="flex justify-between mt-10">
+              <div className="flex justify-between mt-10 mb-10">
                 <Button
                   variant="outline"
                   onClick={prevStep}
@@ -540,11 +667,17 @@ const BookingPage = () => {
                 </Button>
                 
                 {currentStep === 5 ? (
-                  <Button onClick={handleBookingSubmit} className="gap-2" disabled={loading}>
-                    {loading ? "Processing..." : "Confirm Booking"}
+                  <Button 
+                    onClick={handleBookingSubmit} 
+                    className="gap-2 bg-[#007BFF] hover:bg-blue-600"
+                  >
+                    Confirm Booking
                   </Button>
                 ) : (
-                  <Button onClick={nextStep} className="gap-2">
+                  <Button 
+                    onClick={nextStep} 
+                    className="gap-2 bg-[#007BFF] hover:bg-blue-600"
+                  >
                     Next
                     <ChevronRight className="w-4 h-4" />
                   </Button>
@@ -554,6 +687,31 @@ const BookingPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Authentication Dialog */}
+      <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Authentication Required</DialogTitle>
+            <DialogDescription>
+              You need to be logged in to complete your booking.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col space-y-4 my-4">
+            <p>
+              Your booking details have been saved. Please login or create an account to continue.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button variant="outline" onClick={redirectToLogin} className="flex-1">
+                Login
+              </Button>
+              <Button onClick={redirectToSignup} className="flex-1 bg-[#007BFF] hover:bg-blue-600">
+                Create Account
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

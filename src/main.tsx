@@ -1,10 +1,9 @@
-
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
 import ErrorBoundary from './components/ErrorBoundary';
-import './index.css';
+import './styles/index.css';
 
 // Global error handling with more detailed logging
 window.addEventListener('error', (event) => {

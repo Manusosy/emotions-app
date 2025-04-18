@@ -1,37 +1,41 @@
-# Security Policy
+<!-- BEGIN MICROSOFT SECURITY.MD V0.0.9 BLOCK -->
 
-## Reporting a Vulnerability
+## Security
 
-We take the security of Emotions App seriously. If you believe you've found a security vulnerability, please follow these steps:
+Microsoft takes the security of our software products and services seriously, which includes all source code repositories managed through our GitHub organizations, which include [Microsoft](https://github.com/Microsoft), [Azure](https://github.com/Azure), [DotNet](https://github.com/dotnet), [AspNet](https://github.com/aspnet) and [Xamarin](https://github.com/xamarin).
 
-1. **Do not disclose the vulnerability publicly**
-2. **Email us at** security@example.com with details of the vulnerability
-3. **Include the following information**:
-   - Description of the vulnerability
-   - Steps to reproduce
-   - Potential impact
-   - Any suggestions for remediation if you have them
+If you believe you have found a security vulnerability in any Microsoft-owned repository that meets [Microsoft's definition of a security vulnerability](https://aka.ms/security.md/definition), please report it to us as described below.
 
-## Security Measures
+## Reporting Security Issues
 
-The Emotions App implements the following security measures:
+**Please do not report security vulnerabilities through public GitHub issues.**
 
-- Regular dependency updates and security audits
-- Input validation and sanitization
-- Authentication and authorization controls
-- Data encryption in transit and at rest
-- Regular security scanning via GitHub Actions
+Instead, please report them to the Microsoft Security Response Center (MSRC) at [https://msrc.microsoft.com/create-report](https://aka.ms/security.md/msrc/create-report).
 
-## Best Practices for Contributors
+If you prefer to submit without logging in, send email to [secure@microsoft.com](mailto:secure@microsoft.com).  If possible, encrypt your message with our PGP key; please download it from the [Microsoft Security Response Center PGP Key page](https://aka.ms/security.md/msrc/pgp).
 
-If you're contributing to the Emotions App, please follow these security best practices:
+You should receive a response within 24 hours. If for some reason you do not, please follow up via email to ensure we received your original message. Additional information can be found at [microsoft.com/msrc](https://www.microsoft.com/msrc). 
 
-1. Never commit sensitive information (API keys, credentials, etc.)
-2. Keep dependencies updated
-3. Follow secure coding practices
-4. Test thoroughly for security issues before submitting PRs
-5. Report any security concerns immediately
+Please include the requested information listed below (as much as you can provide) to help us better understand the nature and scope of the possible issue:
 
-## Security Updates
+  * Type of issue (e.g. buffer overflow, SQL injection, cross-site scripting, etc.)
+  * Full paths of source file(s) related to the manifestation of the issue
+  * The location of the affected source code (tag/branch/commit or direct URL)
+  * Any special configuration required to reproduce the issue
+  * Step-by-step instructions to reproduce the issue
+  * Proof-of-concept or exploit code (if possible)
+  * Impact of the issue, including how an attacker might exploit the issue
 
-Security updates will be released as soon as practical after they are developed. We encourage all users to keep their applications up to date with the latest releases. 
+This information will help us triage your report more quickly.
+
+If you are reporting for a bug bounty, more complete reports can contribute to a higher bounty award. Please visit our [Microsoft Bug Bounty Program](https://aka.ms/security.md/msrc/bounty) page for more details about our active programs.
+
+## Preferred Languages
+
+We prefer all communications to be in English.
+
+## Policy
+
+Microsoft follows the principle of [Coordinated Vulnerability Disclosure](https://aka.ms/security.md/cvd).
+
+<!-- END MICROSOFT SECURITY.MD BLOCK -->

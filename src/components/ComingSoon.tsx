@@ -11,7 +11,7 @@ export default function ComingSoon({ title, description }: ComingSoonProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-purple-light via-white to-brand-blue-light">
       <div className="container mx-auto px-4 pt-32 pb-16">
-        <div className="max-w-2xl mx-auto text-center">
+        <div className="max-w-2xl mx-auto text-left">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

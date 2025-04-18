@@ -324,9 +324,9 @@ const Resources = () => {
 
       {/* Featured Resources Section */}
       <div className="py-16 container mx-auto px-4">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-bold text-gray-800">Featured Resources</h2>
-          <Button variant="ghost" className="flex items-center text-[#0078FF]">
+        <div className="flex flex-col items-center mb-8">
+          <h2 className="text-3xl md:text-4xl font-bold text-[#001A41] mb-6 font-jakarta text-center">Featured Resources</h2>
+          <Button variant="ghost" className="flex items-center text-[#0078FF] mb-6">
             View All <ChevronRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
@@ -366,7 +366,7 @@ const Resources = () => {
                         <Badge className="ml-2 bg-pink-500 text-white border-0">Popular</Badge>
                       )}
                     </div>
-                    <h3 className="text-xl font-bold text-white">{resource.title}</h3>
+                    <h3 className="text-xl font-bold text-white text-left">{resource.title}</h3>
                   </div>
                 </div>
                 <CardContent className="p-5">
@@ -375,7 +375,7 @@ const Resources = () => {
                       <AvatarImage src={resource.author?.avatar} alt={resource.author?.name} />
                       <AvatarFallback>{resource.author?.name.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <div>
+                    <div className="text-left">
                       <p className="text-sm font-medium">{resource.author?.name}</p>
                       <p className="text-xs text-gray-500">{resource.author?.role}</p>
                     </div>
@@ -386,7 +386,7 @@ const Resources = () => {
                       </div>
                     )}
                   </div>
-                  <p className="text-gray-600 mb-3 line-clamp-2">{resource.description}</p>
+                  <p className="text-gray-600 mb-3 line-clamp-2 text-left">{resource.description}</p>
                   <div className="flex flex-wrap gap-2 mb-3">
                     {resource.tags?.map((tag, index) => (
                       <Badge key={index} variant="outline" className="bg-gray-100 text-gray-700 border-0 text-xs">
@@ -410,7 +410,7 @@ const Resources = () => {
       {/* All Resources Section */}
       <div className="bg-white py-16">
         <div className="container mx-auto px-4">
-          <h2 className="text-2xl font-bold text-gray-800 mb-8">Browse All Resources</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-[#001A41] mb-6 font-jakarta text-center">Browse All Resources</h2>
           
           <Tabs defaultValue="all" onValueChange={setActiveCategory} className="w-full">
             <TabsList className="bg-gray-100 p-1 rounded-lg mb-8 flex flex-wrap">
@@ -450,23 +450,26 @@ const Resources = () => {
                             <span className="ml-1">{getResourceTypeLabel(resource.type)}</span>
                           </Badge>
                           {resource.new && (
-                            <Badge className="bg-amber-500 text-white border-0">New</Badge>
+                            <Badge className="ml-2 bg-amber-500 text-white border-0">New</Badge>
                           )}
                         </div>
                       </div>
-                      <CardContent className="p-5 flex-grow">
-                        <h3 className="text-lg font-bold text-gray-800 mb-2">{resource.title}</h3>
-                        <p className="text-gray-600 mb-3 line-clamp-2 text-sm">{resource.description}</p>
-                        <div className="flex flex-wrap gap-2 mt-3">
-                          {resource.tags?.slice(0, 2).map((tag, index) => (
-                            <Badge key={index} variant="outline" className="bg-gray-100 text-gray-700 border-0 text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                          {(resource.tags?.length || 0) > 2 && (
-                            <Badge variant="outline" className="bg-gray-100 text-gray-700 border-0 text-xs">
-                              +{(resource.tags?.length || 0) - 2} more
-                            </Badge>
+                      <CardContent className="p-4 flex-grow">
+                        <h3 className="font-bold text-gray-800 mb-2 text-left">{resource.title}</h3>
+                        <p className="text-sm text-gray-600 mb-3 line-clamp-2 text-left">{resource.description}</p>
+                        <div className="flex items-center mt-auto">
+                          <Avatar className="h-6 w-6 mr-2">
+                            <AvatarImage src={resource.author?.avatar} alt={resource.author?.name} />
+                            <AvatarFallback>{resource.author?.name.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div className="text-left">
+                            <p className="text-xs font-medium">{resource.author?.name}</p>
+                          </div>
+                          {resource.duration && (
+                            <div className="ml-auto flex items-center text-xs text-gray-500">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {resource.duration}
+                            </div>
                           )}
                         </div>
                       </CardContent>
@@ -521,23 +524,26 @@ const Resources = () => {
                               <span className="ml-1">{getResourceTypeLabel(resource.type)}</span>
                             </Badge>
                             {resource.new && (
-                              <Badge className="bg-amber-500 text-white border-0">New</Badge>
+                              <Badge className="ml-2 bg-amber-500 text-white border-0">New</Badge>
                             )}
                           </div>
                         </div>
-                        <CardContent className="p-5 flex-grow">
-                          <h3 className="text-lg font-bold text-gray-800 mb-2">{resource.title}</h3>
-                          <p className="text-gray-600 mb-3 line-clamp-2 text-sm">{resource.description}</p>
-                          <div className="flex flex-wrap gap-2 mt-3">
-                            {resource.tags?.slice(0, 2).map((tag, index) => (
-                              <Badge key={index} variant="outline" className="bg-gray-100 text-gray-700 border-0 text-xs">
-                                {tag}
-                              </Badge>
-                            ))}
-                            {(resource.tags?.length || 0) > 2 && (
-                              <Badge variant="outline" className="bg-gray-100 text-gray-700 border-0 text-xs">
-                                +{(resource.tags?.length || 0) - 2} more
-                              </Badge>
+                        <CardContent className="p-4 flex-grow">
+                          <h3 className="font-bold text-gray-800 mb-2 text-left">{resource.title}</h3>
+                          <p className="text-sm text-gray-600 mb-3 line-clamp-2 text-left">{resource.description}</p>
+                          <div className="flex items-center mt-auto">
+                            <Avatar className="h-6 w-6 mr-2">
+                              <AvatarImage src={resource.author?.avatar} alt={resource.author?.name} />
+                              <AvatarFallback>{resource.author?.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div className="text-left">
+                              <p className="text-xs font-medium">{resource.author?.name}</p>
+                            </div>
+                            {resource.duration && (
+                              <div className="ml-auto flex items-center text-xs text-gray-500">
+                                <Clock className="h-3 w-3 mr-1" />
+                                {resource.duration}
+                              </div>
                             )}
                           </div>
                         </CardContent>
@@ -556,13 +562,13 @@ const Resources = () => {
 
       {/* Crisis Support Section */}
       <div className="py-16 container mx-auto px-4">
-        <h2 className="text-2xl font-bold text-gray-800 mb-12 text-center">Crisis Support</h2>
+        <h2 className="text-3xl md:text-4xl font-bold text-[#001A41] mb-6 font-jakarta text-center">Crisis Support</h2>
         
         <Card className="rounded-2xl overflow-hidden shadow-lg border-0 max-w-4xl mx-auto bg-gradient-to-r from-[#0078FF] via-[#20c0f3] to-[#00D2FF]">
           <div className="p-8 md:p-10">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card className="border-0 shadow-md bg-white rounded-xl overflow-hidden">
-                <CardContent className="p-6 text-center">
+                <CardContent className="p-6 text-left">
                   <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-50 text-[#0078FF] mb-4">
                     <Phone className="w-6 h-6" />
                   </div>
@@ -578,7 +584,7 @@ const Resources = () => {
               </Card>
               
               <Card className="border-0 shadow-md bg-white rounded-xl overflow-hidden">
-                <CardContent className="p-6 text-center">
+                <CardContent className="p-6 text-left">
                   <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-50 text-[#0078FF] mb-4">
                     <MessageSquare className="w-6 h-6" />
                   </div>
@@ -594,7 +600,7 @@ const Resources = () => {
               </Card>
               
               <Card className="border-0 shadow-md bg-white rounded-xl overflow-hidden">
-                <CardContent className="p-6 text-center">
+                <CardContent className="p-6 text-left">
                   <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-50 text-[#0078FF] mb-4">
                     <Mail className="w-6 h-6" />
                   </div>

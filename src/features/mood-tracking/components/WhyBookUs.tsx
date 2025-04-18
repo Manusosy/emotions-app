@@ -154,7 +154,7 @@ const WhyBookUs = () => {
               transition={{ duration: 0.6 }}
               className="inline-flex items-center px-4 py-2 bg-[#007BFF] rounded-full text-white text-sm font-medium mb-6 mx-auto"
             >
-              <span className="text-white">• Why Book With Us •</span>
+              <span className="text-white">• Why Choose Us •</span>
             </motion.div>
             
             <motion.h2 
@@ -162,7 +162,7 @@ const WhyBookUs = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-3xl md:text-4xl font-bold text-[#001A41] mb-12 font-jakarta"
+              className="text-3xl md:text-4xl font-bold text-[#001A41] mb-12 font-jakarta text-center"
             >
               Compelling Reasons to Choose Us
             </motion.h2>
@@ -271,7 +271,7 @@ const WhyBookUs = () => {
                 transition={{ duration: 0.6 }}
                 className="inline-flex items-center px-4 py-2 bg-[#007BFF] rounded-full text-white text-sm font-medium mb-6"
               >
-                <span className="text-white font-jakarta">• Why Book With Us •</span>
+                <span className="text-white font-jakarta">• Why Choose Us •</span>
               </motion.div>
               
               <motion.h2 
@@ -279,7 +279,7 @@ const WhyBookUs = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: 0.1 }}
-                className="text-3xl md:text-4xl font-bold text-white mb-2 leading-tight font-jakarta"
+                className="text-3xl md:text-4xl font-bold text-white mb-2 leading-tight font-jakarta text-left"
               >
                 We are committed to <br />
                 understanding your <span className="text-[#007BFF]">emotional needs</span><br />
@@ -291,7 +291,7 @@ const WhyBookUs = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-gray-300 mb-8 font-jakarta"
+                className="text-gray-300 mb-8 font-jakarta text-left"
               >
                 As a trusted mental health platform, we are passionate about<br /> promoting emotional wellness beyond the digital experience.<br /> We actively provide tools, resources, and connections to help you<br /> understand and manage your emotions effectively.
               </motion.p>
@@ -319,7 +319,7 @@ const WhyBookUs = () => {
                           <div className="text-white font-medium font-jakarta">{item.title}</div>
                         </div>
                       </AccordionTrigger>
-                      <AccordionContent className="p-4 text-gray-300 border-t border-[#1E3A8A]/30 font-jakarta">
+                      <AccordionContent className="p-4 text-gray-300 border-t border-[#1E3A8A]/30 font-jakarta text-left">
                         {item.content}
                       </AccordionContent>
                     </AccordionItem>
@@ -335,9 +335,9 @@ const WhyBookUs = () => {
       <section className="bg-[#001A41] text-white py-16 border-t border-[#1E3A8A]/30">
         <div className="container mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 max-w-6xl">
           {stepItems.map((step, index) => (
-            <div key={index} className="text-center">
+            <div key={index} className="text-left">
               <div 
-                className={`w-14 h-14 mx-auto mb-4 rounded-lg flex items-center justify-center shadow-lg`}
+                className={`w-14 h-14 mb-4 rounded-lg flex items-center justify-center shadow-lg`}
                 style={{ backgroundColor: step.bgColor }}
               >
                 <step.icon className="w-6 h-6 text-white" />
@@ -370,7 +370,7 @@ const WhyBookUs = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-3xl md:text-4xl font-bold text-[#001A41] mb-6 font-jakarta"
+              className="text-3xl md:text-4xl font-bold text-[#001A41] mb-6 font-jakarta text-center"
             >
               9K Users Trust Emotions Worldwide
             </motion.h2>
@@ -386,7 +386,7 @@ const WhyBookUs = () => {
                   ))}
                 </div>
                 
-                <p className="text-[#475467] mb-6 font-jakarta">
+                <p className="text-[#475467] mb-6 font-jakarta text-left">
                   {testimonial.quote}
                 </p>
                 
@@ -418,7 +418,7 @@ const WhyBookUs = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="inline-flex items-center px-4 py-2 bg-[#007BFF] rounded-full text-white text-sm font-medium mb-6 mx-auto font-jakarta"
+              className="inline-flex items-center px-4 py-2 bg-[#007BFF] rounded-full text-white text-sm font-medium mb-6 font-jakarta mx-auto"
             >
               <span className="text-white">• Frequently Asked Questions •</span>
             </motion.div>
@@ -428,7 +428,7 @@ const WhyBookUs = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-3xl md:text-4xl font-bold text-[#001A41] mb-6 font-jakarta"
+              className="text-3xl md:text-4xl font-bold text-[#001A41] mb-6 font-jakarta text-center"
             >
               Common Questions About Our Platform
             </motion.h2>
@@ -438,7 +438,7 @@ const WhyBookUs = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-[#475467] text-lg max-w-2xl mx-auto mb-12 font-jakarta"
+              className="text-[#475467] text-lg mb-12 font-jakarta text-center"
             >
               Find answers to frequently asked questions about our emotional wellness tracking platform and services
             </motion.p>
@@ -469,7 +469,7 @@ const WhyBookUs = () => {
                       <h3 className="text-lg font-medium text-[#001A41] font-jakarta text-left">{item.question}</h3>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="px-6 py-5 bg-gray-50 border-t border-gray-200 font-jakarta text-[#475467] leading-relaxed">
+                  <AccordionContent className="px-6 py-5 bg-gray-50 border-t border-gray-200 font-jakarta text-[#475467] leading-relaxed text-left">
                     {item.answer}
                   </AccordionContent>
                 </AccordionItem>

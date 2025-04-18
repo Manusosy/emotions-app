@@ -65,9 +65,9 @@ const ScrollingInfoStrip: React.FC<ScrollingInfoStripProps> = ({
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                justifyContent: 'center',
+                justifyContent: 'flex-start',
                 minWidth: '200px',
-                textAlign: 'center',
+                textAlign: 'left',
                 boxShadow: '0 0 15px rgba(255, 255, 255, 1)', 
                 transform: 'translateZ(0)', // Force GPU acceleration
                 border: '1px solid rgba(0,0,0,0.05)',

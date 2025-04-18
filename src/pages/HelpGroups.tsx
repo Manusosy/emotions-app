@@ -395,15 +395,15 @@ const HelpGroups = () => {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="mb-8 bg-white p-6 rounded-xl shadow-md max-w-5xl mx-auto"
+            className="mb-8 bg-white p-6 rounded-xl shadow-md max-w-5xl mx-auto text-left"
           >
-            <h3 className="text-lg font-medium mb-4 flex items-center">
+            <h3 className="text-lg font-medium mb-4 flex items-center text-left font-jakarta text-[#001A41]">
               <Filter className="h-5 w-5 mr-2 text-[#20c0f3]" />
               Advanced Filters
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Meeting Type</label>
+              <div className="text-left">
+                <label className="block text-sm font-medium text-gray-700 mb-2 text-left">Meeting Type</label>
                 <div className="flex flex-wrap gap-2">
                   <Badge 
                     variant="outline" 
@@ -440,8 +440,8 @@ const HelpGroups = () => {
                   </Badge>
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Availability</label>
+              <div className="text-left">
+                <label className="block text-sm font-medium text-gray-700 mb-2 text-left">Availability</label>
                 <div className="flex flex-wrap gap-2">
                   <Badge 
                     variant="outline" 
@@ -467,8 +467,8 @@ const HelpGroups = () => {
                   </Badge>
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Topics</label>
+              <div className="text-left">
+                <label className="block text-sm font-medium text-gray-700 mb-2 text-left">Topics</label>
                 <Input 
                   type="text" 
                   placeholder="Search topics..." 
@@ -522,7 +522,7 @@ const HelpGroups = () => {
                     <CardHeader className="pb-2 relative">
                       <div className="absolute -left-2 top-6 h-8 w-2 bg-[#20c0f3] rounded-r-md"></div>
                       <div className="ml-2">
-                        <CardTitle className="text-2xl font-bold text-gray-800">{group.name}</CardTitle>
+                        <CardTitle className="text-2xl font-bold text-gray-800 text-left">{group.name}</CardTitle>
                         <div className="flex flex-wrap gap-2 my-2">
                           <Badge className={`${getMeetingTypeColor(group.meetingType)} border-0`}>
                             {getMeetingTypeIcon(group.meetingType)}
@@ -541,29 +541,29 @@ const HelpGroups = () => {
                     </CardHeader>
                     
                     <CardContent className="py-3">
-                      <CardDescription className="text-gray-600 mb-4 text-base leading-relaxed">
+                      <CardDescription className="text-gray-600 mb-4 text-base leading-relaxed text-left">
                         {group.description}
                       </CardDescription>
                       
                       <div className="space-y-2 mb-5">
-                        <div className="flex items-start text-sm">
+                        <div className="flex items-start text-sm text-left">
                           <div className="bg-blue-50 p-1.5 rounded-full mr-3">
                             <CalendarDays className="h-4 w-4 text-[#20c0f3]" />
                           </div>
-                          <div>
-                            <p className="font-medium text-gray-700">{group.schedule}</p>
+                          <div className="text-left">
+                            <p className="font-medium text-gray-700 text-left">{group.schedule}</p>
                             {group.nextMeeting && (
-                              <p className="text-sm text-[#20c0f3]">Next meeting: {group.nextMeeting}</p>
+                              <p className="text-sm text-[#20c0f3] text-left">Next meeting: {group.nextMeeting}</p>
                             )}
                           </div>
                         </div>
                         
                         {group.location && (
-                          <div className="flex items-start text-sm">
+                          <div className="flex items-start text-sm text-left">
                             <div className="bg-blue-50 p-1.5 rounded-full mr-3">
                               <MapPin className="h-4 w-4 text-[#20c0f3]" />
                             </div>
-                            <span className="text-gray-700">{group.location}</span>
+                            <span className="text-gray-700 text-left">{group.location}</span>
                           </div>
                         )}
                       </div>
@@ -581,7 +581,7 @@ const HelpGroups = () => {
                   {/* Right Column - Facilitator & Actions */}
                   <div className="md:w-1/4 border-l border-gray-100 bg-gray-50 p-6 flex flex-col justify-between">
                     <div>
-                      <h4 className="text-sm uppercase text-gray-500 font-medium mb-3">Facilitator</h4>
+                      <h4 className="text-sm uppercase text-gray-500 font-medium mb-3 text-center font-jakarta">Facilitator</h4>
                       <div className="flex flex-col items-center text-center mb-6">
                         <Avatar className="h-16 w-16 mb-2 border-2 border-white shadow-md">
                           <AvatarImage src={group.facilitator.avatar} alt={group.facilitator.name} />
@@ -634,10 +634,10 @@ const HelpGroups = () => {
         <div className="container mx-auto px-4">
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden max-w-5xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-0 items-center">
-              <div className="p-8 md:p-12 relative">
+              <div className="p-8 md:p-12 relative text-left">
                 <div className="absolute top-0 left-0 h-1 w-24 bg-[#20c0f3]"></div>
-                <h2 className="text-3xl font-bold text-gray-800 mb-4">Start Your Own Support Group</h2>
-                <p className="text-gray-600 mb-8">
+                <h2 className="text-3xl md:text-4xl font-bold text-[#001A41] mb-4 text-left font-jakarta">Start Your Own Support Group</h2>
+                <p className="text-gray-600 mb-8 text-left">
                   Are you a mental health ambassador looking to create a safe space for people to connect and heal? 
                   We provide the platform, resources, and guidance to help you lead a meaningful support group.
                 </p>
@@ -646,27 +646,27 @@ const HelpGroups = () => {
                     <div className="bg-[#20c0f3]/10 rounded-lg p-2 mr-4">
                       <Users className="h-6 w-6 text-[#20c0f3]" />
                     </div>
-                    <div>
-                      <h3 className="text-gray-800 font-medium">Community Building</h3>
-                      <p className="text-gray-500 text-sm">Create meaningful connections around shared experiences</p>
+                    <div className="text-left">
+                      <h3 className="text-gray-800 font-medium text-left">Community Building</h3>
+                      <p className="text-gray-500 text-sm text-left">Create meaningful connections around shared experiences</p>
                     </div>
                   </div>
                   <div className="flex items-start">
                     <div className="bg-[#20c0f3]/10 rounded-lg p-2 mr-4">
                       <BookOpen className="h-6 w-6 text-[#20c0f3]" />
                     </div>
-                    <div>
-                      <h3 className="text-gray-800 font-medium">Facilitation Resources</h3>
-                      <p className="text-gray-500 text-sm">Access training, materials, and ongoing support</p>
+                    <div className="text-left">
+                      <h3 className="text-gray-800 font-medium text-left">Facilitation Resources</h3>
+                      <p className="text-gray-500 text-sm text-left">Access training, materials, and ongoing support</p>
                     </div>
                   </div>
                   <div className="flex items-start">
                     <div className="bg-[#20c0f3]/10 rounded-lg p-2 mr-4">
                       <Tag className="h-6 w-6 text-[#20c0f3]" />
                     </div>
-                    <div>
-                      <h3 className="text-gray-800 font-medium">Customizable Framework</h3>
-                      <p className="text-gray-500 text-sm">Create a group that meets the specific needs of your community</p>
+                    <div className="text-left">
+                      <h3 className="text-gray-800 font-medium text-left">Customizable Framework</h3>
+                      <p className="text-gray-500 text-sm text-left">Create a group that meets the specific needs of your community</p>
                     </div>
                   </div>
                 </div>
@@ -694,20 +694,20 @@ const HelpGroups = () => {
       <Dialog open={showLeadershipDialog} onOpenChange={setShowLeadershipDialog}>
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-gray-800">Apply to Lead a Support Group</DialogTitle>
-            <DialogDescription className="text-gray-600">
+            <DialogTitle className="text-2xl font-bold text-[#001A41] text-left font-jakarta">Apply to Lead a Support Group</DialogTitle>
+            <DialogDescription className="text-gray-600 text-left">
               Complete this form to apply to become a support group leader. We'll review your application and contact you soon.
             </DialogDescription>
           </DialogHeader>
           
           <Form {...leadershipForm}>
-            <form onSubmit={leadershipForm.handleSubmit(onLeadershipSubmit)} className="space-y-4">
+            <form onSubmit={leadershipForm.handleSubmit(onLeadershipSubmit)} className="space-y-4 text-left">
               <FormField
                 control={leadershipForm.control}
                 name="name"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Full Name</FormLabel>
+                  <FormItem className="text-left">
+                    <FormLabel className="text-left">Full Name</FormLabel>
                     <FormControl>
                       <Input placeholder="Your full name" {...field} />
                     </FormControl>
@@ -721,8 +721,8 @@ const HelpGroups = () => {
                   control={leadershipForm.control}
                   name="email"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
+                    <FormItem className="text-left">
+                      <FormLabel className="text-left">Email</FormLabel>
                       <FormControl>
                         <Input type="email" placeholder="Your email address" {...field} />
                       </FormControl>
@@ -735,8 +735,8 @@ const HelpGroups = () => {
                   control={leadershipForm.control}
                   name="phone"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
+                    <FormItem className="text-left">
+                      <FormLabel className="text-left">Phone Number</FormLabel>
                       <FormControl>
                         <Input placeholder="Your phone number" {...field} />
                       </FormControl>
@@ -750,12 +750,12 @@ const HelpGroups = () => {
                 control={leadershipForm.control}
                 name="groupType"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>What type of group would you like to lead?</FormLabel>
+                  <FormItem className="text-left">
+                    <FormLabel className="text-left">What type of group would you like to lead?</FormLabel>
                     <FormControl>
                       <Input placeholder="E.g., Anxiety support, Grief companions, etc." {...field} />
                     </FormControl>
-                    <FormDescription>Specify the focus of your proposed support group</FormDescription>
+                    <FormDescription className="text-left">Specify the focus of your proposed support group</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -765,8 +765,8 @@ const HelpGroups = () => {
                 control={leadershipForm.control}
                 name="experience"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Relevant Experience</FormLabel>
+                  <FormItem className="text-left">
+                    <FormLabel className="text-left">Relevant Experience</FormLabel>
                     <FormControl>
                       <Textarea 
                         placeholder="Please describe your experience in mental health support, facilitation, or related fields..." 
@@ -783,8 +783,8 @@ const HelpGroups = () => {
                 control={leadershipForm.control}
                 name="motivation"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Motivation</FormLabel>
+                  <FormItem className="text-left">
+                    <FormLabel className="text-left">Motivation</FormLabel>
                     <FormControl>
                       <Textarea 
                         placeholder="Why do you want to lead a support group? What do you hope to achieve?" 

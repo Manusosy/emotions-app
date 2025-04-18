@@ -18,16 +18,34 @@ export default function Login() {
   
   // Check if user is already authenticated and redirect if needed
   useEffect(() => {
-    // If already authenticated, redirect to dashboard
+    // If already authenticated, redirect to dashboard or booking
     if (isAuthenticated && userRole && !redirecting) {
       console.log(`User already authenticated as ${userRole}, redirecting...`);
       setRedirecting(true);
       
-      const dashboardUrl = getDashboardUrlForRole(userRole);
-      console.log(`Redirecting to ${dashboardUrl}`);
+      // Check for booking intent
+      const bookingIntent = localStorage.getItem("bookingIntent");
+      const bookingData = localStorage.getItem("bookingData");
       
-      // Navigate to dashboard
-      navigate(dashboardUrl, { replace: true });
+      if (bookingIntent && bookingData) {
+        // Clear booking intent and data from local storage
+        localStorage.removeItem("bookingIntent");
+        localStorage.removeItem("bookingData");
+        
+        // Parse the booking intent
+        const { ambassadorId } = JSON.parse(bookingIntent);
+        
+        // Navigate to booking page
+        console.log(`Redirecting to booking page with ambassador ID: ${ambassadorId}`);
+        navigate(`/booking?ambassadorId=${ambassadorId}`);
+      } else {
+        // No booking intent, redirect to dashboard
+        const dashboardUrl = getDashboardUrlForRole(userRole);
+        console.log(`Redirecting to ${dashboardUrl}`);
+        
+        // Navigate to dashboard
+        navigate(dashboardUrl, { replace: true });
+      }
     }
   }, [isAuthenticated, userRole, navigate, getDashboardUrlForRole, redirecting]);
 
@@ -50,16 +68,37 @@ export default function Login() {
       if (data.user) {
         // Get the user's role from metadata
         const role = data.user.user_metadata?.role || 'patient';
-        const dashboardUrl = getDashboardUrlForRole(role);
         
-        toast.success(`Signed in successfully! Redirecting to dashboard...`);
-        console.log(`Login successful as ${role}, redirecting to ${dashboardUrl}`);
+        // Check for booking intent
+        const bookingIntent = localStorage.getItem("bookingIntent");
+        const bookingData = localStorage.getItem("bookingData");
         
         // Set redirecting state to prevent multiple redirects
         setRedirecting(true);
         
-        // Navigate to the appropriate dashboard
-        navigate(dashboardUrl, { replace: true });
+        if (bookingIntent && bookingData) {
+          // Clear booking intent from local storage but keep bookingData
+          // We'll remove bookingData after the booking is completed
+          localStorage.removeItem("bookingIntent");
+          
+          // Parse the booking intent
+          const { ambassadorId } = JSON.parse(bookingIntent);
+          
+          toast.success("Signed in successfully! Redirecting to booking...");
+          console.log(`Login successful as ${role}, redirecting to booking with ambassador ID: ${ambassadorId}`);
+          
+          // Navigate to booking page
+          navigate(`/booking?ambassadorId=${ambassadorId}`);
+        } else {
+          // No booking intent, redirect to dashboard
+          const dashboardUrl = getDashboardUrlForRole(role);
+          
+          toast.success(`Signed in successfully! Redirecting to dashboard...`);
+          console.log(`Login successful as ${role}, redirecting to ${dashboardUrl}`);
+          
+          // Navigate to the appropriate dashboard
+          navigate(dashboardUrl, { replace: true });
+        }
       }
     } catch (error: any) {
       console.error('Login error:', error);

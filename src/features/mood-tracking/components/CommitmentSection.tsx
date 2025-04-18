@@ -49,7 +49,7 @@ const WhyBookSection = () => {
       />
 
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
+        <div className="text-left mb-12">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -57,7 +57,7 @@ const WhyBookSection = () => {
             transition={{ duration: 0.6 }}
             className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-brand-blue to-brand-purple rounded-full text-white text-sm font-medium mb-6 shadow-lg shadow-brand-blue/20"
           >
-            Why Book With Us
+            Why Choose Us
           </motion.div>
           
           <motion.h2 
@@ -75,7 +75,7 @@ const WhyBookSection = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-xl text-slate-600 max-w-3xl mx-auto mb-12"
+            className="text-xl text-slate-600 mb-12"
           >
             Emotions is a Platform where your journey to a better mental health begins. With our platform, 
             you'll find expert guidance, personalized support, and innovative tools designed to nurture your 
