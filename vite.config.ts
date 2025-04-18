@@ -25,7 +25,8 @@ export default defineConfig({
           ]
         }
       }
-    }
+    },
+    assetsInlineLimit: 4096
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom']
