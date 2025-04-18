@@ -15,8 +15,8 @@ try {
   console.log('Vercel Build: Installing platform-specific dependencies...');
   execSync('node ./scripts/install-platform-deps.js', { stdio: 'inherit' });
 
-  // Run the standard build command
-  console.log('Vercel Build: Running TypeScript check and Vite build...');
+  // Run the build command directly (skipping TypeScript check)
+  console.log('Vercel Build: Running Vite build (skipping TypeScript checks)...');
   execSync('npm run build', { stdio: 'inherit' });
 
   console.log('Vercel Build: Build completed successfully!');
