@@ -26,33 +26,86 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import PageLoader from "@/components/ui/page-loader";
+import AmbassadorHeader from "./AmbassadorHeader";
+import AmbassadorSidebar from "./AmbassadorSidebar";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
-export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
-  const navigate = useNavigate();
-  const isMobile = useIsMobile();
-  const { user, logout, getFullName, isAuthenticated } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+export default function DashboardLayout({ children }: DashboardLayoutProps) {
+  const { user, logout, getFullName, isAuthenticated, isLoading, userRole } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(!useIsMobile());
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [isPageLoading, setIsPageLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Verify user is authenticated, if not redirect to login
-    if (!isAuthenticated) {
-      navigate('/login', { replace: true });
-      return;
+    // Check for signup credentials first
+    const signupCredentials = localStorage.getItem('signupCredentials');
+    
+    if (signupCredentials) {
+      try {
+        const credentials = JSON.parse(signupCredentials);
+        
+        // Sign in using the credentials stored during signup
+        const signInUser = async () => {
+          try {
+            const { error } = await supabase.auth.signInWithPassword({
+              email: credentials.email,
+              password: credentials.password
+            });
+            
+            if (error) {
+              console.error("Error signing in with stored credentials:", error);
+              // Remove invalid credentials
+              localStorage.removeItem('signupCredentials');
+            } else {
+              // Credentials used successfully, remove them
+              localStorage.removeItem('signupCredentials');
+            }
+          } catch (err) {
+            console.error("Error signing in with stored credentials:", err);
+            localStorage.removeItem('signupCredentials');
+          } finally {
+            // After attempting to sign in, proceed with normal flow
+            setTimeout(() => {
+              setIsPageLoading(false);
+            }, 300);
+          }
+        };
+        
+        signInUser();
+        return;
+      } catch (e) {
+        // If parsing fails, remove the invalid data
+        localStorage.removeItem('signupCredentials');
+      }
     }
+    
+    // No signup credentials, proceed with normal auth flow
+    const timer = setTimeout(() => {
+      if (!isLoading) {
+        if (!isAuthenticated) {
+          navigate("/login", { replace: true });
+        } else if (userRole !== 'ambassador') {
+          // Redirect non-ambassadors to their appropriate dashboard
+          navigate("/patient-dashboard", { replace: true });
+        } else {
+          setIsPageLoading(false);
+        }
+      }
+    }, 300);
 
-    setCurrentPath(window.location.pathname);
-  }, [window.location.pathname, isAuthenticated, navigate]);
+    return () => clearTimeout(timer);
+  }, [isLoading, isAuthenticated, navigate, userRole]);
 
   useEffect(() => {
-    setSidebarOpen(!isMobile);
-  }, [isMobile]);
+    setSidebarOpen(!useIsMobile());
+  }, [useIsMobile]);
 
   useEffect(() => {
     console.log("DashboardLayout checking auth - User:", user?.id);
@@ -130,158 +183,19 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     }
   ];
 
+  if (isPageLoading || isLoading) {
+    return <PageLoader text="Loading your ambassador dashboard..." />;
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 overflow-hidden">
-      {/* Top Navigation Bar Container with Padding */}
-      <div className="px-4 py-4 sm:px-6">
-        {/* Header with rounded corners and contained width */}
-        <div className="sticky top-4 z-40 mx-auto rounded-2xl bg-blue-600 px-4 py-3 shadow-lg sm:px-6 max-w-[98%]">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden text-white hover:bg-blue-500/50"
-              >
-                <span className="sr-only">Toggle sidebar</span>
-                {sidebarOpen ? (
-                  <X className="h-6 w-6" aria-hidden="true" />
-                ) : (
-                  <Menu className="h-6 w-6" aria-hidden="true" />
-                )}
-              </Button>
-              <Link to="/" className="flex items-center">
-                <img
-                  src="/lovable-uploads/03038be2-2146-4f36-a685-7b7719df9caa.png"
-                  alt="Logo"
-                  className="h-8 w-auto"
-                />
-              </Link>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative text-white hover:bg-blue-500/50"
-                onClick={() => navigate('/ambassador-dashboard/notifications')}
-              >
-                <Bell className="h-5 w-5" />
-                {unreadNotifications > 0 && (
-                  <Badge 
-                    variant="destructive" 
-                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                  >
-                    {unreadNotifications}
-                  </Badge>
-                )}
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative text-white hover:bg-blue-500/50"
-                onClick={() => navigate('/ambassador-dashboard/messages')}
-              >
-                <MessageSquare className="h-5 w-5" />
-                {unreadMessages > 0 && (
-                  <Badge 
-                    variant="destructive" 
-                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                  >
-                    {unreadMessages}
-                  </Badge>
-                )}
-              </Button>
-              <Avatar 
-                className="h-8 w-8 cursor-pointer border-2 border-white/25 hover:border-white/50 transition-colors" 
-                onClick={() => navigate('/ambassador-dashboard/profile')}
-              >
-                <AvatarImage src={user?.user_metadata?.avatar_url} />
-                <AvatarFallback className="bg-blue-700 text-white">
-                  {user?.user_metadata?.first_name?.[0]?.toUpperCase() || 'A'}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Sidebar and Main Content */}
-      <div
-        className={`fixed inset-y-0 z-30 flex w-72 flex-col transition-transform duration-300 lg:translate-x-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-        style={{ top: "88px" }}
-      >
-        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white px-6 pb-4 border-r">
-          <nav className="flex flex-1 flex-col pt-4">
-            <ul role="list" className="flex flex-1 flex-col gap-y-7">
-              {ambassadorNavigation.map((section) => (
-                <li key={section.section}>
-                  <div className="text-xs font-semibold text-blue-600 uppercase mb-2">
-                    {section.section}
-                  </div>
-                  <ul role="list" className="-mx-2 space-y-1">
-                    {section.items.map((item) => {
-                      const isActive = currentPath === item.href;
-                      return (
-                        <li key={item.name}>
-                          <Button
-                            variant={isActive ? "secondary" : "ghost"}
-                            className={`w-full justify-start gap-x-3 ${
-                              isActive 
-                                ? "bg-blue-100 text-blue-700 hover:bg-blue-200" 
-                                : "hover:bg-blue-50 hover:text-blue-600"
-                            }`}
-                            onClick={() => {
-                              navigate(item.href);
-                              if (isMobile) setSidebarOpen(false);
-                            }}
-                          >
-                            <item.icon 
-                              className={`h-5 w-5 ${isActive ? "text-blue-600" : ""}`} 
-                              aria-hidden="true" 
-                            />
-                            {item.name}
-                          </Button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </li>
-              ))}
-              <li className="mt-auto">
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start gap-x-3 text-red-600 hover:bg-red-50 hover:text-red-700"
-                  onClick={handleLogout}
-                >
-                  <LogOut className="h-5 w-5" aria-hidden="true" />
-                  Logout
-                </Button>
-              </li>
-            </ul>
-          </nav>
-        </div>
-      </div>
-
-      {/* Main content */}
-      <div className={`lg:pl-72`}>
-        <main className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-background">
+      <AmbassadorSidebar />
+      <div className="flex-1">
+        <AmbassadorHeader />
+        <main className="p-4 md:p-8 pt-6">
           {children}
         </main>
       </div>
-
-      {/* Mobile sidebar backdrop */}
-      {sidebarOpen && isMobile && (
-        <div
-          className="fixed inset-0 z-20 bg-gray-600 bg-opacity-75 transition-opacity lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
     </div>
   );
-};
-
-export default DashboardLayout;
+}

@@ -85,8 +85,18 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
+      // Store credentials in localStorage for the dashboard to use
+      localStorage.setItem('signupCredentials', JSON.stringify({
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+        fullName: `${formData.firstName} ${formData.lastName}`,
+        country: formData.country,
+        gender: formData.gender || null
+      }));
+      
       // Create user with Supabase
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
@@ -104,27 +114,19 @@ export default function Signup() {
       
       if (error) throw error;
       
-      // Determine where to go next
+      // Navigate directly - bypass any auth checks
       const targetPath = formData.role === 'ambassador' 
         ? '/ambassador-dashboard' 
         : '/patient-dashboard';
-      
-      // Sign in immediately after sign up to ensure session is created
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password
-      });
-      
-      if (signInError) throw signInError;
-      
-      // Navigate directly after login
+        
+      // Navigate immediately
       navigate(targetPath, { replace: true });
       
     } catch (error: any) {
       console.error("Signup error:", error);
       setIsLoading(false);
       
-      if (error.message.includes("already")) {
+      if (error.message && error.message.includes("already")) {
         toast.error("This email is already in use. Please try logging in instead.");
       } else {
         toast.error("Failed to create account. Please try again.");
