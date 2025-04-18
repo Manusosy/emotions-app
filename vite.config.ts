@@ -31,11 +31,11 @@ export default defineConfig({
     include: ['react', 'react-dom', 'react-router-dom']
   },
   server: {
-    port: 3000,
+    port: 8080,
     host: true
   },
   preview: {
-    port: 3000,
+    port: 8080,
     host: true
   }
 });
