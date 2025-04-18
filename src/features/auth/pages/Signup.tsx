@@ -49,12 +49,13 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const navigate = useNavigate();
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (isLoading) return;
+    if (isLoading || isRedirecting) return;
     
     // Basic validation
     if (formData.password !== formData.confirmPassword) {
@@ -113,18 +114,43 @@ export default function Signup() {
       });
       
       if (error) throw error;
+
+      // Show success message but keep it short
+      toast.success("Account created successfully!");
       
       // Navigate directly - bypass any auth checks
       const targetPath = formData.role === 'ambassador' 
         ? '/ambassador-dashboard' 
         : '/patient-dashboard';
+      
+      // Sign in immediately after sign up
+      setIsRedirecting(true);
+      
+      // Wait a short period to make sure signup completes, but keep it minimal
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Try to sign in immediately after signup
+      try {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password
+        });
         
-      // Navigate immediately
+        if (signInError) {
+          console.error("Error signing in after signup:", signInError);
+        }
+      } catch (e) {
+        console.error("Error during post-signup signin:", e);
+      }
+      
+      // Navigate immediately regardless of sign-in success
+      // The dashboard will handle auth state if needed
       navigate(targetPath, { replace: true });
       
     } catch (error: any) {
       console.error("Signup error:", error);
       setIsLoading(false);
+      setIsRedirecting(false);
       
       if (error.message && error.message.includes("already")) {
         toast.error("This email is already in use. Please try logging in instead.");
@@ -149,11 +175,11 @@ export default function Signup() {
         className="w-full mb-6"
       >
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="patient" disabled={isLoading}>
+          <TabsTrigger value="patient" disabled={isLoading || isRedirecting}>
             <User className="mr-2 h-4 w-4" />
             Patient
           </TabsTrigger>
-          <TabsTrigger value="ambassador" disabled={isLoading}>
+          <TabsTrigger value="ambassador" disabled={isLoading || isRedirecting}>
             <UserPlus className="mr-2 h-4 w-4" />
             Ambassador
           </TabsTrigger>
@@ -183,7 +209,7 @@ export default function Signup() {
                 value={formData.firstName}
                 onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                 required
-                disabled={isLoading}
+                disabled={isLoading || isRedirecting}
               />
             </div>
             <div className="grid gap-2">
@@ -194,7 +220,7 @@ export default function Signup() {
                 value={formData.lastName}
                 onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                 required
-                disabled={isLoading}
+                disabled={isLoading || isRedirecting}
               />
             </div>
           </div>
@@ -211,7 +237,7 @@ export default function Signup() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
-                disabled={isLoading}
+                disabled={isLoading || isRedirecting}
               />
             </div>
           </div>
@@ -228,7 +254,7 @@ export default function Signup() {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 required
-                disabled={isLoading}
+                disabled={isLoading || isRedirecting}
               />
               <Button
                 type="button"
@@ -236,7 +262,7 @@ export default function Signup() {
                 size="icon"
                 className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                 onClick={() => setShowPassword(!showPassword)}
-                disabled={isLoading}
+                disabled={isLoading || isRedirecting}
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4 text-gray-400" />
@@ -262,7 +288,7 @@ export default function Signup() {
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 required
-                disabled={isLoading}
+                disabled={isLoading || isRedirecting}
               />
             </div>
           </div>
@@ -272,7 +298,7 @@ export default function Signup() {
             <Select
               value={formData.country}
               onValueChange={(value) => setFormData({ ...formData, country: value })}
-              disabled={isLoading}
+              disabled={isLoading || isRedirecting}
             >
               <SelectTrigger id="country">
                 <SelectValue placeholder="Select your country" />
@@ -293,7 +319,7 @@ export default function Signup() {
               <Select
                 value={formData.gender}
                 onValueChange={(value) => setFormData({ ...formData, gender: value })}
-                disabled={isLoading}
+                disabled={isLoading || isRedirecting}
               >
                 <SelectTrigger id="gender">
                   <SelectValue placeholder="Select your gender" />
@@ -316,11 +342,11 @@ export default function Signup() {
             id="terms"
             checked={agreedToTerms}
             onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
-            disabled={isLoading}
+            disabled={isLoading || isRedirecting}
           />
           <label
             htmlFor="terms"
-            className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${isLoading ? "opacity-60 cursor-not-allowed" : ""}`}
+            className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${isLoading || isRedirecting ? "opacity-60 cursor-not-allowed" : ""}`}
           >
             I agree to the{" "}
             <Link to="/terms" className="text-primary hover:underline">
@@ -332,10 +358,10 @@ export default function Signup() {
         <Button
           type="submit"
           className="w-full mt-6"
-          disabled={isLoading || !agreedToTerms}
+          disabled={isLoading || isRedirecting || !agreedToTerms}
           variant="brand"
         >
-          {isLoading ? "Creating Account..." : "Create Account"}
+          {isRedirecting ? "Redirecting..." : isLoading ? "Creating Account..." : "Create Account"}
         </Button>
 
         <div className="flex justify-between items-center text-center text-sm text-gray-600 mt-4">

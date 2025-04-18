@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -13,16 +14,15 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [redirecting, setRedirecting] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const navigate = useNavigate();
   const { getDashboardUrlForRole, setIsAuthenticating, isAuthenticated, userRole } = useAuth();
   
   // Check if user is already authenticated and redirect if needed
   useEffect(() => {
-    // If already authenticated, redirect to dashboard or booking
-    if (isAuthenticated && userRole && !redirecting) {
+    if (isAuthenticated && userRole && !isRedirecting) {
       console.log(`User already authenticated as ${userRole}, redirecting...`);
-      setRedirecting(true);
+      setIsRedirecting(true);
       
       // Check for booking intent
       const bookingIntent = localStorage.getItem("bookingIntent");
@@ -31,28 +31,27 @@ export default function Login() {
       if (bookingIntent && bookingData) {
         // Clear booking intent and data from local storage
         localStorage.removeItem("bookingIntent");
-        localStorage.removeItem("bookingData");
         
         // Parse the booking intent
         const { ambassadorId } = JSON.parse(bookingIntent);
         
         // Navigate to booking page
         console.log(`Redirecting to booking page with ambassador ID: ${ambassadorId}`);
-        navigate(`/booking?ambassadorId=${ambassadorId}`);
+        navigate(`/booking?ambassadorId=${ambassadorId}`, { replace: true });
       } else {
         // No booking intent, redirect to dashboard
         const dashboardUrl = getDashboardUrlForRole(userRole);
         console.log(`Redirecting to ${dashboardUrl}`);
         
-        // Navigate to dashboard
+        // Navigate to dashboard with replace to prevent back button issues
         navigate(dashboardUrl, { replace: true });
       }
     }
-  }, [isAuthenticated, userRole, navigate, getDashboardUrlForRole, redirecting]);
+  }, [isAuthenticated, userRole, navigate, getDashboardUrlForRole, isRedirecting]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLoading || redirecting) return;
+    if (isLoading || isRedirecting) return;
     
     setIsLoading(true);
     setIsAuthenticating(true);
@@ -75,7 +74,10 @@ export default function Login() {
         const bookingData = localStorage.getItem("bookingData");
         
         // Set redirecting state to prevent multiple redirects
-        setRedirecting(true);
+        setIsRedirecting(true);
+        
+        // Success message
+        toast.success("Signed in successfully!");
         
         if (bookingIntent && bookingData) {
           // Clear booking intent from local storage but keep bookingData
@@ -85,29 +87,33 @@ export default function Login() {
           // Parse the booking intent
           const { ambassadorId } = JSON.parse(bookingIntent);
           
-          toast.success("Signed in successfully! Redirecting to booking...");
           console.log(`Login successful as ${role}, redirecting to booking with ambassador ID: ${ambassadorId}`);
           
-          // Navigate to booking page
-          navigate(`/booking?ambassadorId=${ambassadorId}`);
+          // Give the auth state time to update
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Navigate to booking page with replace to prevent back button issues
+          navigate(`/booking?ambassadorId=${ambassadorId}`, { replace: true });
         } else {
           // No booking intent, redirect to dashboard
           const dashboardUrl = getDashboardUrlForRole(role);
           
-          toast.success(`Signed in successfully! Redirecting to dashboard...`);
           console.log(`Login successful as ${role}, redirecting to ${dashboardUrl}`);
           
-          // Navigate to the appropriate dashboard
+          // Give the auth state time to update
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Navigate to the appropriate dashboard with replace to prevent back button issues
           navigate(dashboardUrl, { replace: true });
         }
       }
     } catch (error: any) {
       console.error('Login error:', error);
       toast.error(error.message || "Failed to sign in. Please check your credentials.");
-      setRedirecting(false);
+      setIsRedirecting(false);
+      setIsAuthenticating(false);
     } finally {
       setIsLoading(false);
-      setIsAuthenticating(false);
     }
   };
 
@@ -129,7 +135,7 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              disabled={redirecting || isLoading}
+              disabled={isRedirecting || isLoading}
             />
           </div>
         </div>
@@ -145,17 +151,17 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              disabled={redirecting || isLoading}
+              disabled={isRedirecting || isLoading}
             />
           </div>
         </div>
         <Button 
           type="submit" 
           className="w-full mt-6" 
-          disabled={isLoading || redirecting}
+          disabled={isLoading || isRedirecting}
           variant="brand"
         >
-          {isLoading ? "Logging in..." : redirecting ? "Redirecting..." : "Login"}
+          {isLoading ? "Logging in..." : isRedirecting ? "Redirecting..." : "Login"}
         </Button>
         
         <div className="flex items-center justify-between mt-4">

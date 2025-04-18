@@ -43,7 +43,6 @@ import ReviewsPage from "@/features/ambassadors/pages/ReviewsPage";
 import AvailabilityPage from "@/features/ambassadors/pages/AvailabilityPage";
 import './styles/App.css';
 
-// HomePage component that properly wraps the MoodTracker component
 const HomePage = () => {
   return (
     <div className="homepage-wrapper relative pb-12">
@@ -61,10 +60,17 @@ const ProtectedRoute = ({
 }) => {
   const { isAuthenticated, userRole, isLoading } = useAuth();
   const location = useLocation();
+  const [shouldRedirect, setShouldRedirect] = useState(false);
   
   useEffect(() => {
-    console.log(`ProtectedRoute check - authenticated: ${isAuthenticated}, role: ${userRole}, required: ${requiredRole}`);
-  }, [isAuthenticated, userRole, requiredRole]);
+    if (!isLoading) {
+      console.log(`ProtectedRoute check - authenticated: ${isAuthenticated}, role: ${userRole}, required: ${requiredRole}`);
+      
+      const needsRedirect = !isAuthenticated || (requiredRole && userRole !== requiredRole);
+      
+      setShouldRedirect(needsRedirect);
+    }
+  }, [isAuthenticated, userRole, requiredRole, isLoading]);
   
   if (isLoading) {
     return (
@@ -77,23 +83,25 @@ const ProtectedRoute = ({
     );
   }
   
-  if (!isAuthenticated) {
-    console.log("User not authenticated, redirecting to login");
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-  
-  if (requiredRole && userRole !== requiredRole) {
-    console.log(`Role mismatch: user has ${userRole}, requires ${requiredRole}`);
-    toast.error("You don't have permission to access this page");
+  if (shouldRedirect) {
+    if (!isAuthenticated) {
+      console.log("User not authenticated, redirecting to login");
+      return <Navigate to="/login" state={{ from: location }} replace />;
+    }
     
-    if (userRole === 'ambassador') {
-      return <Navigate to="/ambassador-dashboard" replace />;
-    } else if (userRole === 'patient') {
-      return <Navigate to="/patient-dashboard" replace />;
-    } else if (userRole === 'admin') {
-      return <Navigate to="/admin-dashboard" replace />;
-    } else {
-      return <Navigate to="/" replace />;
+    if (requiredRole && userRole !== requiredRole) {
+      console.log(`Role mismatch: user has ${userRole}, requires ${requiredRole}`);
+      toast.error("You don't have permission to access this page");
+      
+      if (userRole === 'ambassador') {
+        return <Navigate to="/ambassador-dashboard" replace />;
+      } else if (userRole === 'patient') {
+        return <Navigate to="/patient-dashboard" replace />;
+      } else if (userRole === 'admin') {
+        return <Navigate to="/admin-dashboard" replace />;
+      } else {
+        return <Navigate to="/" replace />;
+      }
     }
   }
   
@@ -104,7 +112,6 @@ const AppContent = () => {
   const [showHeaderFooter, setShowHeaderFooter] = useState(true);
   const location = useLocation();
 
-  // Debug global click events
   useEffect(() => {
     const handleGlobalClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -118,14 +125,12 @@ const AppContent = () => {
     return () => document.removeEventListener('click', handleGlobalClick);
   }, []);
 
-  // Debug routing to ensure proper navigation
   useEffect(() => {
     console.log("Current location:", location.pathname);
   }, [location.pathname]);
 
   useEffect(() => {
     const pathname = location.pathname;
-    // Don't show header/footer on dashboard pages - removed booking from the list
     const isDashboardPage = pathname.includes('dashboard') || 
                           pathname.includes('admin') ||
                           pathname === '/ambassador-dashboard' ||
@@ -135,7 +140,6 @@ const AppContent = () => {
     console.log('Current path:', pathname, 'Show header/footer:', !isDashboardPage);
   }, [location.pathname]);
 
-  // Determine if the contact banner should be shown based on the current route
   const shouldShowContactBanner = location.pathname === "/" || 
                                  location.pathname === "/contact" || 
                                  location.pathname === "/privacy" ||
@@ -152,7 +156,6 @@ const AppContent = () => {
         <div className="flex flex-col min-h-screen max-w-[100vw] overflow-x-hidden">
           {showHeaderFooter && <Navbar />}
           <div className="flex-grow">
-            {/* We're using a key based on the path to force a complete re-render on route changes */}
             <Routes key={location.pathname}>
               <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<Login />} />
