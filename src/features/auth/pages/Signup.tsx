@@ -86,18 +86,8 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
-      // Store credentials in localStorage for the dashboard to use
-      localStorage.setItem('signupCredentials', JSON.stringify({
-        email: formData.email,
-        password: formData.password,
-        role: formData.role,
-        fullName: `${formData.firstName} ${formData.lastName}`,
-        country: formData.country,
-        gender: formData.gender || null
-      }));
-      
       // Create user with Supabase
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
@@ -115,10 +105,10 @@ export default function Signup() {
       
       if (error) throw error;
 
-      // Show success message but keep it short
-      toast.success("Account created successfully!");
+      // Show success message
+      toast.success("Account created successfully! Logging you in...");
       
-      // Navigate directly - bypass any auth checks
+      // Determine where to go next
       const targetPath = formData.role === 'ambassador' 
         ? '/ambassador-dashboard' 
         : '/patient-dashboard';
@@ -126,25 +116,18 @@ export default function Signup() {
       // Sign in immediately after sign up
       setIsRedirecting(true);
       
-      // Wait a short period to make sure signup completes, but keep it minimal
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Wait a short period to make sure signup completes
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Try to sign in immediately after signup
-      try {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: formData.email,
-          password: formData.password
-        });
-        
-        if (signInError) {
-          console.error("Error signing in after signup:", signInError);
-        }
-      } catch (e) {
-        console.error("Error during post-signup signin:", e);
-      }
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password
+      });
       
-      // Navigate immediately regardless of sign-in success
-      // The dashboard will handle auth state if needed
+      if (signInError) throw signInError;
+      
+      // Navigate directly after login
+      console.log(`Redirecting to ${targetPath} after successful signup`);
       navigate(targetPath, { replace: true });
       
     } catch (error: any) {
@@ -152,7 +135,7 @@ export default function Signup() {
       setIsLoading(false);
       setIsRedirecting(false);
       
-      if (error.message && error.message.includes("already")) {
+      if (error.message.includes("already")) {
         toast.error("This email is already in use. Please try logging in instead.");
       } else {
         toast.error("Failed to create account. Please try again.");
