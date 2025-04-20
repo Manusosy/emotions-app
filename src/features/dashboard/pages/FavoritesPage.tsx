@@ -10,13 +10,13 @@ import { useAuth } from '@/hooks/use-auth';
 
 const FavoritesPage = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('therapists');
+  const [activeTab, setActiveTab] = useState('ambassadors');
 
-  // Mock data for favorite therapists
-  const favoriteTherapists = [
+  // Mock data for favorite ambassadors
+  const favoriteAmbassadors = [
     {
       id: '1',
-      name: 'Dr. Sarah Johnson',
+      name: 'Sarah Johnson',
       specialty: 'Depression & Anxiety',
       rating: 4.8,
       totalSessions: 126,
@@ -26,7 +26,7 @@ const FavoritesPage = () => {
     },
     {
       id: '2',
-      name: 'Dr. Michael Chen',
+      name: 'Michael Chen',
       specialty: 'Stress Management',
       rating: 4.9,
       totalSessions: 98,
@@ -59,51 +59,51 @@ const FavoritesPage = () => {
       <div className="p-6">
         <h1 className="text-2xl font-bold mb-6">Favorites</h1>
         
-        <Tabs defaultValue="therapists" className="w-full" value={activeTab} onValueChange={setActiveTab}>
+        <Tabs defaultValue="ambassadors" className="w-full" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6">
-            <TabsTrigger value="therapists">Favorite Therapists</TabsTrigger>
+            <TabsTrigger value="ambassadors">Favorite Ambassadors</TabsTrigger>
             <TabsTrigger value="groups">Support Groups</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="therapists">
-            {favoriteTherapists.length > 0 ? (
+          <TabsContent value="ambassadors">
+            {favoriteAmbassadors.length > 0 ? (
               <div className="grid gap-4 md:grid-cols-2">
-                {favoriteTherapists.map((therapist) => (
-                  <Card key={therapist.id} className="overflow-hidden">
+                {favoriteAmbassadors.map((ambassador) => (
+                  <Card key={ambassador.id} className="overflow-hidden">
                     <CardContent className="p-0">
                       <div className="p-4">
                         <div className="flex items-start gap-4">
                           <Avatar className="h-16 w-16">
-                            {therapist.avatar ? (
-                              <AvatarImage src={therapist.avatar} alt={therapist.name} />
+                            {ambassador.avatar ? (
+                              <AvatarImage src={ambassador.avatar} alt={ambassador.name} />
                             ) : (
-                              <AvatarFallback>{therapist.name.charAt(0)}</AvatarFallback>
+                              <AvatarFallback>{ambassador.name.charAt(0)}</AvatarFallback>
                             )}
                           </Avatar>
                           <div className="flex-1">
                             <div className="flex items-center justify-between">
-                              <h3 className="font-semibold text-lg">{therapist.name}</h3>
+                              <h3 className="font-semibold text-lg">{ambassador.name}</h3>
                               <Button variant="ghost" size="icon" className="text-red-500">
                                 <Heart className="h-5 w-5 fill-current" />
                               </Button>
                             </div>
                             <Badge variant="secondary" className="mt-1">
-                              {therapist.specialty}
+                              {ambassador.specialty}
                             </Badge>
                             <div className="flex items-center gap-1 mt-2 text-sm text-muted-foreground">
                               <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                              <span>{therapist.rating}</span>
+                              <span>{ambassador.rating}</span>
                               <span className="mx-1">•</span>
-                              <span>{therapist.totalSessions} sessions</span>
+                              <span>{ambassador.totalSessions} sessions</span>
                             </div>
                             <div className="flex flex-col mt-2 space-y-1 text-sm text-muted-foreground">
                               <div className="flex items-center">
                                 <MapPin className="h-4 w-4 mr-1" />
-                                {therapist.location}
+                                {ambassador.location}
                               </div>
                               <div className="flex items-center">
                                 <Clock className="h-4 w-4 mr-1" />
-                                Next available: {therapist.nextAvailable}
+                                Next available: {ambassador.nextAvailable}
                               </div>
                             </div>
                           </div>
@@ -119,8 +119,8 @@ const FavoritesPage = () => {
               </div>
             ) : (
               <div className="text-center py-12 bg-gray-50 rounded-lg">
-                <p className="text-lg text-gray-500">You haven't added any favorite therapists yet</p>
-                <Button className="mt-4">Browse Therapists</Button>
+                <p className="text-lg text-gray-500">You haven't added any favorite ambassadors yet</p>
+                <Button className="mt-4">Browse Ambassadors</Button>
               </div>
             )}
           </TabsContent>

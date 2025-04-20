@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
@@ -64,9 +63,6 @@ export default function AppointmentsPage() {
         patient_id: appt.patient_id,
         ambassador_id: appt.ambassador_id,
         notes: appt.notes,
-        therapist_name: "Dr. Example", // Placeholder
-        therapist_specialty: "General", // Placeholder
-        therapist_avatar: "", // Placeholder
         duration: appt.duration
       }));
 
@@ -103,7 +99,7 @@ export default function AppointmentsPage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">Appointments</h1>
-            <p className="text-sm text-gray-500">Manage your therapy sessions</p>
+            <p className="text-sm text-gray-500">Manage your sessions with our ambassadors</p>
           </div>
           <div className="flex gap-4 w-full sm:w-auto">
             <Select
@@ -168,14 +164,14 @@ export default function AppointmentsPage() {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4 mb-4">
                     <Avatar className="h-12 w-12">
-                      <AvatarImage src={appointment.therapist_avatar} />
+                      <AvatarImage src="/placeholder-avatar.png" />
                       <AvatarFallback className="bg-[#fda901] text-white">
-                        {appointment.therapist_name[0]}
+                        {appointment.ambassador_id ? appointment.ambassador_id.charAt(0) : 'A'}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="font-medium">{appointment.therapist_name}</h3>
-                      <p className="text-sm text-gray-500">{appointment.therapist_specialty}</p>
+                      <h3 className="font-medium">Ambassador {appointment.ambassador_id?.substring(0, 6)}</h3>
+                      <p className="text-sm text-gray-500">Mental Health Support</p>
                     </div>
                   </div>
                   <div className="space-y-3">

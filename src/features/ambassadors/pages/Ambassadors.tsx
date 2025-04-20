@@ -35,7 +35,7 @@ const Ambassadors = () => {
     {
       id: "1",
       name: "Dr. Ruby Perrin",
-      credentials: "PhD in Psychology, Licensed Therapist",
+      credentials: "PhD in Psychology, Mental Health Specialist",
       specialty: "Depression & Anxiety Specialist",
       rating: 5,
       totalRatings: 17,
@@ -63,7 +63,7 @@ const Ambassadors = () => {
     {
       id: "3",
       name: "Dr. Deborah Angel",
-      credentials: "MA in Counseling Psychology, Licensed Therapist",
+      credentials: "MA in Counseling Psychology, Mental Health Ambassador",
       specialty: "Relationship & Family Specialist",
       rating: 4,
       totalRatings: 27,
@@ -151,8 +151,8 @@ const Ambassadors = () => {
           >
             <h1 className="text-4xl md:text-5xl font-bold mb-6 text-center">Our Mental Health Ambassadors</h1>
             <p className="text-lg md:text-xl max-w-2xl mx-auto text-blue-50 mb-8 text-center">
-              Our Mental Health Ambassadors are licensed therapists and counselors dedicated to providing
-              compassionate support for your emotional well-being. These professionals specialize in various areas of
+              Our Mental Health Ambassadors are dedicated professionals providing
+              compassionate support for your emotional well-being. These specialists focus on various areas of
               mental health to help you navigate life's challenges with confidence and resilience.
             </p>
           </motion.div>

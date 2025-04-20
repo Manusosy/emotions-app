@@ -129,8 +129,8 @@ const WhyBookSection = () => {
 
 const featureCards = [
   {
-    title: "Expert Therapists",
-    description: "Connect with licensed professionals specializing in various mental health areas.",
+    title: "Expert Ambassadors",
+    description: "Connect with mental health ambassadors specializing in various mental health areas.",
     icon: UserRound,
   },
   {
@@ -140,12 +140,12 @@ const featureCards = [
   },
   {
     title: "Safe Space",
-    description: "Experience therapy in a confidential and judgment-free environment.",
+    description: "Experience support in a confidential and judgment-free environment.",
     icon: ShieldCheck,
   },
   {
     title: "Personalized Care",
-    description: "Receive tailored treatment plans designed specifically for your mental health needs.",
+    description: "Receive tailored support plans designed specifically for your mental health needs.",
     icon: Brain,
   },
   {
@@ -232,7 +232,7 @@ const CommitmentSection = () => {
             </h2>
 
             <p className="text-slate-300 text-lg leading-relaxed">
-              As a trusted mental health platform, we are dedicated to making therapy accessible and comfortable. Our network of professional therapists provides personalized care through individual sessions, group therapy, and ongoing support.
+              As a trusted mental health platform, we are dedicated to making support accessible and comfortable. Our network of mental health ambassadors provides personalized care through individual sessions, group support, and ongoing guidance.
             </p>
 
             <Accordion type="single" value={openItem} onValueChange={setOpenItem} collapsible>
@@ -281,14 +281,14 @@ const CommitmentSection = () => {
           {[
             {
               icon: Search,
-              title: "Find Your Therapist",
-              description: "Search for therapists based on specialization, approach, and availability that match your needs.",
+              title: "Find Your Ambassador",
+              description: "Search for mental health ambassadors based on specialization, approach, and availability that match your needs.",
               color: '#0066FF'
             },
             {
               icon: UserRound,
               title: "Review Profiles",
-              description: "Explore detailed therapist profiles, credentials, and specialties to find your ideal match.",
+              description: "Explore detailed ambassador profiles, backgrounds, and specialties to find your ideal match.",
               color: '#FF4D00'
             },
             {
@@ -299,8 +299,8 @@ const CommitmentSection = () => {
             },
             {
               icon: MessageSquare,
-              title: "Start Therapy",
-              description: "Begin your therapy journey with secure video sessions and ongoing support.",
+              title: "Start Sessions",
+              description: "Begin your mental health journey with secure video sessions and ongoing support.",
               color: '#4A3AFF'
             }
           ].map((item, index) => (

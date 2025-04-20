@@ -581,53 +581,6 @@ export type Database = {
         }
         Relationships: []
       }
-      therapist_profiles: {
-        Row: {
-          bio: string | null
-          created_at: string
-          education: string[] | null
-          full_name: string
-          id: string
-          languages: string[] | null
-          profile_image: string | null
-          specialty: string
-          updated_at: string
-          years_of_experience: number | null
-        }
-        Insert: {
-          bio?: string | null
-          created_at?: string
-          education?: string[] | null
-          full_name: string
-          id: string
-          languages?: string[] | null
-          profile_image?: string | null
-          specialty: string
-          updated_at?: string
-          years_of_experience?: number | null
-        }
-        Update: {
-          bio?: string | null
-          created_at?: string
-          education?: string[] | null
-          full_name?: string
-          id?: string
-          languages?: string[] | null
-          profile_image?: string | null
-          specialty?: string
-          updated_at?: string
-          years_of_experience?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "therapist_profiles_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "admin_users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       users: {
         Row: {
           avatar_url: string | null

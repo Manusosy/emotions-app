@@ -194,7 +194,30 @@ const AmbassadorDashboard = () => {
 
   // Fetch profile data when the dashboard loads
   useEffect(() => {
-    if (!user?.id || !isMountedRef.current) return;
+    if (!isMountedRef.current) return;
+    
+    if (!user?.id) {
+      // Check local storage for auth data when no session found
+      const storedAuthState = localStorage.getItem('auth_state');
+      if (storedAuthState) {
+        try {
+          const { isAuthenticated, userRole } = JSON.parse(storedAuthState);
+          if (!isAuthenticated || userRole !== 'ambassador') {
+            // Redirect to login if not authenticated or not an ambassador
+            window.location.href = '/login';
+            return;
+          }
+          // Continue with default/mock data since we don't have the user ID
+          setIsLoading(false);
+        } catch (e) {
+          console.error("Error parsing stored auth state:", e);
+          window.location.href = '/login';
+        }
+      } else {
+        window.location.href = '/login';
+      }
+      return;
+    }
     
     console.log("Fetching ambassador profile data");
     

@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, Navigate, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import MoodTracker from "@/features/mood-tracking/pages/MoodTracker";
 import Login from "@/features/auth/pages/Login";
@@ -42,6 +42,14 @@ import AmbassadorProfile from "@/features/ambassadors/pages/AmbassadorProfile";
 import ReviewsPage from "@/features/ambassadors/pages/ReviewsPage";
 import AvailabilityPage from "@/features/ambassadors/pages/AvailabilityPage";
 import './styles/App.css';
+import { Spinner } from "@/components/ui/spinner";
+
+// Type definition for ProtectedRoute props
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  allowedRoles?: UserRole[];
+  requiredRole?: UserRole;
+}
 
 const HomePage = () => {
   return (
@@ -51,61 +59,125 @@ const HomePage = () => {
   );
 };
 
-const ProtectedRoute = ({ 
-  children, 
+const ProtectedRoute = ({
+  children,
+  allowedRoles = [],
   requiredRole,
-}: { 
-  children: React.ReactNode; 
-  requiredRole?: 'patient' | 'ambassador' | 'admin';
-}) => {
-  const { isAuthenticated, userRole, isLoading } = useAuth();
-  const location = useLocation();
-  const [shouldRedirect, setShouldRedirect] = useState(false);
-  
+}: ProtectedRouteProps) => {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [redirectPath, setRedirectPath] = useState<string | null>(null);
+  const { isAuthenticated, userRole, isLoading, getDashboardUrlForRole } = useAuth();
+
+  const effectiveAllowedRoles = requiredRole ? [requiredRole] : allowedRoles;
+
+  // Check for stored auth state first
   useEffect(() => {
-    if (!isLoading) {
-      console.log(`ProtectedRoute check - authenticated: ${isAuthenticated}, role: ${userRole}, required: ${requiredRole}`);
-      
-      const needsRedirect = !isAuthenticated || (requiredRole && userRole !== requiredRole);
-      
-      setShouldRedirect(needsRedirect);
+    // Attempt to get stored auth data from localStorage
+    const storedAuthState = localStorage.getItem('auth_state');
+    if (storedAuthState) {
+      try {
+        const { isAuthenticated: storedAuth, userRole: storedRole } = JSON.parse(storedAuthState);
+        
+        if (storedAuth && storedRole) {
+          console.log(`Found stored auth state with role: ${storedRole}`);
+          // If the stored role matches our required role, we can bypass the auth check
+          const hasRequiredRole = 
+            effectiveAllowedRoles.length === 0 || 
+            effectiveAllowedRoles.includes(storedRole as UserRole);
+            
+          if (hasRequiredRole) {
+            console.log("User has required role based on stored auth state");
+            setIsAuthorized(true);
+            setHasCheckedAuth(true);
+          }
+        }
+      } catch (e) {
+        console.error("Error parsing stored auth state:", e);
+      }
     }
-  }, [isAuthenticated, userRole, requiredRole, isLoading]);
-  
-  if (isLoading) {
+  }, [effectiveAllowedRoles]);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      // Skip if we've already authorized based on stored state
+      if (hasCheckedAuth && isAuthorized) return;
+      
+      console.log(
+        `Checking auth for path: ${pathname}, isAuthenticated: ${isAuthenticated}, userRole: ${userRole}, allowedRoles:`,
+        effectiveAllowedRoles
+      );
+
+      // Wait until authentication check is complete
+      if (isLoading) return;
+
+      if (!isAuthenticated) {
+        console.log("User not authenticated, redirecting to login");
+        const loginPath = `/login?redirect=${encodeURIComponent(pathname)}`;
+        setRedirectPath(loginPath);
+        setCountdown(1); // Reduced countdown for better UX
+        return;
+      }
+
+      // If no specific roles are required or user has required role
+      const hasRequiredRole =
+        effectiveAllowedRoles.length === 0 || (userRole && effectiveAllowedRoles.includes(userRole));
+
+      if (!hasRequiredRole) {
+        console.log(
+          `User does not have required role. Current role: ${userRole}, required roles:`,
+          effectiveAllowedRoles
+        );
+        // Redirect to appropriate dashboard based on role
+        const dashboardPath = getDashboardUrlForRole(userRole);
+        setRedirectPath(dashboardPath);
+        setCountdown(1); // Reduced countdown for better UX
+        return;
+      }
+
+      // User is authenticated and authorized
+      setIsAuthorized(true);
+      setHasCheckedAuth(true);
+    };
+
+    checkAuth();
+  }, [isAuthenticated, userRole, pathname, effectiveAllowedRoles, navigate, isLoading, getDashboardUrlForRole, hasCheckedAuth, isAuthorized]);
+
+  // Countdown effect
+  useEffect(() => {
+    if (countdown === null || redirectPath === null) return;
+    
+    if (countdown === 0) {
+      navigate(redirectPath);
+      setHasCheckedAuth(true);
+      return;
+    }
+    
+    const timer = setTimeout(() => {
+      setCountdown(countdown - 1);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, [countdown, redirectPath, navigate]);
+
+  if (isLoading || countdown !== null) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="flex flex-col items-center gap-2">
-          <div className="w-8 h-8 rounded-full border-4 border-t-blue-500 border-b-blue-500 border-r-transparent border-l-transparent animate-spin"></div>
-          <p className="text-sm text-muted-foreground">Checking authentication...</p>
-        </div>
+      <div className="flex flex-col h-screen items-center justify-center">
+        <Spinner size="lg" className="mb-4" />
+        {countdown !== null && redirectPath && (
+          <div className="text-center">
+            <p className="text-lg font-medium mb-2">Please wait</p>
+            <p>Redirecting to dashboard in {countdown} seconds...</p>
+          </div>
+        )}
       </div>
     );
   }
-  
-  if (shouldRedirect) {
-    if (!isAuthenticated) {
-      console.log("User not authenticated, redirecting to login");
-      return <Navigate to="/login" state={{ from: location }} replace />;
-    }
-    
-    if (requiredRole && userRole !== requiredRole) {
-      console.log(`Role mismatch: user has ${userRole}, requires ${requiredRole}`);
-      toast.error("You don't have permission to access this page");
-      
-      if (userRole === 'ambassador') {
-        return <Navigate to="/ambassador-dashboard" replace />;
-      } else if (userRole === 'patient') {
-        return <Navigate to="/patient-dashboard" replace />;
-      } else if (userRole === 'admin') {
-        return <Navigate to="/admin-dashboard" replace />;
-      } else {
-        return <Navigate to="/" replace />;
-      }
-    }
-  }
-  
-  return <>{children}</>;
+
+  return isAuthorized ? <>{children}</> : null;
 };
 
 const AppContent = () => {
@@ -168,15 +240,6 @@ const AppContent = () => {
               <Route path="/booking" element={<BookingPage />} />
               
               <Route 
-                path="/therapists" 
-                element={
-                  <ComingSoon 
-                    title="Find Your Perfect Therapist" 
-                    description="We're building a network of qualified therapists to provide you with professional mental health support. This feature will be available soon!"
-                  />
-                } 
-              />
-              <Route 
                 path="/resources" 
                 element={<Resources />}
               />
@@ -207,16 +270,6 @@ const AppContent = () => {
               <Route 
                 path="/faqs" 
                 element={<FAQs />}
-              />
-              
-              <Route 
-                path="/therapy" 
-                element={
-                  <ComingSoon 
-                    title="Therapy Services" 
-                    description="We're working on expanding our therapy services. This feature will be available soon to connect you with qualified therapists who can provide personalized support for your mental health journey."
-                  />
-                } 
               />
               
               <Route 

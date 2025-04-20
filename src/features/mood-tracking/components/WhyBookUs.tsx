@@ -99,8 +99,8 @@ const faqItems = [
   },
   {
     id: "item-4",
-    question: "Can I use the app if I'm already seeing a therapist?",
-    answer: "Absolutely! Our mood tracking platform works as a complementary tool to professional therapy. Many users share their mood data with their therapists to provide additional insights between sessions."
+    question: "Can I use the app if I'm already working with a mental health ambassador?",
+    answer: "Absolutely! Our mood tracking platform works as a complementary tool to your sessions with mental health ambassadors. Many users share their mood data with their ambassadors to provide additional insights between sessions."
   },
   {
     id: "item-5",

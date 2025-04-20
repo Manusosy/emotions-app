@@ -35,13 +35,13 @@ const HeroSection = ({ scrollToEmotions, emotionsRef }: HeroSectionProps) => {
                 <div className="bg-white/90 backdrop-blur-sm shadow-md py-2 px-4 rounded-full inline-flex items-center w-auto max-w-[260px]">
                   <div className="flex -space-x-2 mr-4">
                     <div className="w-8 h-8 rounded-full border-2 border-white overflow-hidden">
-                      <img src="/lovable-uploads/a299cbd8-711d-4138-b99d-eec11582bf18.png" alt="Therapist" className="w-full h-full object-cover" />
+                      <img src="/lovable-uploads/a299cbd8-711d-4138-b99d-eec11582bf18.png" alt="Ambassador" className="w-full h-full object-cover" />
                     </div>
                     <div className="w-8 h-8 rounded-full border-2 border-white overflow-hidden">
-                      <img src="/lovable-uploads/557ff7f5-9815-4228-b935-0fb6a858cc65.png" alt="Therapist" className="w-full h-full object-cover" />
+                      <img src="/lovable-uploads/557ff7f5-9815-4228-b935-0fb6a858cc65.png" alt="Ambassador" className="w-full h-full object-cover" />
                     </div>
                     <div className="w-8 h-8 rounded-full border-2 border-white overflow-hidden">
-                      <img src="/lovable-uploads/c830a369-efad-44e6-b333-658dd7ebfd60.png" alt="Therapist" className="w-full h-full object-cover" />
+                      <img src="/lovable-uploads/c830a369-efad-44e6-b333-658dd7ebfd60.png" alt="Ambassador" className="w-full h-full object-cover" />
                     </div>
                   </div>
                   <div className="flex flex-col">
@@ -86,7 +86,7 @@ const HeroSection = ({ scrollToEmotions, emotionsRef }: HeroSectionProps) => {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input 
                     type="text" 
-                    placeholder="Search therapists, clinics, hospitals..." 
+                    placeholder="Search ambassadors, groups, support..." 
                     className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-gray-200 bg-white focus:border-blue-500 focus:outline-none transition-colors font-jakarta"
                   />
                 </div>

@@ -1,121 +1,87 @@
-
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AuthLayout from "../components/AuthLayout";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { Mail, Lock } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const navigate = useNavigate();
-  const { getDashboardUrlForRole, setIsAuthenticating, isAuthenticated, userRole } = useAuth();
+  const location = useLocation();
+  const { login, isAuthenticated, userRole, getDashboardUrlForRole, isLoading: authLoading } = useAuth();
+  
+  // Get redirect URL from query parameters if it exists
+  const getRedirectUrl = () => {
+    const searchParams = new URLSearchParams(location.search);
+    return searchParams.get("redirect");
+  };
   
   // Check if user is already authenticated and redirect if needed
   useEffect(() => {
-    if (isAuthenticated && userRole && !isRedirecting) {
-      console.log(`User already authenticated as ${userRole}, redirecting...`);
-      setIsRedirecting(true);
-      
-      // Check for booking intent
-      const bookingIntent = localStorage.getItem("bookingIntent");
-      const bookingData = localStorage.getItem("bookingData");
-      
-      if (bookingIntent && bookingData) {
-        // Clear booking intent and data from local storage
-        localStorage.removeItem("bookingIntent");
-        
-        // Parse the booking intent
-        const { ambassadorId } = JSON.parse(bookingIntent);
-        
-        // Navigate to booking page
-        console.log(`Redirecting to booking page with ambassador ID: ${ambassadorId}`);
-        navigate(`/booking?ambassadorId=${ambassadorId}`, { replace: true });
-      } else {
-        // No booking intent, redirect to dashboard
-        const dashboardUrl = getDashboardUrlForRole(userRole);
-        console.log(`Redirecting to ${dashboardUrl}`);
-        
-        // Navigate to dashboard with replace to prevent back button issues
-        navigate(dashboardUrl, { replace: true });
-      }
+    if (authLoading) return;
+    
+    if (isAuthenticated && userRole) {
+      console.log("User already authenticated, redirecting to dashboard");
+      const dashboardUrl = getDashboardUrlForRole(userRole);
+      navigate(dashboardUrl, { replace: true });
     }
-  }, [isAuthenticated, userRole, navigate, getDashboardUrlForRole, isRedirecting]);
+    
+    setCheckingAuth(false);
+  }, [isAuthenticated, userRole, navigate, getDashboardUrlForRole, authLoading]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLoading || isRedirecting) return;
-    
     setIsLoading(true);
-    setIsAuthenticating(true);
     
     try {
       console.log("Attempting login with email:", email);
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+      const data = await login(email, password);
 
-      if (error) throw error;
-
-      if (data.user) {
-        // Get the user's role from metadata
-        const role = data.user.user_metadata?.role || 'patient';
-        
-        // Check for booking intent
-        const bookingIntent = localStorage.getItem("bookingIntent");
-        const bookingData = localStorage.getItem("bookingData");
-        
-        // Set redirecting state to prevent multiple redirects
-        setIsRedirecting(true);
-        
-        // Success message
+      if (data?.user) {
         toast.success("Signed in successfully!");
         
-        if (bookingIntent && bookingData) {
-          // Clear booking intent from local storage but keep bookingData
-          // We'll remove bookingData after the booking is completed
-          localStorage.removeItem("bookingIntent");
-          
-          // Parse the booking intent
-          const { ambassadorId } = JSON.parse(bookingIntent);
-          
-          console.log(`Login successful as ${role}, redirecting to booking with ambassador ID: ${ambassadorId}`);
-          
-          // Give the auth state time to update
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          // Navigate to booking page with replace to prevent back button issues
-          navigate(`/booking?ambassadorId=${ambassadorId}`, { replace: true });
+        // Check if there's a redirect URL in the query parameters
+        const redirectUrl = getRedirectUrl();
+        
+        if (redirectUrl) {
+          console.log(`Login successful, redirecting to: ${redirectUrl}`);
+          navigate(decodeURIComponent(redirectUrl), { replace: true });
         } else {
-          // No booking intent, redirect to dashboard
-          const dashboardUrl = getDashboardUrlForRole(role);
+          // If no redirect URL, navigate to dashboard
+          const dashboardUrl = getDashboardUrlForRole(data.user.user_metadata?.role || 'patient');
+          console.log(`Login successful, redirecting to dashboard: ${dashboardUrl}`);
           
-          console.log(`Login successful as ${role}, redirecting to ${dashboardUrl}`);
-          
-          // Give the auth state time to update
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          // Navigate to the appropriate dashboard with replace to prevent back button issues
-          navigate(dashboardUrl, { replace: true });
+          // Use window.location for a full page refresh to ensure auth state is recognized
+          window.location.href = dashboardUrl;
         }
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Login error:', error);
-      toast.error(error.message || "Failed to sign in. Please check your credentials.");
-      setIsRedirecting(false);
-      setIsAuthenticating(false);
-    } finally {
+      toast.error("Login failed. Please check your credentials.");
       setIsLoading(false);
     }
   };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  if (checkingAuth || authLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <AuthLayout 
@@ -135,7 +101,7 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              disabled={isRedirecting || isLoading}
+              disabled={isLoading}
             />
           </div>
         </div>
@@ -145,23 +111,35 @@ export default function Login() {
             <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               id="password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Enter your password"
-              className="pl-10"
+              className="pl-10 pr-10"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              disabled={isRedirecting || isLoading}
+              disabled={isLoading}
             />
+            <button 
+              type="button"
+              onClick={togglePasswordVisibility}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-500"
+              tabIndex={-1}
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </button>
           </div>
         </div>
         <Button 
           type="submit" 
           className="w-full mt-6" 
-          disabled={isLoading || isRedirecting}
+          disabled={isLoading}
           variant="brand"
         >
-          {isLoading ? "Logging in..." : isRedirecting ? "Redirecting..." : "Login"}
+          {isLoading ? "Logging in..." : "Login"}
         </Button>
         
         <div className="flex items-center justify-between mt-4">

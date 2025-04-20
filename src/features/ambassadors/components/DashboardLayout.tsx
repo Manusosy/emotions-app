@@ -43,7 +43,22 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   useEffect(() => {
     // Verify user is authenticated, if not redirect to login
     if (!isAuthenticated) {
-      navigate('/login', { replace: true });
+      // Check localStorage first
+      const storedAuthState = localStorage.getItem('auth_state');
+      if (storedAuthState) {
+        try {
+          const { isAuthenticated: storedAuth, userRole } = JSON.parse(storedAuthState);
+          if (!storedAuth || userRole !== 'ambassador') {
+            navigate('/login', { replace: true });
+          }
+          // If we have stored auth with correct role, don't redirect
+        } catch (e) {
+          console.error("Error parsing stored auth state:", e);
+          navigate('/login', { replace: true });
+        }
+      } else {
+        navigate('/login', { replace: true });
+      }
       return;
     }
 

@@ -28,7 +28,7 @@ const MoodTracker = () => {
     },
     {
       id: 3,
-      content: "Certified Therapists"
+      content: "Certified Ambassadors"
     },
     {
       id: 4,

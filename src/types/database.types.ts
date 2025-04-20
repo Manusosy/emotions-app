@@ -1,5 +1,4 @@
-
-export type UserRole = 'patient' | 'therapist' | 'ambassador' | 'admin';
+export type UserRole = 'patient' | 'ambassador' | 'admin';
 
 export interface PatientHealthMetric {
   id: string;
@@ -29,20 +28,6 @@ export interface PatientProfile {
 }
 
 export interface AmbassadorProfile {
-  id: string;
-  full_name: string;
-  email: string;
-  phone_number: string;
-  bio: string;
-  speciality: string;
-  hourly_rate: number;
-  availability_status: string;
-  avatar_url: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface TherapistProfile {
   id: string;
   full_name: string;
   email: string;
@@ -129,9 +114,6 @@ export interface Appointment {
   patient_id?: string;
   ambassador_id?: string;
   notes?: string;
-  therapist_name?: string;
-  therapist_specialty?: string;
-  therapist_avatar?: string;
   duration?: string;
 }
 

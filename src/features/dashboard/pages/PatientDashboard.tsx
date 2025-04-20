@@ -48,26 +48,44 @@ export default function PatientDashboard() {
       try {
         setIsLoading(true);
         const { data: { session } } = await supabase.auth.getSession();
+        
+        // Check local storage for auth data when no session found
         if (!session) {
-          navigate('/login');
-          return;
+          const storedAuthState = localStorage.getItem('auth_state');
+          if (storedAuthState) {
+            try {
+              const { isAuthenticated, userRole } = JSON.parse(storedAuthState);
+              if (!isAuthenticated || userRole !== 'patient') {
+                navigate('/login');
+                return;
+              }
+              // Continue with stored auth - we'll use default/mock data
+            } catch (e) {
+              console.error("Error parsing stored auth state:", e);
+              navigate('/login');
+              return;
+            }
+          } else {
+            navigate('/login');
+            return;
+          }
         }
 
-        // Create profile from user metadata
+        // Create profile from user metadata or use default data if not available
         const userProfile: UserProfile = {
-          id: session.user.id,
-          patient_id: session.user.user_metadata?.patient_id || 'EMHA01P',
-          first_name: session.user.user_metadata?.first_name || '',
-          last_name: session.user.user_metadata?.last_name || '',
-          email: session.user.email || '',
-          phone_number: session.user.user_metadata?.phone_number || '',
-          date_of_birth: session.user.user_metadata?.date_of_birth || '',
-          country: session.user.user_metadata?.country || '',
-          address: session.user.user_metadata?.address || '',
-          city: session.user.user_metadata?.city || '',
-          state: session.user.user_metadata?.state || '',
-          pincode: session.user.user_metadata?.pincode || '',
-          avatar_url: session.user.user_metadata?.avatar_url || '',
+          id: session?.user?.id || 'unknown',
+          patient_id: session?.user?.user_metadata?.patient_id || 'EMHA01P',
+          first_name: session?.user?.user_metadata?.first_name || 'Demo',
+          last_name: session?.user?.user_metadata?.last_name || 'User',
+          email: session?.user?.email || 'demo@example.com',
+          phone_number: session?.user?.user_metadata?.phone_number || '',
+          date_of_birth: session?.user?.user_metadata?.date_of_birth || '',
+          country: session?.user?.user_metadata?.country || 'United States',
+          address: session?.user?.user_metadata?.address || '',
+          city: session?.user?.user_metadata?.city || '',
+          state: session?.user?.user_metadata?.state || '',
+          pincode: session?.user?.user_metadata?.pincode || '',
+          avatar_url: session?.user?.user_metadata?.avatar_url || '',
           created_at: new Date().toISOString()
         };
 
@@ -93,11 +111,8 @@ export default function PatientDashboard() {
               type: "video",
               status: "upcoming",
               patient_id: session.user.id,
-              ambassador_id: null,
+              ambassador_id: "amb-123",
               notes: null,
-              therapist_name: "Dr. Sarah Johnson",
-              therapist_specialty: "Depression & Anxiety",
-              therapist_avatar: "/lovable-uploads/47ac3dae-2498-4dd3-a729-73086f5c34f8.png",
               duration: "60 minutes"
             },
             {
@@ -107,11 +122,8 @@ export default function PatientDashboard() {
               type: "voice",
               status: "upcoming",
               patient_id: session.user.id,
-              ambassador_id: null,
+              ambassador_id: "amb-456",
               notes: null,
-              therapist_name: "Dr. Michael Chen",
-              therapist_specialty: "Stress Management",
-              therapist_avatar: "",
               duration: "45 minutes"
             }
           ];
@@ -130,9 +142,6 @@ export default function PatientDashboard() {
             patient_id: appt.patient_id,
             ambassador_id: appt.ambassador_id,
             notes: appt.notes,
-            therapist_name: "Dr. Example", // Placeholder since we don't have this data
-            therapist_specialty: "General", // Placeholder since we don't have this data
-            therapist_avatar: "", // Placeholder since we don't have this data
             duration: appt.duration
           }));
           
@@ -162,7 +171,7 @@ export default function PatientDashboard() {
               id: "1",
               sender: {
                 id: "1",
-                full_name: "Dr. Sarah Johnson",
+                full_name: "Sarah Johnson (Ambassador)",
                 avatar_url: "/lovable-uploads/47ac3dae-2498-4dd3-a729-73086f5c34f8.png"
               },
               content: "Hi there! Just checking in on how you're feeling after our last session.",
@@ -174,7 +183,7 @@ export default function PatientDashboard() {
               id: "2",
               sender: {
                 id: "2",
-                full_name: "Dr. Michael Chen",
+                full_name: "Michael Chen (Ambassador)",
                 avatar_url: ""
               },
               content: "Don't forget to complete your daily mood tracking exercise.",

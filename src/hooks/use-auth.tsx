@@ -1,7 +1,7 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { authService } from '@/integrations/supabase/services/auth.service';
+import { userService } from '@/integrations/supabase/services/user.service';
 
 export type UserRole = 'patient' | 'ambassador' | 'admin';
 
@@ -48,16 +48,56 @@ export const useAuth = () => {
       const role = session.user.user_metadata?.role || 'patient';
       setUserRole(role as UserRole);
       console.log(`Auth state updated: User authenticated as ${role}`);
+      
+      // Store authentication in localStorage to persist through refreshes
+      localStorage.setItem('auth_state', JSON.stringify({
+        isAuthenticated: true,
+        userRole: role,
+        userId: session.user.id
+      }));
+      
+      // Auto-redirect to dashboard when authenticated
+      const dashboardUrl = getDashboardUrlForRole(role as UserRole);
+      console.log(`Auto redirecting to dashboard: ${dashboardUrl}`);
+      
+      // Use window.location for a complete refresh to ensure auth state is recognized
+      if (window.location.pathname === '/login' || window.location.pathname === '/signup') {
+        window.location.href = dashboardUrl;
+      }
     } else {
       setUser(null);
       setIsAuthenticated(false);
       setUserRole(null);
       console.log("Auth state updated: User not authenticated");
+      
+      // Clear stored authentication state
+      localStorage.removeItem('auth_state');
     }
     
     // Always set loading to false after processing auth state
     setIsLoading(false);
-  }, []);
+  }, [getDashboardUrlForRole]);
+  
+  // Add this new effect to check localStorage on mount
+  useEffect(() => {
+    // Check if we have stored auth state in localStorage
+    const storedAuthState = localStorage.getItem('auth_state');
+    if (storedAuthState) {
+      try {
+        const { isAuthenticated: storedAuth, userRole: storedRole } = JSON.parse(storedAuthState);
+        
+        // If we're on the login or signup page and have stored auth, redirect to dashboard
+        if (storedAuth && storedRole && (window.location.pathname === '/login' || window.location.pathname === '/signup')) {
+          console.log("Found stored auth state, redirecting to dashboard");
+          const dashboardUrl = getDashboardUrlForRole(storedRole as UserRole);
+          window.location.href = dashboardUrl;
+        }
+      } catch (e) {
+        console.error("Error parsing stored auth state:", e);
+        localStorage.removeItem('auth_state');
+      }
+    }
+  }, [getDashboardUrlForRole]);
   
   useEffect(() => {
     console.log("Setting up auth state management");
@@ -65,27 +105,32 @@ export const useAuth = () => {
     
     const setupAuth = async () => {
       try {
-        // Set up auth state change listener first
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        console.log('Setting up auth listeners...');
+        
+        // Subscribe to auth state changes
+        const subscription = authService.onAuthStateChange(
           (event, session) => {
-            console.log(`Auth event: ${event}`, session?.user?.id);
+            console.log('Auth state changed:', event);
+            
+            // Check for mount before updating state
+            if (!isMountedRef.current) return;
+            
+            // Handle session updates
             updateAuthState(session);
             
             // Special handling for sign in
             if (event === 'SIGNED_IN' && isMountedRef.current) {
               console.log('User signed in successfully');
-              // Adding a small delay to ensure all auth state updates complete
-              setTimeout(() => {
-                if (isMountedRef.current) {
-                  setIsAuthenticating(false);
-                }
-              }, 300);
+              // Remove the timeout - update state immediately
+              if (isMountedRef.current) {
+                setIsAuthenticating(false);
+              }
             }
           }
         );
         
         // Then check for existing session
-        const { data, error } = await supabase.auth.getSession();
+        const { data, error } = await authService.getSession();
         
         if (error) {
           console.error('Error checking session:', error);
@@ -115,6 +160,107 @@ export const useAuth = () => {
     };
   }, [updateAuthState]);
 
+  const login = async (email: string, password: string) => {
+    if (isAuthenticating) return null;
+    
+    console.log("Login function called");
+    setIsAuthenticating(true);
+    
+    try {
+      const { data, error } = await authService.signIn({
+        email,
+        password
+      });
+      
+      if (error) throw error;
+      
+      toast.success("Signed in successfully!");
+      return data;
+    } catch (error: any) {
+      console.error('Login error:', error);
+      toast.error('Failed to sign in: ' + (error.message || 'Invalid credentials'));
+      throw error;
+    } finally {
+      if (isMountedRef.current) {
+        setIsAuthenticating(false);
+      }
+    }
+  };
+
+  const signup = async (signupData: {
+    email: string,
+    password: string,
+    firstName: string,
+    lastName: string,
+    role: UserRole,
+    country: string,
+    gender?: string | null,
+  }) => {
+    if (isAuthenticating) return { data: null, error: new Error("Authentication already in progress") };
+    
+    console.log("Signup function called", signupData.email);
+    setIsAuthenticating(true);
+    
+    try {
+      // Step 1: Sign up the user
+      const response = await authService.signUp({
+        email: signupData.email,
+        password: signupData.password,
+        firstName: signupData.firstName,
+        lastName: signupData.lastName,
+        role: signupData.role,
+        country: signupData.country,
+        gender: signupData.gender
+      });
+      
+      if (response.error) {
+        console.error('Signup response error:', response.error);
+        return { data: null, error: response.error };
+      }
+      
+      const { data } = response;
+      
+      if (!data.user) {
+        console.error('Signup returned no user data');
+        return { data: null, error: new Error("No user data returned") };
+      }
+      
+      // Step 2: Sign in immediately after signup to get a session
+      console.log('Automatically signing in after signup');
+      const signInResponse = await authService.signIn({
+        email: signupData.email,
+        password: signupData.password
+      });
+      
+      if (signInResponse.error) {
+        console.error('Auto sign-in after signup failed:', signInResponse.error);
+        // Even if sign-in fails, signup succeeded
+        return { data, error: null };
+      }
+      
+      // Manually set auth state to skip any potential delays
+      if (signInResponse.data?.session) {
+        setUser(signInResponse.data.user);
+        setIsAuthenticated(true);
+        setUserRole(signupData.role);
+      }
+      
+      // Successfully signed up and signed in
+      console.log('Auto sign-in after signup successful');
+      toast.success("Account created successfully!");
+      
+      // Return the sign-in response data which contains the latest session
+      return { data: signInResponse.data, error: null };
+    } catch (error: any) {
+      console.error('Signup error:', error);
+      return { data: null, error };
+    } finally {
+      if (isMountedRef.current) {
+        setIsAuthenticating(false);
+      }
+    }
+  };
+
   const logout = async () => {
     if (isAuthenticating) return;
     
@@ -122,16 +268,24 @@ export const useAuth = () => {
     setIsAuthenticating(true);
     
     try {
-      const { error } = await supabase.auth.signOut();
+      const { error } = await authService.signOut();
       if (error) {
         console.error("Error during sign out:", error.message);
         throw error;
       }
       
-      // Toast will be shown once the auth state changes
+      // Explicitly reset auth state after successful sign-out
+      setUser(null);
+      setIsAuthenticated(false);
+      setUserRole(null);
       
-      // Small timeout to ensure state updates before any navigation
-      return new Promise(resolve => setTimeout(resolve, 300));
+      // Clear stored authentication state
+      localStorage.removeItem('auth_state');
+      
+      // Redirect to login page
+      window.location.href = '/login';
+      
+      return;
     } catch (error: any) {
       console.error('Logout error:', error);
       toast.error('Failed to sign out: ' + (error.message || 'Unknown error'));
@@ -150,16 +304,40 @@ export const useAuth = () => {
            'User';
   }, [user]);
 
+  const redirectToDashboard = useCallback(() => {
+    if (!isAuthenticated || !userRole) {
+      console.error("Cannot redirect: User not authenticated or role not known");
+      return;
+    }
+    
+    const dashboardUrl = getDashboardUrlForRole(userRole);
+    console.log(`Redirecting to dashboard: ${dashboardUrl}`);
+    
+    // Use window.location for a complete refresh rather than React Router navigation
+    window.location.href = dashboardUrl;
+  }, [isAuthenticated, userRole, getDashboardUrlForRole]);
+
+  // Add this function near the redirectToDashboard function
+  const directNavigateToDashboard = useCallback((role: UserRole) => {
+    const dashboardUrl = role === 'ambassador' ? '/ambassador-dashboard' : '/patient-dashboard';
+    console.log(`Directly navigating to dashboard: ${dashboardUrl}`);
+    window.location.href = dashboardUrl;
+  }, []);
+
   return {
     user,
     userRole,
     isLoading,
     isAuthenticating,
     isAuthenticated,
+    login,
+    signup,
     logout,
     getFullName,
     getDashboardUrl,
     getDashboardUrlForRole,
+    redirectToDashboard,
+    directNavigateToDashboard,
     setIsAuthenticating
   };
 };

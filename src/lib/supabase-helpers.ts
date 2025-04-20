@@ -1,16 +1,14 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   PatientHealthMetric, 
   PatientProfile, 
   AmbassadorProfile,
-  TherapistProfile,
   Appointment,
   AdminUser
 } from '@/types/database.types';
 
-type UserProfileType = PatientProfile | AmbassadorProfile | TherapistProfile | AdminUser;
-type TableNames = 'patient_profiles' | 'ambassador_profiles' | 'therapist_profiles' | 'admin_users';
+type UserProfileType = PatientProfile | AmbassadorProfile | AdminUser;
+type TableNames = 'patient_profiles' | 'ambassador_profiles' | 'admin_users';
 
 const getRoleTable = (role: string): TableNames => {
   switch (role) {
@@ -18,8 +16,6 @@ const getRoleTable = (role: string): TableNames => {
       return 'patient_profiles';
     case 'ambassador':
       return 'ambassador_profiles';
-    case 'therapist':
-      return 'therapist_profiles';
     case 'admin':
       return 'admin_users';
     default:
