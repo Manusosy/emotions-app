@@ -54,7 +54,7 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-20">
           <Link to="/" className="flex items-center">
             <img 
-              src="/lovable-uploads/03038be2-2146-4f36-a685-7b7719df9caa.png" 
+              src="/images/emotions-logo.svg" 
               alt="Emotions Logo" 
               className="h-7 md:h-9 relative"
             />
