@@ -229,7 +229,7 @@ const About = () => {
                 className="bg-white rounded-lg overflow-hidden shadow-sm w-64 flex-shrink-0 snap-start"
               >
                 <img 
-                  src="/lovable-uploads/52d8a3a8-4039-4e73-9cb7-54162b88d286.png" 
+                  src="/assets/team/abdul.jpg" 
                   alt="Abdul Karim Sesay" 
                   className="w-full aspect-square object-cover"
                 />
@@ -255,7 +255,7 @@ const About = () => {
                 className="bg-white rounded-lg overflow-hidden shadow-sm w-64 flex-shrink-0 snap-start"
               >
                 <img 
-                  src="https://raw.githubusercontent.com/codingtherapist/HopeHacks-images/main/gabriel.png" 
+                  src="/assets/team/gabriel.jpg" 
                   alt="Gabriel Oke" 
                   className="w-full aspect-square object-cover"
                 />
@@ -281,7 +281,7 @@ const About = () => {
                 className="bg-white rounded-lg overflow-hidden shadow-sm w-64 flex-shrink-0 snap-start"
               >
                 <img 
-                  src="https://raw.githubusercontent.com/codingtherapist/HopeHacks-images/main/axel.png" 
+                  src="/assets/team/axel.jpg" 
                   alt="Axel Shimwa" 
                   className="w-full aspect-square object-cover"
                 />
@@ -307,7 +307,7 @@ const About = () => {
                 className="bg-white rounded-lg overflow-hidden shadow-sm w-64 flex-shrink-0 snap-start"
               >
                 <img 
-                  src="https://raw.githubusercontent.com/codingtherapist/HopeHacks-images/main/emanuel.png" 
+                  src="/assets/team/emanuel.jpg" 
                   alt="Emanuel Soita" 
                   className="w-full aspect-square object-cover"
                 />
@@ -333,7 +333,7 @@ const About = () => {
                 className="bg-white rounded-lg overflow-hidden shadow-sm w-64 flex-shrink-0 snap-start"
               >
                 <img 
-                  src="https://raw.githubusercontent.com/codingtherapist/HopeHacks-images/main/pascaline.png" 
+                  src="/assets/team/pascaline.jpg" 
                   alt="Pascaline Kayitete" 
                   className="w-full aspect-square object-cover"
                 />
