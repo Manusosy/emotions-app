@@ -40,7 +40,7 @@ const Header = () => {
         <div className="flex items-center justify-between h-16 md:h-20">
           <Link to="/" className="relative">
             <img 
-              src="/images/emotions-logo.svg" 
+              src="/assets/emotions-app-logo.png" 
               alt="Emotions Logo" 
               className="h-6 md:h-8 relative"
             />

@@ -168,8 +168,8 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               </Button>
               <Link to="/" className="flex items-center">
                 <img
-                  src="/images/emotions-logo.svg"
-                  alt="Emotions Logo"
+                  src="/assets/emotions-logo.png"
+                  alt="Emotions Dashboard Logo"
                   className="h-8 w-auto"
                 />
               </Link>
