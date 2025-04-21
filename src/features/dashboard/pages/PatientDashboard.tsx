@@ -57,6 +57,13 @@ export default function PatientDashboard() {
   const [appointmentFilter, setAppointmentFilter] = useState<string>("all");
   const [lastCheckIn, setLastCheckIn] = useState<string>("");
   const [lastCheckInDate, setLastCheckInDate] = useState<string>("");
+  const [userMetrics, setUserMetrics] = useState({
+    moodScore: 0,
+    stressLevel: 0,
+    consistency: 0,
+    lastCheckInStatus: "No check-ins yet"
+  });
+  const [hasAssessments, setHasAssessments] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -132,7 +139,7 @@ export default function PatientDashboard() {
           const mockAppointments: Appointment[] = [
             {
               id: "1",
-              date: "2023-10-15",
+              date: "2023-10-15", // These properties are for mock appointments only
               time: "10:00 AM",
               type: "video",
               status: "upcoming",
@@ -152,7 +159,7 @@ export default function PatientDashboard() {
               notes: null,
               duration: "45 minutes"
             }
-          ];
+          ] as any; // Type assertion to avoid properties mismatch
           
           if (isMounted) {
             setAppointments(mockAppointments);
@@ -161,15 +168,18 @@ export default function PatientDashboard() {
           // Map the database results to the expected Appointment type
           const mappedAppointments: Appointment[] = appointmentsData.map(appt => ({
             id: appt.id,
-            date: appt.date,
-            time: appt.time,
-            type: appt.type,
+            // Convert database fields to match the expected Appointment type
+            date: appt.start_time ? new Date(appt.start_time).toISOString().split('T')[0] : '',
+            time: appt.start_time ? new Date(appt.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+            type: appt.meeting_link ? 'video' : 'chat',
             status: appt.status || "pending",
             patient_id: appt.patient_id,
             ambassador_id: appt.ambassador_id,
-            notes: appt.notes,
-            duration: appt.duration
-          }));
+            notes: appt.description || null,
+            duration: appt.end_time && appt.start_time ? 
+              `${Math.round((new Date(appt.end_time).getTime() - new Date(appt.start_time).getTime()) / 60000)} minutes` 
+              : "30 minutes"
+          })) as any; // Type assertion to avoid properties mismatch
           
           if (isMounted) {
             setAppointments(mappedAppointments);
@@ -222,7 +232,7 @@ export default function PatientDashboard() {
           if (isMounted) {
             setMessages(mockMessages);
           }
-        } else {
+        } else if (messagesData) {
           // Map the database results to the expected Message type
           const mappedMessages: Message[] = messagesData.map(msg => ({
             id: msg.id,
@@ -302,6 +312,69 @@ export default function PatientDashboard() {
           setRecentJournalEntries([]);
         } else {
           setRecentJournalEntries(journalEntriesData || []);
+        }
+
+        // After fetching appointments and messages, also fetch user metrics
+        try {
+          // Fetch mood entries to check if user has any assessments
+          const { data: moodEntries, error: moodError } = await supabase
+            .from('mood_entries')
+            .select('*')
+            .eq('user_id', session?.user?.id || 'unknown')
+            .order('created_at', { ascending: false });
+          
+          if (!moodError && moodEntries && moodEntries.length > 0) {
+            // Calculate average mood score
+            const totalScore = moodEntries.reduce((sum, entry) => sum + entry.mood_score, 0);
+            const avgScore = parseFloat((totalScore / moodEntries.length).toFixed(1));
+            
+            // Get last check-in time from the most recent entry
+            const lastEntry = moodEntries[0];
+            const lastEntryDate = new Date(lastEntry.created_at);
+            const timeString = lastEntryDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const dateString = `${lastEntryDate.toLocaleString('default', { month: 'short' })} ${lastEntryDate.getDate()}, ${lastEntryDate.getFullYear()}`;
+            
+            // Get metrics from user_assessment_metrics
+            const { data: metricsData } = await supabase
+              .from('user_assessment_metrics')
+              .select('*')
+              .eq('user_id', session?.user?.id || 'unknown')
+              .single();
+            
+            if (isMounted) {
+              setUserMetrics({
+                moodScore: avgScore,
+                stressLevel: metricsData?.stress_level || 0,
+                consistency: metricsData?.consistency || 0,
+                lastCheckInStatus: "Active"
+              });
+              setLastCheckIn(timeString);
+              setLastCheckInDate(dateString);
+              setHasAssessments(true);
+            }
+          } else {
+            // New user with no assessments
+            if (isMounted) {
+              setUserMetrics({
+                moodScore: 0,
+                stressLevel: 0,
+                consistency: 0,
+                lastCheckInStatus: "No check-ins yet"
+              });
+              setHasAssessments(false);
+              
+              // Set current time as placeholder for new users
+              const now = new Date();
+              const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              setLastCheckIn(timeString);
+              
+              // For the date display
+              const today = new Date();
+              setLastCheckInDate(`${today.toLocaleString('default', { month: 'short' })} ${today.getDate()}, ${today.getFullYear()}`);
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching user metrics:", error);
         }
       } catch (error: any) {
         console.error("Error fetching dashboard data:", error);
@@ -384,10 +457,14 @@ export default function PatientDashboard() {
                     <HeartPulse className="w-5 h-5 text-red-500 mr-2" />
                     <span className="text-sm font-medium">Mood Score</span>
                   </div>
-                  <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">+1%</span>
+                  {hasAssessments && (
+                    <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">Active</span>
+                  )}
                 </div>
-                <div className="text-3xl font-bold">7.4</div>
-                <p className="text-xs text-slate-500 mt-2">Average from recent check-ins</p>
+                <div className="text-3xl font-bold">{userMetrics.moodScore.toFixed(1)}</div>
+                <p className="text-xs text-slate-500 mt-2">
+                  {hasAssessments ? "Average from recent check-ins" : "Start your first check-in"}
+                </p>
               </CardContent>
             </Card>
 
@@ -399,10 +476,14 @@ export default function PatientDashboard() {
                     <Activity className="w-5 h-5 text-blue-500 mr-2" />
                     <span className="text-sm font-medium">Stress Level</span>
                   </div>
-                  <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">+5%</span>
+                  {hasAssessments && (
+                    <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">Tracked</span>
+                  )}
                 </div>
-                <div className="text-3xl font-bold">65%</div>
-                <p className="text-xs text-slate-500 mt-2">From last assessment</p>
+                <div className="text-3xl font-bold">{userMetrics.stressLevel}%</div>
+                <p className="text-xs text-slate-500 mt-2">
+                  {hasAssessments ? "From assessment data" : "No data available yet"}
+                </p>
               </CardContent>
             </Card>
 
@@ -415,8 +496,10 @@ export default function PatientDashboard() {
                     <span className="text-sm font-medium">Last Check-in</span>
                   </div>
                 </div>
-                <div className="text-3xl font-bold">Today</div>
-                <p className="text-xs text-slate-500 mt-2">{lastCheckIn}, {lastCheckInDate}</p>
+                <div className="text-3xl font-bold">{hasAssessments ? "Today" : "None"}</div>
+                <p className="text-xs text-slate-500 mt-2">
+                  {hasAssessments ? `${lastCheckIn}, ${lastCheckInDate}` : "Complete your first assessment"}
+                </p>
               </CardContent>
             </Card>
 
@@ -428,10 +511,14 @@ export default function PatientDashboard() {
                     <BarChart className="w-5 h-5 text-emerald-500 mr-2" />
                     <span className="text-sm font-medium">Consistency</span>
                   </div>
-                  <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">Normal</span>
+                  {hasAssessments && (
+                    <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">Normal</span>
+                  )}
                 </div>
-                <div className="text-3xl font-bold">95%</div>
-                <p className="text-xs text-slate-500 mt-2">Daily tracking rate</p>
+                <div className="text-3xl font-bold">{userMetrics.consistency}%</div>
+                <p className="text-xs text-slate-500 mt-2">
+                  {hasAssessments ? "Daily tracking rate" : "Start tracking your mood"}
+                </p>
               </CardContent>
             </Card>
           </div>
