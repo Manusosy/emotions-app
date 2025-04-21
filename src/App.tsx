@@ -10,6 +10,10 @@ import ForgotPassword from "@/features/auth/pages/ForgotPassword";
 import ResetPassword from "@/features/auth/pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import JournalPage from "@/features/journal/pages/JournalPage";
+import DashboardJournalPage from "@/features/dashboard/pages/JournalPage";
+import NotificationsPage from "@/features/dashboard/pages/NotificationsPage";
+import MoodTrackerPage from "@/features/dashboard/pages/MoodTrackerPage";
+import ReportsPage from "@/features/dashboard/pages/ReportsPage";
 import Footer from "@/components/layout/Footer";
 import ContactBanner from "@/components/layout/ContactBanner";
 import Ambassadors from "@/features/ambassadors/pages/Ambassadors";
@@ -17,6 +21,7 @@ import AppointmentsPage from "@/features/ambassadors/pages/AppointmentsPage";
 import ClientsPage from "@/features/ambassadors/pages/ClientsPage";
 import GroupsPage from "@/features/ambassadors/pages/GroupsPage";
 import ResourcesPage from "@/features/ambassadors/pages/ResourcesPage";
+import DashboardResourcesPage from "@/features/dashboard/pages/ResourcesPage";
 import BookingPage from "@/features/booking/pages/BookingPage";
 import PatientDashboard from "@/features/dashboard/pages/PatientDashboard";
 import PatientAppointmentsPage from "@/features/dashboard/pages/AppointmentsPage";
@@ -43,6 +48,16 @@ import ReviewsPage from "@/features/ambassadors/pages/ReviewsPage";
 import AvailabilityPage from "@/features/ambassadors/pages/AvailabilityPage";
 import './styles/App.css';
 import { Spinner } from "@/components/ui/spinner";
+import JournalEntryPage from "@/features/journal/pages/JournalEntryPage";
+import NewJournalEntryPage from "@/features/journal/pages/NewJournalEntryPage";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import { Button } from "@/components/ui/button";
+import HelpCenterPage from "@/features/dashboard/pages/HelpCenterPage";
+import MessagesPage from "@/features/dashboard/pages/MessagesPage";
+import AmbassadorMessagesPage from "@/features/ambassadors/pages/MessagesPage";
+
+// Type definition for UserRole
+type UserRole = 'patient' | 'ambassador' | 'admin';
 
 // Type definition for ProtectedRoute props
 interface ProtectedRouteProps {
@@ -55,6 +70,31 @@ const HomePage = () => {
   return (
     <div className="homepage-wrapper relative pb-12">
       <MoodTracker />
+    </div>
+  );
+};
+
+// DashboardErrorFallback component to provide context-aware error handling
+const DashboardErrorFallback = ({ dashboardType }: { dashboardType: 'patient' | 'ambassador' }) => {
+  const navigate = useNavigate();
+  const dashboardPath = dashboardType === 'patient' ? '/patient-dashboard' : '/ambassador-dashboard';
+  
+  return (
+    <div className="flex flex-col items-center justify-center h-full min-h-[50vh] p-6 text-center">
+      <div className="max-w-md space-y-4">
+        <h2 className="text-2xl font-semibold text-gray-800">Something went wrong</h2>
+        <p className="text-gray-600">
+          We encountered an error while loading this page.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+          <Button onClick={() => navigate(-1)}>
+            Go Back
+          </Button>
+          <Button variant="outline" onClick={() => navigate(dashboardPath)}>
+            Return to Dashboard
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
@@ -124,7 +164,7 @@ const ProtectedRoute = ({
 
       // If no specific roles are required or user has required role
       const hasRequiredRole =
-        effectiveAllowedRoles.length === 0 || (userRole && effectiveAllowedRoles.includes(userRole));
+        effectiveAllowedRoles.length === 0 || (userRole && effectiveAllowedRoles.includes(userRole as UserRole));
 
       if (!hasRequiredRole) {
         console.log(
@@ -177,7 +217,14 @@ const ProtectedRoute = ({
     );
   }
 
-  return isAuthorized ? <>{children}</> : null;
+  // Wrap the children in an ErrorBoundary with the appropriate dashboard path
+  const dashboardPath = requiredRole === 'patient' ? '/patient-dashboard' : '/ambassador-dashboard';
+  
+  return isAuthorized ? (
+    <ErrorBoundary dashboardPath={dashboardPath}>
+      {children}
+    </ErrorBoundary>
+  ) : null;
 };
 
 const AppContent = () => {
@@ -229,6 +276,7 @@ const AppContent = () => {
           {showHeaderFooter && <Navbar />}
           <div className="flex-grow">
             <Routes key={location.pathname}>
+              {/* Public routes */}
               <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
@@ -239,44 +287,16 @@ const AppContent = () => {
               <Route path="/ambassadors/:id" element={<AmbassadorProfile />} />
               <Route path="/booking" element={<BookingPage />} />
               
-              <Route 
-                path="/resources" 
-                element={<Resources />}
-              />
-              <Route 
-                path="/help-groups" 
-                element={<HelpGroups />}
-              />
-              <Route 
-                path="/privacy" 
-                element={<PrivacyPolicy />}
-              />
+              <Route path="/resources" element={<Resources />} />
+              <Route path="/help-groups" element={<HelpGroups />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/data-protection" element={<DataProtection />} />
+              <Route path="/terms" element={<TermsOfService />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/faqs" element={<FAQs />} />
+              <Route path="/about" element={<About />} />
               
-              <Route 
-                path="/data-protection" 
-                element={<DataProtection />}
-              />
-              
-              <Route 
-                path="/terms" 
-                element={<TermsOfService />}
-              />
-              
-              <Route 
-                path="/contact" 
-                element={<Contact />}
-              />
-              
-              <Route 
-                path="/faqs" 
-                element={<FAQs />}
-              />
-              
-              <Route 
-                path="/about" 
-                element={<About />}
-              />
-              
+              {/* Ambassador Dashboard Routes */}
               <Route path="/ambassador-dashboard" element={
                 <ProtectedRoute requiredRole="ambassador">
                   <AmbassadorDashboard />
@@ -312,6 +332,11 @@ const AppContent = () => {
                   <AvailabilityPage />
                 </ProtectedRoute>
               } />
+              <Route path="/ambassador-dashboard/messages" element={
+                <ProtectedRoute requiredRole="ambassador">
+                  <AmbassadorMessagesPage />
+                </ProtectedRoute>
+              } />
               <Route path="/ambassador-dashboard/profile" element={
                 <ProtectedRoute requiredRole="ambassador">
                   <Profile />
@@ -327,7 +352,13 @@ const AppContent = () => {
                   <DeleteAccount />
                 </ProtectedRoute>
               } />
+              <Route path="/ambassador-dashboard/*" element={
+                <ProtectedRoute requiredRole="ambassador">
+                  <NotFound />
+                </ProtectedRoute>
+              } />
               
+              {/* Patient Dashboard Routes */}
               <Route path="/patient-dashboard" element={
                 <ProtectedRoute requiredRole="patient">
                   <PatientDashboard />
@@ -345,7 +376,52 @@ const AppContent = () => {
               } />
               <Route path="/patient-dashboard/journal" element={
                 <ProtectedRoute requiredRole="patient">
-                  <JournalPage />
+                  <DashboardJournalPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/patient-dashboard/journal/:entryId" element={
+                <ProtectedRoute requiredRole="patient">
+                  <JournalEntryPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/patient-dashboard/journal/new" element={
+                <ProtectedRoute requiredRole="patient">
+                  <NewJournalEntryPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/patient-dashboard/journal/edit/:entryId" element={
+                <ProtectedRoute requiredRole="patient">
+                  <ComingSoon title="Edit Journal Entry" />
+                </ProtectedRoute>
+              } />
+              <Route path="/patient-dashboard/notifications" element={
+                <ProtectedRoute requiredRole="patient">
+                  <NotificationsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/patient-dashboard/mood-tracker" element={
+                <ProtectedRoute requiredRole="patient">
+                  <MoodTrackerPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/patient-dashboard/reports" element={
+                <ProtectedRoute requiredRole="patient">
+                  <ReportsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/patient-dashboard/resources" element={
+                <ProtectedRoute requiredRole="patient">
+                  <DashboardResourcesPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/patient-dashboard/messages" element={
+                <ProtectedRoute requiredRole="patient">
+                  <MessagesPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/patient-dashboard/help" element={
+                <ProtectedRoute requiredRole="patient">
+                  <HelpCenterPage />
                 </ProtectedRoute>
               } />
               <Route path="/patient-dashboard/settings" element={
@@ -363,7 +439,13 @@ const AppContent = () => {
                   <Profile />
                 </ProtectedRoute>
               } />
+              <Route path="/patient-dashboard/*" element={
+                <ProtectedRoute requiredRole="patient">
+                  <NotFound />
+                </ProtectedRoute>
+              } />
               
+              {/* Fallback 404 route */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>

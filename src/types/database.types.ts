@@ -83,6 +83,7 @@ export interface UserProfile {
   email: string;
   phone_number: string;
   date_of_birth: string;
+  gender?: string;
   country: string;
   address: string;
   city: string;

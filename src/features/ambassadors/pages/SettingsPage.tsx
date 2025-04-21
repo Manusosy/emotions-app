@@ -131,12 +131,15 @@ export default function SettingsPage() {
       let avatarUrl = formData.avatar_url;
       if (formData.avatar) {
         const fileExt = formData.avatar.name.split('.').pop();
-        const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
         const filePath = `${fileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from('avatars')
-          .upload(filePath, formData.avatar);
+          .upload(filePath, formData.avatar, {
+            cacheControl: '3600',
+            upsert: true
+          });
 
         if (uploadError) throw uploadError;
 
@@ -181,16 +184,31 @@ export default function SettingsPage() {
             <div>
               <Label>Profile Photo</Label>
               <div className="flex items-center gap-4 mt-2">
-                <img
-                  src={formData.avatar_url || "/default-avatar.png"}
-                  alt="Profile"
-                  className="w-20 h-20 rounded-full object-cover"
-                />
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                />
+                <div className="relative cursor-pointer">
+                  <img
+                    src={formData.avatar_url || "/default-avatar.png"}
+                    alt="Profile"
+                    className="w-20 h-20 rounded-full object-cover cursor-pointer"
+                  />
+                  <label htmlFor="ambassador-profile-upload" className="absolute inset-0 cursor-pointer">
+                    <span className="sr-only">Upload profile picture</span>
+                  </label>
+                  <Input
+                    id="ambassador-profile-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="absolute inset-0 opacity-0 cursor-pointer z-10 w-20 h-20"
+                  />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500">
+                    Click on the avatar to update your profile picture
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Recommended: Square image, at least 300x300 pixels
+                  </p>
+                </div>
               </div>
             </div>
 

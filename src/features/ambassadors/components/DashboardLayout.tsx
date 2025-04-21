@@ -281,12 +281,14 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         </div>
       </div>
 
-      {/* Main content */}
-      <div className={`lg:pl-72`}>
-        <main className="min-h-screen bg-gray-50">
-          {children}
-        </main>
-      </div>
+      {/* Main Content */}
+      <main className={`flex-1 pl-0 transition-all duration-300 w-full ${sidebarOpen ? "lg:pl-64" : ""}`}>
+        <div className="py-4 px-3 sm:py-6 sm:px-6 lg:px-8">
+          <div className="max-w-full overflow-x-auto">
+            {children}
+          </div>
+        </div>
+      </main>
 
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && isMobile && (

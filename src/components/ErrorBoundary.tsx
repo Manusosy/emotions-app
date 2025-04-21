@@ -1,8 +1,11 @@
-import React from 'react';
-import { toast } from 'sonner';
+import React, { Component, ErrorInfo, ReactNode } from "react";
+import { Button } from "@/components/ui/button";
 
 interface Props {
-  children: React.ReactNode;
+  children: ReactNode;
+  fallback?: ReactNode;
+  onReset?: () => void;
+  dashboardPath?: string;
 }
 
 interface State {
@@ -10,42 +13,62 @@ interface State {
   error: Error | null;
 }
 
-class ErrorBoundary extends React.Component<Props, State> {
+class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = {
+      hasError: false,
+      error: null
+    };
   }
 
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, error };
+  static getDerivedStateFromError(error: Error): State {
+    return {
+      hasError: true,
+      error
+    };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo);
-    
-    // Check if it's a Supabase-related error
-    if (error.message.includes('supabase') || error.message.includes('fetch')) {
-      toast.error('Connection error. Please check your internet connection and try again.');
-    }
+  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+    console.error("Error caught by ErrorBoundary:", error, errorInfo);
   }
 
-  render() {
+  resetErrorBoundary = (): void => {
+    this.props.onReset?.();
+    this.setState({
+      hasError: false,
+      error: null
+    });
+  };
+
+  render(): ReactNode {
     if (this.state.hasError) {
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
+
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="text-center p-8 rounded-lg bg-white shadow-lg max-w-md">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Something went wrong</h2>
-            <p className="text-gray-600 mb-6">
-              {this.state.error?.message.includes('supabase') || this.state.error?.message.includes('fetch')
-                ? 'Connection error. Please check your internet connection and try again.'
-                : 'An unexpected error occurred. Please try refreshing the page.'}
+        <div className="flex flex-col items-center justify-center h-full p-6 text-center">
+          <div className="max-w-md space-y-4">
+            <h2 className="text-2xl font-semibold text-gray-800">Something went wrong</h2>
+            <p className="text-gray-600">
+              We encountered an error while rendering this page.
             </p>
-            <button
-              onClick={() => window.location.reload()}
-              className="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 transition-colors"
-            >
-              Refresh Page
-            </button>
+            {this.state.error && (
+              <div className="p-4 text-sm bg-red-50 text-red-700 rounded-md border border-red-200 text-left overflow-auto max-h-32">
+                {this.state.error.toString()}
+              </div>
+            )}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+              <Button onClick={this.resetErrorBoundary}>
+                Try Again
+              </Button>
+              {this.props.dashboardPath && (
+                <Button variant="outline" onClick={() => window.location.href = this.props.dashboardPath}>
+                  Return to Dashboard
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       );

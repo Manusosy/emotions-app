@@ -214,44 +214,80 @@ const JournalEditor = ({ onBackToWelcome }: { onBackToWelcome: () => void }) => 
   const saveEntry = useCallback(async () => {
     if (!editor) return;
 
-    const user = await supabase.auth.getUser();
-    if (!user.data.user) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to save entries",
-        variant: "destructive",
-      });
-      return;
+    const content = editor.getHTML();
+    if (!content.trim() && !title.trim()) {
+      return; // Don't save empty entries
     }
 
-    try {
-      const { error } = await supabase.from("journal_entries").insert({
-        user_id: user.data.user.id,
-        title,
-        content: editor.getHTML(),
-        mood: selectedMood,
-        tomorrows_intention: tomorrowsIntention,
-      } as any); // Use type assertion to bypass type checking for this demo
+    setIsSaving(true);
 
-      if (error) throw error;
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !userData.user) {
+        toast({
+          title: "Authentication Error",
+          description: "You must be logged in to save journal entries. Please sign in.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.from("journal_entries").insert({
+        user_id: userData.user.id,
+        title: title.trim() || "Untitled Entry",
+        content: content,
+        mood: selectedMood,
+        mood_score: selectedMood ? 7 : undefined, // Default mood score if mood is selected
+        tomorrows_plan: tomorrowsIntention, // Using consistent field name with dashboard
+        created_at: new Date().toISOString(),
+      }).select();
+
+      if (error) {
+        console.error("Error saving journal entry:", error);
+        throw error;
+      }
 
       setLastSaved(new Date());
       toast({
         title: "Entry saved",
-        description: "Your journal entry has been automatically saved.",
+        description: "Your journal entry has been saved successfully.",
       });
-    } catch (error) {
+      
+      // If the user is not on dashboard, suggest viewing in dashboard
+      if (!window.location.pathname.includes('dashboard')) {
+        toast({
+          title: "Entry saved to dashboard",
+          description: "You can view all your journal entries in your dashboard.",
+          action: (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => window.location.href = '/patient-dashboard/journal'}
+            >
+              Go to Dashboard
+            </Button>
+          )
+        });
+      }
+    } catch (error: any) {
+      console.error("Error saving journal entry:", error);
       toast({
         title: "Error",
-        description: "Failed to save your journal entry. Please try again.",
+        description: error.message || "Failed to save your journal entry. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
     }
   }, [editor, title, selectedMood, tomorrowsIntention, toast]);
 
   // Autosave functionality
   useEffect(() => {
-    if (!editor || !title) return;
+    if (!editor) return;
+    
+    const content = editor.getText().trim();
+    if (!content && !title.trim()) return;
 
     const timeoutId = setTimeout(saveEntry, AUTOSAVE_DELAY);
     return () => clearTimeout(timeoutId);

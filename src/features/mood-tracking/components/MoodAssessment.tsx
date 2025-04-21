@@ -1,10 +1,13 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useState, RefObject } from "react";
+import { useState, RefObject, useEffect } from "react";
 import EmotionButton from "./EmotionButton";
 import QuestionCard from "./QuestionCard";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Book, Heart, LifeBuoy, FileText, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 // Emotion data
 const emotions = [{
@@ -72,7 +75,105 @@ const MoodAssessment = ({ emotionsRef }: MoodAssessmentProps) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
   const [showResults, setShowResults] = useState(false);
+  const [resultSaved, setResultSaved] = useState(false);
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
+
+  // Function to map emotion and score to a mood_score on a scale of 1-10
+  const getMoodScore = (emotion: string | null, score: number): number => {
+    // Maximum possible score from questions (2 questions x max 3 points each)
+    const MAX_ASSESSMENT_SCORE = 6;
+    
+    // Base score from emotion type (on a scale of 1-10)
+    let baseScore = 5; // Neutral default
+    
+    switch (emotion?.toLowerCase()) {
+      case 'happy':
+        baseScore = 8;
+        break;
+      case 'calm':
+        baseScore = 7;
+        break;
+      case 'sad':
+        baseScore = 3;
+        break;
+      case 'angry':
+        baseScore = 2;
+        break;
+      case 'worried':
+        baseScore = 4;
+        break;
+    }
+    
+    // Convert assessment score to a factor between 0 and 1
+    // Higher assessment score = more negative emotional state
+    const scoreFactor = score / MAX_ASSESSMENT_SCORE;
+    
+    // For happy/calm emotions: higher assessment score reduces base score
+    // For sad/angry/worried emotions: higher assessment score increases their intensity
+    let adjustedScore;
+    if (baseScore >= 5) {
+      // Happy/calm emotions get reduced by negative assessment
+      adjustedScore = baseScore - (scoreFactor * 3);
+    } else {
+      // Negative emotions get intensified by negative assessment
+      adjustedScore = baseScore - (scoreFactor * 1);
+    }
+    
+    // Ensure score is between 1-10
+    return Math.max(1, Math.min(10, Math.round(adjustedScore)));
+  };
+
+  // Function to get mood result based on score
+  const getMoodResult = (emotion: string | null): string => {
+    if (!emotion) return "Neutral";
+    
+    switch (emotion.toLowerCase()) {
+      case 'happy':
+        return "Happy";
+      case 'calm':
+        return "Calm";
+      case 'sad':
+        return "Sad";
+      case 'angry':
+        return "Angry";
+      case 'worried':
+        return "Worried";
+      default:
+        return "Neutral";
+    }
+  };
+
+  // Effect to save result when assessment is completed by logged-in user
+  useEffect(() => {
+    const saveMoodEntry = async () => {
+      if (isAuthenticated && user && showResults && !resultSaved) {
+        try {
+          const moodScore = getMoodScore(selectedEmotion, score);
+          const moodResult = getMoodResult(selectedEmotion);
+          
+          const { error } = await supabase
+            .from("mood_entries")
+            .insert({
+              user_id: user.id,
+              mood_score: moodScore,
+              assessment_result: moodResult,
+              notes: `Assessment score: ${score}, Selected emotion: ${selectedEmotion}`
+            });
+
+          if (error) throw error;
+          
+          setResultSaved(true);
+          // Don't show a toast notification to avoid disrupting the experience
+        } catch (error) {
+          console.error("Error saving mood entry:", error);
+          // Silent fail to not disrupt the user experience
+        }
+      }
+    };
+
+    saveMoodEntry();
+  }, [showResults, isAuthenticated, user, selectedEmotion, score, resultSaved]);
 
   const handleEmotionSelect = (emotion: string) => {
     if (selectedEmotion === emotion) {
@@ -101,6 +202,7 @@ const MoodAssessment = ({ emotionsRef }: MoodAssessmentProps) => {
     setCurrentQuestion(0);
     setScore(0);
     setShowResults(false);
+    setResultSaved(false);
   };
 
   const navigateToJournal = () => {

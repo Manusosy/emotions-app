@@ -1,27 +1,78 @@
-import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
 
-const NotFound = () => {
+export default function NotFound() {
+  const navigate = useNavigate();
   const location = useLocation();
-
+  const { user, userRole } = useAuth();
+  
+  // Handle navigation based on context
   useEffect(() => {
-    console.error(
-      "404 Error: User attempted to access non-existent route:",
-      location.pathname
-    );
-  }, [location.pathname]);
+    // If we're in a dashboard context, keep the user there
+    const path = location.pathname;
+    const isDashboardPath = path.includes('/patient-dashboard') || path.includes('/ambassador-dashboard');
+    
+    if (isDashboardPath) {
+      // Extract the dashboard base path
+      const dashboardBase = path.includes('/patient-dashboard') 
+        ? '/patient-dashboard'
+        : '/ambassador-dashboard';
+      
+      // Set a timeout to automatically navigate back
+      const timer = setTimeout(() => {
+        // Navigate back in history
+        navigate(-1);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [location.pathname, navigate, userRole]);
+  
+  // Determine where to redirect the user based on context
+  const getRedirectPath = () => {
+    const path = location.pathname;
+    
+    if (path.includes('/patient-dashboard')) {
+      return '/patient-dashboard';
+    } else if (path.includes('/ambassador-dashboard')) {
+      return '/ambassador-dashboard';
+    } else if (userRole === 'patient') {
+      return '/patient-dashboard';
+    } else if (userRole === 'ambassador') {
+      return '/ambassador-dashboard';
+    } else {
+      return '/';
+    }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">404</h1>
-        <p className="text-xl text-gray-600 mb-4">Oops! Page not found</p>
-        <a href="/" className="text-blue-500 hover:text-blue-700 underline">
-          Return to Home
-        </a>
+    <div className="flex flex-col items-center justify-center min-h-screen px-4 text-center bg-gray-50">
+      <div className="space-y-6 max-w-md">
+        <h1 className="text-6xl font-bold text-blue-600">404</h1>
+        <h2 className="text-2xl font-semibold text-gray-800">Page Not Found</h2>
+        <p className="text-gray-600">
+          The page you are looking for doesn't exist or has been moved.
+          {location.pathname.includes('dashboard') && (
+            " You'll be redirected back to your previous page automatically in a few seconds."
+          )}
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+          <Button onClick={() => navigate(-1)}>
+            Go Back
+          </Button>
+          <Button variant="outline" asChild>
+            <Link to={getRedirectPath()}>
+              {location.pathname.includes('patient-dashboard') 
+                ? 'Patient Dashboard' 
+                : location.pathname.includes('ambassador-dashboard')
+                  ? 'Ambassador Dashboard'
+                  : 'Home'}
+            </Link>
+          </Button>
+        </div>
       </div>
     </div>
   );
-};
-
-export default NotFound;
+}

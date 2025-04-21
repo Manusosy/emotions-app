@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,7 +21,18 @@ import {
   Mail,
   Phone as PhoneIcon,
   MapPin,
-  BadgeHelp
+  BadgeHelp,
+  LineChart,
+  Heart,
+  ExternalLink,
+  BookOpen,
+  FileText,
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  Activity,
+  BarChart,
+  HeartPulse
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +40,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/hooks/use-auth";
 import MoodAnalytics from "../components/MoodAnalytics";
 import MoodAssessment from "../components/MoodAssessment";
+import MoodSummaryCard from "../components/MoodSummaryCard";
 import { Appointment, Message, UserProfile } from "@/types/database.types";
+import { format, parseISO } from "date-fns";
 
 export default function PatientDashboard() {
   const navigate = useNavigate();
@@ -40,9 +53,22 @@ export default function PatientDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
   const [supportGroups, setSupportGroups] = useState<any[]>([]);
+  const [recentJournalEntries, setRecentJournalEntries] = useState<any[]>([]);
+  const [appointmentFilter, setAppointmentFilter] = useState<string>("all");
+  const [lastCheckIn, setLastCheckIn] = useState<string>("");
+  const [lastCheckInDate, setLastCheckInDate] = useState<string>("");
 
   useEffect(() => {
     let isMounted = true;
+
+    // Set last check-in time to current time
+    const now = new Date();
+    const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    setLastCheckIn(timeString);
+    
+    // For the date display
+    const today = new Date();
+    setLastCheckInDate(`${today.toLocaleString('default', { month: 'short' })} ${today.getDate()}, ${today.getFullYear()}`);
 
     const fetchDashboardData = async () => {
       try {
@@ -262,6 +288,21 @@ export default function PatientDashboard() {
         } else {
           setSupportGroups(supportGroupsData || []);
         }
+
+        // Fetch recent journal entries
+        const { data: journalEntriesData, error: journalEntriesError } = await supabase
+          .from('journal_entries')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .order('created_at', { ascending: false })
+          .limit(3);
+
+        if (journalEntriesError) {
+          console.error("Error fetching journal entries:", journalEntriesError);
+          setRecentJournalEntries([]);
+        } else {
+          setRecentJournalEntries(journalEntriesData || []);
+        }
       } catch (error: any) {
         console.error("Error fetching dashboard data:", error);
         if (isMounted) {
@@ -304,7 +345,7 @@ export default function PatientDashboard() {
   };
 
   const handleJournalClick = () => {
-    navigate('/journal');
+    navigate('/patient-dashboard/journal');
   };
 
   const handleSettingsClick = () => {
@@ -322,107 +363,465 @@ export default function PatientDashboard() {
 
   return (
     <DashboardLayout>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="col-span-2">
-          <CardHeader>
-            <CardTitle>Your Mood Analytics</CardTitle>
-          </CardHeader>
-          <CardContent>
-                  <MoodAnalytics />
+      <div className="space-y-6">
+        {/* Title and User Welcome */}
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-semibold">Dashboard</h1>
+          <p className="text-slate-500">
+            Welcome back, {profile?.first_name || "User"}
+          </p>
+        </div>
+
+        {/* Health Records Overview */}
+        <div>
+          <h2 className="text-xl font-medium mb-4">Emotional Health Records</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {/* Mood Score */}
+            <Card className="overflow-hidden border-0 bg-gradient-to-br from-red-50 to-pink-50">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center">
+                    <HeartPulse className="w-5 h-5 text-red-500 mr-2" />
+                    <span className="text-sm font-medium">Mood Score</span>
+                  </div>
+                  <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">+1%</span>
+                </div>
+                <div className="text-3xl font-bold">7.4</div>
+                <p className="text-xs text-slate-500 mt-2">Average from recent check-ins</p>
+              </CardContent>
+            </Card>
+
+            {/* Stress Level */}
+            <Card className="overflow-hidden border-0 bg-gradient-to-br from-blue-50 to-indigo-50">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center">
+                    <Activity className="w-5 h-5 text-blue-500 mr-2" />
+                    <span className="text-sm font-medium">Stress Level</span>
+                  </div>
+                  <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">+5%</span>
+                </div>
+                <div className="text-3xl font-bold">65%</div>
+                <p className="text-xs text-slate-500 mt-2">From last assessment</p>
+              </CardContent>
+            </Card>
+
+            {/* Last Check-in */}
+            <Card className="overflow-hidden border-0 bg-gradient-to-br from-indigo-50 to-purple-50">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center">
+                    <Clock className="w-5 h-5 text-indigo-500 mr-2" />
+                    <span className="text-sm font-medium">Last Check-in</span>
+                  </div>
+                </div>
+                <div className="text-3xl font-bold">Today</div>
+                <p className="text-xs text-slate-500 mt-2">{lastCheckIn}, {lastCheckInDate}</p>
+              </CardContent>
+            </Card>
+
+            {/* Consistency */}
+            <Card className="overflow-hidden border-0 bg-gradient-to-br from-emerald-50 to-teal-50">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center">
+                    <BarChart className="w-5 h-5 text-emerald-500 mr-2" />
+                    <span className="text-sm font-medium">Consistency</span>
+                  </div>
+                  <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">Normal</span>
+                </div>
+                <div className="text-3xl font-bold">95%</div>
+                <p className="text-xs text-slate-500 mt-2">Daily tracking rate</p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Mood Check-in and Recent Assessments - 2 columns layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {/* Mood Assessment Card */}
+          <Card className="h-full">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-medium">Daily Check-in</CardTitle>
+              <CardDescription>How are you feeling today?</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <MoodAssessment />
             </CardContent>
           </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Daily Check-in</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <MoodAssessment onComplete={() => toast.success('Mood logged successfully')} />
-          </CardContent>
-        </Card>
+          {/* Mood Summary Card */}
+          <Card className="h-full bg-gradient-to-br from-white to-blue-50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-medium">Recent Trend</CardTitle>
+              <CardDescription>Based on recent assessments</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <MoodSummaryCard />
+            </CardContent>
+          </Card>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Find an Ambassador</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">Connect with mental health ambassadors for support and guidance.</p>
-            <Button className="w-full" onClick={() => navigate("/ambassadors")}>
-              Browse Ambassadors
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Appointment Section */}
+        <div>
+          {/* Reports Section */}
+          <div className="mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4">
+              <h2 className="text-xl font-medium">Appointment Reports</h2>
+              <div className="flex items-center mt-2 sm:mt-0 gap-2">
+                <div className="relative">
+                  <select 
+                    className="appearance-none bg-white border border-slate-200 rounded-md pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                    defaultValue="all"
+                    onChange={(e) => setAppointmentFilter(e.target.value)}
+                    value={appointmentFilter}
+                  >
+                    <option value="all">All Appointments</option>
+                    <option value="upcoming">Upcoming</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                    <ChevronRight className="h-4 w-4 rotate-90" />
+                  </div>
+                </div>
+                <Button variant="outline" size="sm">
+                  <FileText className="h-4 w-4 mr-1" />
+                  Export
+                </Button>
+              </div>
+            </div>
+          </div>
 
-              <Card>
-          <CardHeader>
-                  <CardTitle>Upcoming Appointments</CardTitle>
-                </CardHeader>
-                <CardContent>
-            {upcomingAppointments.length > 0 ? (
-              <div className="space-y-4">
-                {upcomingAppointments.map((appointment) => (
-                  <div key={appointment.id} className="flex items-center space-x-4 p-2 bg-muted rounded-lg">
-                    <div>
-                      <p className="font-medium">{appointment.title}</p>
-                      <p className="text-sm text-muted-foreground">
-                        with {appointment.ambassador_profiles.full_name}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(appointment.start_time).toLocaleString()}
-                      </p>
-                    </div>
+          {/* Appointments Table */}
+          <Card className="shadow-sm">
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-slate-100">
+                      <th className="text-left text-sm font-medium text-slate-700 p-4">ID</th>
+                      <th className="text-left text-sm font-medium text-slate-700 p-4">M.H Ambassador</th>
+                      <th className="text-left text-sm font-medium text-slate-700 p-4">Date</th>
+                      <th className="text-left text-sm font-medium text-slate-700 p-4">Type</th>
+                      <th className="text-left text-sm font-medium text-slate-700 p-4">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {/* Appointment Row 1 */}
+                    {(appointmentFilter === "all" || appointmentFilter === "upcoming") && (
+                    <tr className="hover:bg-blue-50/30 transition-colors">
+                      <td className="p-4">
+                        <span className="text-blue-600 font-medium">#EMHA01</span>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
+                            <img 
+                              src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80"
+                              alt="Ruby Perrin"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div>
+                            <div className="font-medium">Dr. Ruby Perrin</div>
+                            <div className="text-xs text-slate-500">Depression & Anxiety Specialist</div>
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-              <p className="text-muted-foreground">No upcoming appointments</p>
-            )}
-            <Button className="w-full mt-4" variant="outline" onClick={() => window.location.href = '/booking'}>
-              Book New Session
-                      </Button>
-                  </CardContent>
-                </Card>
+                      </td>
+                      <td className="p-4 text-sm">25 Apr 2025, 10:30 AM</td>
+                      <td className="p-4 text-sm">Video Call</td>
+                      <td className="p-4">
+                        <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 font-medium px-3 py-1 rounded-full">
+                          <span className="flex items-center">
+                            <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 mr-1.5"></span>
+                            Upcoming
+                          </span>
+                        </Badge>
+                      </td>
+                    </tr>
+                    )}
 
-              <Card>
-          <CardHeader>
-            <CardTitle>Your Support Groups</CardTitle>
-                </CardHeader>
-                <CardContent>
-            {supportGroups.length > 0 ? (
-                      <div className="space-y-4">
-                {supportGroups.map((membership) => (
-                  <div key={membership.id} className="p-4 bg-muted rounded-lg">
-                    <h3 className="font-medium">{membership.support_groups.name}</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Type: {membership.support_groups.group_type}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Schedule: {membership.support_groups.meeting_schedule}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Led by: {membership.support_groups.ambassador_profiles.full_name}
-                    </p>
-          </div>
-                        ))}
-          </div>
-                    ) : (
-              <p className="text-muted-foreground">You haven't been added to any support groups yet</p>
-            )}
-          </CardContent>
-        </Card>
+                    {/* Appointment Row 2 */}
+                    {(appointmentFilter === "all" || appointmentFilter === "completed") && (
+                    <tr className="hover:bg-blue-50/30 transition-colors">
+                      <td className="p-4">
+                        <span className="text-blue-600 font-medium">#EMHA02</span>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-cyan-100 flex items-center justify-center overflow-hidden">
+                            <img 
+                              src="https://images.unsplash.com/photo-1582750433449-648ed127bb54?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80"
+                              alt="Darren Elder"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div>
+                            <div className="font-medium">Dr. Darren Elder</div>
+                            <div className="text-xs text-slate-500">Trauma & PTSD Specialist</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-4 text-sm">18 Apr 2025, 11:40 AM</td>
+                      <td className="p-4 text-sm">Video Call</td>
+                      <td className="p-4">
+                        <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 font-medium px-3 py-1 rounded-full">
+                          <span className="flex items-center">
+                            <span className="h-1.5 w-1.5 rounded-full bg-purple-500 mr-1.5"></span>
+                            Completed
+                          </span>
+                        </Badge>
+                      </td>
+                    </tr>
+                    )}
 
-        <Card className="col-span-2">
-          <CardHeader>
-            <CardTitle>Calendar</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Calendar
-              mode="single"
-              selected={new Date()}
-              className="rounded-md border"
-            />
+                    {/* Adding Past Appointment: Dr. Deborah Angel */}
+                    {(appointmentFilter === "all" || appointmentFilter === "completed") && (
+                    <tr className="hover:bg-blue-50/30 transition-colors">
+                      <td className="p-4">
+                        <span className="text-blue-600 font-medium">#EMHA03</span>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
+                            <img 
+                              src="https://images.unsplash.com/photo-1614608997588-8173059e05e6?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80"
+                              alt="Deborah Angel"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div>
+                            <div className="font-medium">Dr. Deborah Angel</div>
+                            <div className="text-xs text-slate-500">Relationship & Family Specialist</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-4 text-sm">12 Apr 2025, 04:00 PM</td>
+                      <td className="p-4 text-sm">Chat</td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 font-medium px-3 py-1 rounded-full">
+                            <span className="flex items-center">
+                              <span className="h-1.5 w-1.5 rounded-full bg-purple-500 mr-1.5"></span>
+                              Completed
+                            </span>
+                          </Badge>
+                          <div className="flex">
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                              <FileText className="h-3.5 w-3.5 text-slate-600" />
+                            </Button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                    )}
+
+                    {/* Adding Past Appointment: Dr. Sofia Brient */}
+                    {(appointmentFilter === "all" || appointmentFilter === "completed") && (
+                    <tr className="hover:bg-blue-50/30 transition-colors">
+                      <td className="p-4">
+                        <span className="text-blue-600 font-medium">#EMHA04</span>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center overflow-hidden">
+                            <img 
+                              src="https://images.unsplash.com/photo-1594824476967-48c8b964273f?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80"
+                              alt="Sofia Brient"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div>
+                            <div className="font-medium">Dr. Sofia Brient</div>
+                            <div className="text-xs text-slate-500">Addiction & Recovery Specialist</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-4 text-sm">10 Apr 2025, 10:00 AM</td>
+                      <td className="p-4 text-sm">Video Call</td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 font-medium px-3 py-1 rounded-full">
+                            <span className="flex items-center">
+                              <span className="h-1.5 w-1.5 rounded-full bg-purple-500 mr-1.5"></span>
+                              Completed
+                            </span>
+                          </Badge>
+                          <div className="flex">
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                              <FileText className="h-3.5 w-3.5 text-slate-600" />
+                            </Button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                    )}
+
+                    {/* Appointment Row 3 */}
+                    {(appointmentFilter === "all" || appointmentFilter === "completed") && (
+                    <tr className="hover:bg-blue-50/30 transition-colors">
+                      <td className="p-4">
+                        <span className="text-blue-600 font-medium">#EMHA05</span>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center overflow-hidden">
+                            <img 
+                              src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80"
+                              alt="Ruby Perrin"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div>
+                            <div className="font-medium">Dr. Ruby Perrin</div>
+                            <div className="text-xs text-slate-500">Depression & Anxiety Specialist</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-4 text-sm">02 Apr 2025, 09:20 AM</td>
+                      <td className="p-4 text-sm">Audio Call</td>
+                      <td className="p-4">
+                        <Badge className="bg-green-100 text-green-700 hover:bg-green-200 font-medium px-3 py-1 rounded-full">
+                          <span className="flex items-center">
+                            <span className="h-1.5 w-1.5 rounded-full bg-green-500 mr-1.5"></span>
+                            Completed
+                          </span>
+                        </Badge>
+                      </td>
+                    </tr>
+                    )}
+
+                    {/* Appointment Row 4 */}
+                    {(appointmentFilter === "all" || appointmentFilter === "cancelled") && (
+                    <tr className="hover:bg-blue-50/30 transition-colors">
+                      <td className="p-4">
+                        <span className="text-blue-600 font-medium">#EMHA06</span>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center overflow-hidden">
+                            <img 
+                              src="https://images.unsplash.com/photo-1582750433449-648ed127bb54?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80"
+                              alt="Darren Elder"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div>
+                            <div className="font-medium">Dr. Darren Elder</div>
+                            <div className="text-xs text-slate-500">Trauma & PTSD Specialist</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-4 text-sm">15 Apr 2025, 04:10 PM</td>
+                      <td className="p-4 text-sm">Audio Call</td>
+                      <td className="p-4">
+                        <Badge className="bg-red-100 text-red-700 hover:bg-red-200 font-medium px-3 py-1 rounded-full">
+                          <span className="flex items-center">
+                            <span className="h-1.5 w-1.5 rounded-full bg-red-500 mr-1.5"></span>
+                            Cancelled
+                          </span>
+                        </Badge>
+                      </td>
+                    </tr>
+                    )}
+
+                    {/* Appointment Row 5 */}
+                    {(appointmentFilter === "all" || appointmentFilter === "upcoming") && (
+                    <tr className="hover:bg-blue-50/30 transition-colors">
+                      <td className="p-4">
+                        <span className="text-blue-600 font-medium">#EMHA07</span>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden">
+                            <img 
+                              src="https://images.unsplash.com/photo-1594824476967-48c8b964273f?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80"
+                              alt="Sofia Brient"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div>
+                            <div className="font-medium">Dr. Sofia Brient</div>
+                            <div className="text-xs text-slate-500">Addiction & Recovery Specialist</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-4 text-sm">30 Apr 2025, 06:00 PM</td>
+                      <td className="p-4 text-sm">Chat</td>
+                      <td className="p-4">
+                        <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 font-medium px-3 py-1 rounded-full">
+                          <span className="flex items-center">
+                            <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 mr-1.5"></span>
+                            Upcoming
+                          </span>
+                        </Badge>
+                      </td>
+                    </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </CardContent>
           </Card>
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-medium">Journal Entries</h2>
+            <Button variant="outline" size="sm" className="text-blue-600">View All</Button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {/* Journal Entry */}
+            <Card className="hover:border-blue-200 cursor-pointer transition-colors">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <Badge variant="outline" className="bg-green-50 border-green-200 text-green-700">
+                    Happy
+                  </Badge>
+                  <span className="text-xs text-slate-500">Apr 20, 2025</span>
+                </div>
+                <h3 className="font-medium mb-2 line-clamp-1">Morning Reflection</h3>
+                <p className="text-sm text-slate-600 line-clamp-3">
+                  Today I woke up feeling refreshed after a good night's sleep. I had a productive morning and managed to complete my daily meditation session...
+                </p>
+              </CardContent>
+            </Card>
+            
+            {/* Journal Entry */}
+            <Card className="hover:border-blue-200 cursor-pointer transition-colors">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <Badge variant="outline" className="bg-yellow-50 border-yellow-200 text-yellow-700">
+                    Neutral
+                  </Badge>
+                  <span className="text-xs text-slate-500">Apr 18, 2025</span>
+                </div>
+                <h3 className="font-medium mb-2 line-clamp-1">Mid-week Thoughts</h3>
+                <p className="text-sm text-slate-600 line-clamp-3">
+                  Work has been challenging this week, but I'm managing to maintain a good balance. I felt a bit overwhelmed at times but remembered to use my breathing techniques...
+                </p>
+              </CardContent>
+            </Card>
+            
+            {/* Journal Entry */}
+            <Card className="hover:border-blue-200 cursor-pointer transition-colors">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <Badge variant="outline" className="bg-red-50 border-red-200 text-red-700">
+                    Sad
+                  </Badge>
+                  <span className="text-xs text-slate-500">Apr 15, 2025</span>
+                </div>
+                <h3 className="font-medium mb-2 line-clamp-1">Difficult Day</h3>
+                <p className="text-sm text-slate-600 line-clamp-3">
+                  Today was challenging emotionally. I received some disappointing news and struggled to maintain my focus throughout the day. I'm going to try to rest well tonight...
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );
