@@ -237,10 +237,13 @@ const About = () => {
                   <h3 className="font-bold text-lg text-gray-900">Abdul Karim Sesay</h3>
                   <p className="text-gray-600 text-sm mb-3">CEO and Product Innovation Strategist</p>
                   <div className="flex justify-center space-x-3">
-                    <a href="#" className="text-gray-400 hover:text-blue-500 transition-colors">
-                      <Twitter className="w-4 h-4" />
+                    <a href="https://www.facebook.com/share/1Gzgqg26Xb/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-600 transition-colors">
+                      <Facebook className="w-4 h-4" />
                     </a>
-                    <a href="#" className="text-gray-400 hover:text-blue-500 transition-colors">
+                    <a href="https://www.instagram.com/champion_boy_jela_official?igsh=Y2Jyc3UxdTY2dmt2&utm_source=qr" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-pink-500 transition-colors">
+                      <Instagram className="w-4 h-4" />
+                    </a>
+                    <a href="https://www.linkedin.com/in/abdul-karim-sesay-2858b6203?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-500 transition-colors">
                       <Linkedin className="w-4 h-4" />
                     </a>
                   </div>
@@ -289,10 +292,10 @@ const About = () => {
                   <h3 className="font-bold text-lg text-gray-900">Axel Shimwa</h3>
                   <p className="text-gray-600 text-sm mb-3">Chief Medical Officer</p>
                   <div className="flex justify-center space-x-3">
-                    <a href="#" className="text-gray-400 hover:text-blue-500 transition-colors">
+                    <a href="https://x.com/AxelShimwa" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-500 transition-colors">
                       <Twitter className="w-4 h-4" />
                     </a>
-                    <a href="#" className="text-gray-400 hover:text-blue-500 transition-colors">
+                    <a href="https://www.linkedin.com/in/axel-shimwa-792299192/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-500 transition-colors">
                       <Linkedin className="w-4 h-4" />
                     </a>
                   </div>
@@ -315,11 +318,14 @@ const About = () => {
                   <h3 className="font-bold text-lg text-gray-900">Emanuel Soita</h3>
                   <p className="text-gray-600 text-sm mb-3">Product Development Lead</p>
                   <div className="flex justify-center space-x-3">
-                    <a href="#" className="text-gray-400 hover:text-blue-500 transition-colors">
+                    <a href="https://github.com/Manusosy" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-700 transition-colors">
                       <Github className="w-4 h-4" />
                     </a>
-                    <a href="#" className="text-gray-400 hover:text-blue-500 transition-colors">
+                    <a href="https://www.linkedin.com/in/soitaemanuel/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-500 transition-colors">
                       <Linkedin className="w-4 h-4" />
+                    </a>
+                    <a href="https://x.com/manusosy" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-500 transition-colors">
+                      <Twitter className="w-4 h-4" />
                     </a>
                   </div>
                 </div>
@@ -341,10 +347,10 @@ const About = () => {
                   <h3 className="font-bold text-lg text-gray-900">Pascaline Kayitete</h3>
                   <p className="text-gray-600 text-sm mb-3">Software Developer</p>
                   <div className="flex justify-center space-x-3">
-                    <a href="#" className="text-gray-400 hover:text-blue-500 transition-colors">
-                      <Github className="w-4 h-4" />
+                    <a href="https://x.com/Umulisapa" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-500 transition-colors">
+                      <Twitter className="w-4 h-4" />
                     </a>
-                    <a href="#" className="text-gray-400 hover:text-blue-500 transition-colors">
+                    <a href="https://www.linkedin.com/in/pascaline-kayitete-umulisa/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-500 transition-colors">
                       <Linkedin className="w-4 h-4" />
                     </a>
                   </div>
