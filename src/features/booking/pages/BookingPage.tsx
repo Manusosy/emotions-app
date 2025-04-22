@@ -9,7 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronLeft, ChevronRight, CalendarClock, Calendar as CalendarIcon, Clock, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, CalendarClock, Calendar as CalendarIcon, Clock, CheckCircle2, MapPin, Award } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -21,6 +21,7 @@ import { useRef } from "react";
 import HeroSection from "../components/HeroSection";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const steps = [
   { id: 1, name: "Specialty" },
@@ -62,7 +63,7 @@ const BookingPage = () => {
   
   const [user, setUser] = useState<any>(null);
   const [ambassador, setAmbassador] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   
   useEffect(() => {
@@ -131,13 +132,15 @@ const BookingPage = () => {
       
       // If we have an ambassador ID, fetch ambassador details
       if (ambassadorId) {
-        fetchAmbassadorDetails(ambassadorId);
+        await fetchAmbassadorDetails(ambassadorId);
+      } else {
+        setLoading(false);
       }
     };
     
     const fetchAmbassadorDetails = async (id: string) => {
       try {
-        // For demonstration, we'll use a simplified approach since we don't have a complete ambassador system yet
+        // Fetch ambassador data from the database
         const { data, error } = await supabase
           .from("ambassador_profiles")
           .select("*")
@@ -146,15 +149,32 @@ const BookingPage = () => {
           
         if (error) {
           console.error("Error fetching ambassador details:", error);
-          // For now, just use a placeholder
-          setAmbassador({ name: "Mental Health Ambassador" });
+          
+          // For development/demo purposes - Use hard-coded data if not found in database
+          const ambassadorData = {
+            id: "1",
+            name: "Dr. Ruby Perrin",
+            credentials: "PhD in Psychology, Mental Health Specialist",
+            specialty: "Depression & Anxiety Specialist",
+            rating: 5,
+            location: "Kigali, Rwanda",
+            image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80",
+            bio: "Dr. Ruby Perrin is a highly skilled mental health professional with extensive experience in treating depression and anxiety disorders. She provides a safe and supportive environment for her clients."
+          };
+          
+          setAmbassador(ambassadorData);
+          setSelectedSpecialty(ambassadorData.specialty.split(" ")[0]);
         } else {
           setAmbassador(data);
+          if (data.specialty) {
+            setSelectedSpecialty(data.specialty);
+          }
         }
+        
+        setLoading(false);
       } catch (error) {
         console.error("Error fetching ambassador details:", error);
-        // Fallback to placeholder
-        setAmbassador({ name: "Mental Health Ambassador" });
+        setLoading(false);
       }
     };
     
@@ -293,9 +313,63 @@ const BookingPage = () => {
       case 1:
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-center mb-8">Choose a Specialty</h2>
-            <div className="grid gap-6">
-              <Card className={`border-2 ${selectedSpecialty === "Mental Health" ? "border-blue-500" : "border-gray-200"}`}>
+            <h2 className="text-2xl font-bold text-center mb-8">Selected Ambassador</h2>
+            
+            {loading ? (
+              <div className="flex justify-center items-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+              </div>
+            ) : ambassador ? (
+              <Card className="border-2 border-blue-200 overflow-hidden">
+                <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4">
+                  <h3 className="text-xl font-semibold">Your Selected Ambassador</h3>
+                </div>
+                <CardContent className="p-6">
+                  <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
+                    <Avatar className="h-24 w-24 border-2 border-blue-100">
+                      <AvatarImage src={ambassador.image} alt={ambassador.name} />
+                      <AvatarFallback>{ambassador.name?.split(" ").map((n: string) => n[0]).join("")}</AvatarFallback>
+                    </Avatar>
+                    
+                    <div className="flex-1 text-center md:text-left">
+                      <h3 className="text-xl font-bold text-gray-800">{ambassador.name}</h3>
+                      <p className="text-gray-500 text-sm mb-2">{ambassador.credentials}</p>
+                      
+                      <div className="flex flex-col md:flex-row gap-2 md:gap-4 mb-4 mt-2 items-center md:items-start">
+                        <div className="flex items-center text-blue-600">
+                          <Award className="w-4 h-4 mr-1" />
+                          <span className="text-sm">{ambassador.specialty}</span>
+                        </div>
+                        {ambassador.location && (
+                          <div className="flex items-center text-gray-500">
+                            <MapPin className="w-4 h-4 mr-1" />
+                            <span className="text-sm">{ambassador.location}</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="bg-blue-50 p-4 rounded-lg mt-4 text-blue-800">
+                        <p className="text-sm">
+                          You selected <span className="font-semibold">{ambassador.name}</span>. 
+                          {ambassador.specialty && (
+                            <> They are a specialist in <span className="font-semibold">{ambassador.specialty.replace('Specialist', '').trim()}</span>. 
+                            You can discuss all matters related to their specialty.</>
+                          )}
+                        </p>
+                      </div>
+                      
+                      {ambassador.bio && (
+                        <div className="mt-4">
+                          <h4 className="font-medium text-gray-700 mb-1">About</h4>
+                          <p className="text-sm text-gray-600">{ambassador.bio}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="border-2 border-gray-200">
                 <CardContent className="p-6 flex flex-col items-center text-center">
                   <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
                     <span className="text-2xl">🧠</span>
@@ -311,7 +385,7 @@ const BookingPage = () => {
                   </Button>
                 </CardContent>
               </Card>
-            </div>
+            )}
           </div>
         );
         
@@ -470,7 +544,7 @@ const BookingPage = () => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Specialty:</span>
-                    <span className="font-medium">{selectedSpecialty}</span>
+                    <span className="font-medium">{ambassador?.specialty || selectedSpecialty}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Appointment Type:</span>
