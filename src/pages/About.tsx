@@ -1,9 +1,15 @@
 import { motion } from "framer-motion";
 import { useSafeNavigation } from "@/hooks/use-safe-navigation";
 import { Facebook, Twitter, Instagram, Linkedin, Github } from "lucide-react";
+import { useEffect } from "react";
 
 const About = () => {
   const { safeNavigate } = useSafeNavigation();
+  
+  // Scroll to top when the component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   return (
     <div className="min-h-screen bg-white">
@@ -12,7 +18,7 @@ const About = () => {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
             <motion.div 
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
               className="max-w-2xl text-center md:text-left"
@@ -49,7 +55,7 @@ const About = () => {
       <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="text-center max-w-3xl mx-auto mb-16"
@@ -139,7 +145,7 @@ const About = () => {
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="text-center max-w-3xl mx-auto mb-16"
@@ -151,7 +157,7 @@ const About = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {/* Compassion */}
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: -30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
               className="bg-white p-6 rounded-lg border border-gray-100 text-center"
@@ -169,7 +175,7 @@ const About = () => {
 
             {/* Trust */}
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: -30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
               className="bg-white p-6 rounded-lg border border-gray-100 text-center"
@@ -187,7 +193,7 @@ const About = () => {
 
             {/* Innovation */}
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: -30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
               className="bg-white p-6 rounded-lg border border-gray-100 text-center"
@@ -210,7 +216,7 @@ const About = () => {
       <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="text-center max-w-3xl mx-auto mb-16"
@@ -223,7 +229,7 @@ const About = () => {
             <div className="flex gap-8 min-w-max px-4">
               {/* Team Member 1 */}
               <motion.div
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: -30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
                 className="bg-white rounded-lg overflow-hidden shadow-sm w-64 flex-shrink-0 snap-start"
@@ -252,7 +258,7 @@ const About = () => {
 
               {/* Team Member 2 */}
               <motion.div
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: -30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="bg-white rounded-lg overflow-hidden shadow-sm w-64 flex-shrink-0 snap-start"
@@ -278,7 +284,7 @@ const About = () => {
 
               {/* Team Member 3 */}
               <motion.div
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: -30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
                 className="bg-white rounded-lg overflow-hidden shadow-sm w-64 flex-shrink-0 snap-start"
@@ -304,7 +310,7 @@ const About = () => {
 
               {/* Team Member 4 */}
               <motion.div
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: -30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
                 className="bg-white rounded-lg overflow-hidden shadow-sm w-64 flex-shrink-0 snap-start"
@@ -333,7 +339,7 @@ const About = () => {
 
               {/* Team Member 5 */}
               <motion.div
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: -30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.5 }}
                 className="bg-white rounded-lg overflow-hidden shadow-sm w-64 flex-shrink-0 snap-start"
@@ -372,22 +378,23 @@ const About = () => {
       {/* Our Impact Section */}
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-left max-w-3xl mx-auto mb-16"
+            className="text-center max-w-3xl mx-auto mb-16"
           >
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Our Impact</h2>
             <p className="text-gray-600">Making a difference in mental health support</p>
           </motion.div>
           
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 max-w-5xl mx-auto text-left">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 max-w-5xl mx-auto text-center">
             {/* Impact Stat 1 */}
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: -30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
+              className="text-center"
             >
               <h3 className="text-4xl font-bold text-blue-500 mb-2">50K+</h3>
               <p className="text-gray-600 text-sm">Active Users</p>
@@ -395,9 +402,10 @@ const About = () => {
 
             {/* Impact Stat 2 */}
           <motion.div 
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="text-center"
             >
               <h3 className="text-4xl font-bold text-blue-500 mb-2">200+</h3>
               <p className="text-gray-600 text-sm">Mental Health Professionals</p>
@@ -405,9 +413,10 @@ const About = () => {
           
             {/* Impact Stat 3 */}
           <motion.div 
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="text-center"
             >
               <h3 className="text-4xl font-bold text-blue-500 mb-2">100+</h3>
               <p className="text-gray-600 text-sm">Support Groups</p>
@@ -415,9 +424,10 @@ const About = () => {
 
             {/* Impact Stat 4 */}
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: -30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
+              className="text-center"
             >
               <h3 className="text-4xl font-bold text-blue-500 mb-2">25+</h3>
               <p className="text-gray-600 text-sm">Countries Reached</p>
@@ -430,7 +440,7 @@ const About = () => {
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
           <motion.div 
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="text-left max-w-3xl mx-auto"

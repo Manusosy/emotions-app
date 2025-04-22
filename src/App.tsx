@@ -55,6 +55,7 @@ import { Button } from "@/components/ui/button";
 import HelpCenterPage from "@/features/dashboard/pages/HelpCenterPage";
 import MessagesPage from "@/features/dashboard/pages/MessagesPage";
 import AmbassadorMessagesPage from "@/features/ambassadors/pages/MessagesPage";
+import ScrollToTop from "@/components/layout/ScrollToTop";
 
 // Type definition for UserRole
 type UserRole = 'patient' | 'ambassador' | 'admin';
@@ -471,6 +472,7 @@ const App = () => {
 
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <AppContent />
     </BrowserRouter>
   );

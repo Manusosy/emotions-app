@@ -1,6 +1,12 @@
 import { motion } from "framer-motion";
+import { useEffect } from "react";
 
 const TermsOfService = () => {
+  // Scroll to top when the component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <div className="min-h-screen relative overflow-hidden">
       {/* Background gradient */}
@@ -13,7 +19,7 @@ const TermsOfService = () => {
         <div className="w-full flex justify-center items-center py-16">
           <div className="text-center max-w-3xl">
             <motion.div 
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
               className="inline-flex items-center px-4 py-2 bg-[#007BFF] rounded-full text-white text-sm font-medium mb-6"
@@ -22,7 +28,7 @@ const TermsOfService = () => {
             </motion.div>
             
             <motion.h1 
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-4xl md:text-5xl font-bold text-[#001A41] mb-3 font-jakarta"
@@ -31,12 +37,12 @@ const TermsOfService = () => {
             </motion.h1>
             
             <motion.p 
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-gray-500 font-jakarta"
             >
-              Last Updated: March 2024
+              Last Updated: March 2025
             </motion.p>
           </div>
         </div>
@@ -44,7 +50,7 @@ const TermsOfService = () => {
         {/* Main Content - Left-aligned text */}
         <div className="container mx-auto px-4 pb-16">
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
             className="max-w-4xl mx-auto bg-white rounded-2xl shadow-sm p-8 mb-8"

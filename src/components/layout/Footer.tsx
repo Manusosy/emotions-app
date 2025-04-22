@@ -9,6 +9,11 @@ const Footer = () => {
   const handleNavigation = (path: string, e: React.MouseEvent) => {
     e.preventDefault();
     navigate(path);
+    // Scroll to top of the page
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
   };
 
   const handleSubscribe = (e: React.FormEvent) => {

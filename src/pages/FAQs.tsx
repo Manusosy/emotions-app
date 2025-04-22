@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Plus, Minus, Search } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useSafeNavigation } from "@/hooks/use-safe-navigation";
@@ -21,6 +21,11 @@ const FAQs = () => {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<FAQCategory>("all");
+  
+  // Scroll to top when the component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   // Toggle FAQ item
   const toggleFAQ = (index: number) => {
@@ -173,7 +178,7 @@ const FAQs = () => {
   };
 
   const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
+    hidden: { y: -20, opacity: 0 },
     visible: { y: 0, opacity: 1 }
   };
 
@@ -189,7 +194,7 @@ const FAQs = () => {
         <div className="w-full flex justify-center items-center py-16">
           <div className="text-center max-w-3xl">
             <motion.div 
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
               className="inline-flex items-center px-4 py-2 bg-[#007BFF] rounded-full text-white text-sm font-medium mb-6"
@@ -198,7 +203,7 @@ const FAQs = () => {
             </motion.div>
             
             <motion.h1 
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-4xl md:text-5xl font-bold text-[#001A41] mb-3 font-jakarta"
@@ -207,7 +212,7 @@ const FAQs = () => {
             </motion.h1>
             
             <motion.p 
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-gray-500"
@@ -221,7 +226,7 @@ const FAQs = () => {
         <div className="container mx-auto px-4 pb-16">
           {/* Search Bar */}
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
             className="relative max-w-2xl mx-auto mb-12"
@@ -238,7 +243,7 @@ const FAQs = () => {
           
           {/* Category Filters */}
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
             className="flex flex-wrap justify-center gap-2 mb-10"
@@ -314,7 +319,7 @@ const FAQs = () => {
           
           {/* Need more help */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.5 }}
             className="text-center max-w-2xl mx-auto"
