@@ -151,33 +151,40 @@ export default function Navbar() {
           </div>
 
           {/* Mobile Auth Buttons */}
-          <div className="flex md:hidden items-center mr-2">
+          <div className="flex md:hidden items-center space-x-4 mr-4">
             {effectiveIsAuthenticated ? (
-              <a 
-                href={dashboardUrl} 
-                onClick={(e) => handleNavigation(dashboardUrl, e)}
-              >
+              <div className="flex items-center space-x-2">
+                <a 
+                  href={dashboardUrl} 
+                  onClick={(e) => handleNavigation(dashboardUrl, e)}
+                >
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="text-white hover:bg-[#fda802] rounded-full font-medium transition-all flex items-center"
+                  >
+                    <LayoutDashboard className="h-4 w-4 mr-1" />
+                    <span className="text-xs">Dashboard</span>
+                  </Button>
+                </a>
                 <Button 
                   variant="ghost" 
                   size="sm"
-                  className="text-white hover:bg-[#fda802] rounded-full font-medium transition-all"
+                  onClick={handleLogout}
+                  className="text-white hover:bg-[#fda802] rounded-full font-medium transition-all flex items-center"
                 >
-                  <LayoutDashboard className="h-4 w-4" />
+                  <LogOut className="h-4 w-4 mr-1" />
+                  <span className="text-xs">Logout</span>
                 </Button>
-              </a>
+              </div>
             ) : (
               <>
                 <a 
                   href="/login" 
                   onClick={(e) => handleNavigation("/login", e)}
+                  className="text-white hover:text-blue-100 font-medium px-3 py-1.5 text-base transition-colors"
                 >
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    className="text-white hover:bg-[#fda802] rounded-full font-medium transition-all"
-                  >
-                    Login
-                  </Button>
+                  Login
                 </a>
                 <a 
                   href="/signup" 
@@ -185,7 +192,7 @@ export default function Navbar() {
                 >
                   <Button 
                     size="sm"
-                    className="bg-white text-[#0078FF] hover:bg-[#fda802] hover:text-white rounded-full font-medium shadow-sm shadow-blue-600/20 transition-all"
+                    className="bg-white text-[#0078FF] hover:bg-[#fda802] hover:text-white rounded-full px-5 py-1 font-medium shadow-sm shadow-blue-600/20 transition-all"
                   >
                     Signup
                   </Button>
