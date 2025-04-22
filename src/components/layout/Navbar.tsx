@@ -1,13 +1,20 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Menu, X, LogOut, LayoutDashboard } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [localAuthState, setLocalAuthState] = useState({ isAuthenticated: false, userRole: null });
   const { isAuthenticated, userRole, logout, getDashboardUrlForRole } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Close mobile menu on location change
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location]);
 
   // Check localStorage for auth state on mount and when auth context changes
   useEffect(() => {
@@ -39,6 +46,7 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
+      setIsMobileMenuOpen(false);
       await logout();
       // After logout, let the auth state handle the redirect
     } catch (error) {
@@ -48,11 +56,29 @@ export default function Navbar() {
 
   const dashboardUrl = effectiveUserRole ? getDashboardUrlForRole(effectiveUserRole) : '/';
 
+  // Enhanced navigation handler that closes menu and handles navigation
+  const handleNavigation = useCallback((path: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
+    setIsMobileMenuOpen(false);
+    navigate(path);
+  }, [navigate]);
+
+  // Toggle menu state
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(prev => !prev);
+  };
+
   return (
     <nav className="bg-[#0078FF] text-white relative z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
-          <Link to="/" className="flex items-center">
+          <Link 
+            to="/" 
+            onClick={(e) => handleNavigation('/', e)} 
+            className="flex items-center"
+          >
             <img 
               src="/assets/emotions-app-logo.png" 
               alt="Emotions Logo" 
@@ -81,7 +107,7 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* Auth Buttons */}
+          {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center space-x-2">
             {effectiveIsAuthenticated ? (
               <>
@@ -124,10 +150,56 @@ export default function Navbar() {
             )}
           </div>
 
+          {/* Mobile Auth Buttons */}
+          <div className="flex md:hidden items-center mr-2">
+            {effectiveIsAuthenticated ? (
+              <a 
+                href={dashboardUrl} 
+                onClick={(e) => handleNavigation(dashboardUrl, e)}
+              >
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="text-white hover:bg-[#fda802] rounded-full font-medium transition-all"
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                </Button>
+              </a>
+            ) : (
+              <>
+                <a 
+                  href="/login" 
+                  onClick={(e) => handleNavigation("/login", e)}
+                >
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="text-white hover:bg-[#fda802] rounded-full font-medium transition-all"
+                  >
+                    Login
+                  </Button>
+                </a>
+                <a 
+                  href="/signup" 
+                  onClick={(e) => handleNavigation("/signup", e)}
+                >
+                  <Button 
+                    size="sm"
+                    className="bg-white text-[#0078FF] hover:bg-[#fda802] hover:text-white rounded-full font-medium shadow-sm shadow-blue-600/20 transition-all"
+                  >
+                    Signup
+                  </Button>
+                </a>
+              </>
+            )}
+          </div>
+
           {/* Mobile Menu Button */}
           <button
             className="md:hidden p-2 rounded-lg hover:bg-blue-600/50 transition-colors"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            onClick={toggleMobileMenu}
+            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={isMobileMenuOpen}
           >
             {isMobileMenuOpen ? (
               <X className="w-6 h-6" />
@@ -140,32 +212,32 @@ export default function Navbar() {
         {/* Mobile Navigation */}
         {isMobileMenuOpen && (
           <div className="md:hidden py-4 space-y-2">
-            <Link to="/" className="block px-4 py-2 hover:bg-[#fda802] rounded-lg transition-colors">
+            <a href="/" className="block px-4 py-2 hover:bg-[#fda802] rounded-lg transition-colors" onClick={(e) => handleNavigation("/", e)}>
               Home
-            </Link>
-            <Link to="/journal" className="block px-4 py-2 hover:bg-[#fda802] rounded-lg transition-colors">
+            </a>
+            <a href="/journal" className="block px-4 py-2 hover:bg-[#fda802] rounded-lg transition-colors" onClick={(e) => handleNavigation("/journal", e)}>
               Journal
-            </Link>
-            <Link to="/ambassadors" className="block px-4 py-2 hover:bg-[#fda802] rounded-lg transition-colors">
+            </a>
+            <a href="/ambassadors" className="block px-4 py-2 hover:bg-[#fda802] rounded-lg transition-colors" onClick={(e) => handleNavigation("/ambassadors", e)}>
               Mental Health Ambassadors
-            </Link>
-            <Link to="/resources" className="block px-4 py-2 hover:bg-[#fda802] rounded-lg transition-colors">
+            </a>
+            <a href="/resources" className="block px-4 py-2 hover:bg-[#fda802] rounded-lg transition-colors" onClick={(e) => handleNavigation("/resources", e)}>
               Resource Center
-            </Link>
-            <Link to="/help-groups" className="block px-4 py-2 hover:bg-[#fda802] rounded-lg transition-colors">
+            </a>
+            <a href="/help-groups" className="block px-4 py-2 hover:bg-[#fda802] rounded-lg transition-colors" onClick={(e) => handleNavigation("/help-groups", e)}>
               Help Groups
-            </Link>
+            </a>
             
             {/* Mobile Menu Auth Buttons */}
             <div className="py-2 border-t border-blue-600/20">
               {effectiveIsAuthenticated ? (
                 <>
-                  <Link to={dashboardUrl} className="block px-4 py-2 hover:bg-[#fda802] rounded-lg transition-colors">
+                  <a href={dashboardUrl} className="block px-4 py-2 hover:bg-[#fda802] rounded-lg transition-colors" onClick={(e) => handleNavigation(dashboardUrl, e)}>
                     <span className="flex items-center">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
                       Dashboard
                     </span>
-                  </Link>
+                  </a>
                   <button 
                     onClick={handleLogout}
                     className="w-full text-left px-4 py-2 hover:bg-[#fda802] rounded-lg transition-colors"
@@ -178,12 +250,12 @@ export default function Navbar() {
                 </>
               ) : (
                 <>
-                  <Link to="/login" className="block px-4 py-2 hover:bg-[#fda802] rounded-lg transition-colors">
+                  <a href="/login" className="block px-4 py-2 hover:bg-[#fda802] rounded-lg transition-colors" onClick={(e) => handleNavigation("/login", e)}>
                     Login
-                  </Link>
-                  <Link to="/signup" className="block px-4 py-2 hover:bg-[#fda802] rounded-lg transition-colors">
+                  </a>
+                  <a href="/signup" className="block px-4 py-2 hover:bg-[#fda802] rounded-lg transition-colors" onClick={(e) => handleNavigation("/signup", e)}>
                     Signup
-                  </Link>
+                  </a>
                 </>
               )}
             </div>
