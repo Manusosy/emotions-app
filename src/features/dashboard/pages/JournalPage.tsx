@@ -51,7 +51,7 @@ interface JournalEntry {
   updated_at?: string;
   user_id: string;
   is_favorite?: boolean;
-  tomorrows_plan?: string;
+  tomorrows_intention?: string;
 }
 
 export default function JournalPage() {
@@ -130,7 +130,7 @@ export default function JournalPage() {
   useEffect(() => {
     if (journalEntries.length > 0) {
       const mostRecentEntry = journalEntries[0];
-      setTomorrowsPlan(mostRecentEntry.tomorrows_plan || '');
+      setTomorrowsPlan(mostRecentEntry.tomorrows_intention || '');
     }
   }, [journalEntries]);
   
@@ -236,7 +236,7 @@ export default function JournalPage() {
       
       const { error } = await supabase
         .from('journal_entries')
-        .update({ tomorrows_plan: tomorrowsPlan } as any)
+        .update({ tomorrows_intention: tomorrowsPlan } as any)
         .eq('id', mostRecentEntryId);
         
       if (error) throw error;

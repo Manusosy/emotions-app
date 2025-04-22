@@ -41,6 +41,7 @@ import { useAuth } from "@/hooks/use-auth";
 import MoodAnalytics from "../components/MoodAnalytics";
 import MoodAssessment from "../components/MoodAssessment";
 import MoodSummaryCard from "../components/MoodSummaryCard";
+import EmotionalHealthWheel from "../components/EmotionalHealthWheel";
 import { Appointment, Message, UserProfile } from "@/types/database.types";
 import { format, parseISO } from "date-fns";
 
@@ -57,6 +58,7 @@ export default function PatientDashboard() {
   const [appointmentFilter, setAppointmentFilter] = useState<string>("all");
   const [lastCheckIn, setLastCheckIn] = useState<string>("");
   const [lastCheckInDate, setLastCheckInDate] = useState<string>("");
+  const [lastAssessmentDate, setLastAssessmentDate] = useState<string>("");
   const [userMetrics, setUserMetrics] = useState({
     moodScore: 0,
     stressLevel: 0,
@@ -68,7 +70,7 @@ export default function PatientDashboard() {
   useEffect(() => {
     let isMounted = true;
 
-    // Set last check-in time to current time
+    // Set last check-in time to current time (for mood tracking)
     const now = new Date();
     const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     setLastCheckIn(timeString);
@@ -76,6 +78,9 @@ export default function PatientDashboard() {
     // For the date display
     const today = new Date();
     setLastCheckInDate(`${today.toLocaleString('default', { month: 'short' })} ${today.getDate()}, ${today.getFullYear()}`);
+    
+    // Initialize last assessment date to "Not taken" by default
+    setLastAssessmentDate("Not taken");
 
     const fetchDashboardData = async () => {
       try {
@@ -316,7 +321,58 @@ export default function PatientDashboard() {
 
         // After fetching appointments and messages, also fetch user metrics
         try {
-          // Fetch mood entries to check if user has any assessments
+          // Fetch stress assessments to check if user has any assessments
+          const { data: assessments, error: assessmentsError } = await supabase
+            .from('stress_assessments')
+            .select('*')
+            .eq('user_id', session?.user?.id || 'unknown')
+            .order('created_at', { ascending: false });
+          
+          if (!assessmentsError && assessments && assessments.length > 0) {
+            // User has taken assessments
+            
+            // Get last assessment time from the most recent entry
+            const lastAssessment = assessments[0];
+            const lastAssessmentDateTime = new Date(lastAssessment.created_at);
+            const assessmentTimeString = lastAssessmentDateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const assessmentDateString = `${lastAssessmentDateTime.toLocaleString('default', { month: 'short' })} ${lastAssessmentDateTime.getDate()}, ${lastAssessmentDateTime.getFullYear()}`;
+            
+            // Get metrics from user_assessment_metrics
+            const { data: metricsData } = await supabase
+              .from('user_assessment_metrics')
+              .select('*')
+              .eq('user_id', session?.user?.id || 'unknown')
+              .single();
+            
+            if (isMounted) {
+              // Convert stress_level from 0-1 scale to 0-10 scale for display
+              const stressLevel = metricsData?.stress_level * 10 || lastAssessment.stress_score || 0;
+              
+              setUserMetrics({
+                moodScore: 0, // Will be filled from mood tracking if available
+                stressLevel: stressLevel,
+                consistency: metricsData?.consistency || 0,
+                lastCheckInStatus: "Active"
+              });
+              
+              setLastAssessmentDate(assessmentDateString);
+              setHasAssessments(true);
+            }
+          } else {
+            // New user with no assessments
+            if (isMounted) {
+              setUserMetrics({
+                moodScore: 0,
+                stressLevel: 0,
+                consistency: 0,
+                lastCheckInStatus: "No check-ins yet"
+              });
+              setHasAssessments(false);
+              setLastAssessmentDate("Not taken");
+            }
+          }
+          
+          // Now additionally fetch mood entries (separate from assessments)
           const { data: moodEntries, error: moodError } = await supabase
             .from('mood_entries')
             .select('*')
@@ -334,56 +390,26 @@ export default function PatientDashboard() {
             const timeString = lastEntryDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const dateString = `${lastEntryDate.toLocaleString('default', { month: 'short' })} ${lastEntryDate.getDate()}, ${lastEntryDate.getFullYear()}`;
             
-            // Get metrics from user_assessment_metrics
-            const { data: metricsData } = await supabase
-              .from('user_assessment_metrics')
-              .select('*')
-              .eq('user_id', session?.user?.id || 'unknown')
-              .single();
-            
             if (isMounted) {
-              setUserMetrics({
+              setUserMetrics(prevMetrics => ({
+                ...prevMetrics,
                 moodScore: avgScore,
-                stressLevel: metricsData?.stress_level || 0,
-                consistency: metricsData?.consistency || 0,
-                lastCheckInStatus: "Active"
-              });
+              }));
               setLastCheckIn(timeString);
               setLastCheckInDate(dateString);
-              setHasAssessments(true);
-            }
-          } else {
-            // New user with no assessments
-            if (isMounted) {
-              setUserMetrics({
-                moodScore: 0,
-                stressLevel: 0,
-                consistency: 0,
-                lastCheckInStatus: "No check-ins yet"
-              });
-              setHasAssessments(false);
-              
-              // Set current time as placeholder for new users
-              const now = new Date();
-              const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-              setLastCheckIn(timeString);
-              
-              // For the date display
-              const today = new Date();
-              setLastCheckInDate(`${today.toLocaleString('default', { month: 'short' })} ${today.getDate()}, ${today.getFullYear()}`);
             }
           }
         } catch (error) {
           console.error("Error fetching user metrics:", error);
+        } finally {
+          if (isMounted) {
+            setIsLoading(false);
+          }
         }
       } catch (error: any) {
         console.error("Error fetching dashboard data:", error);
         if (isMounted) {
           toast.error(error.message || "Failed to load dashboard data");
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
         }
       }
     };
@@ -476,14 +502,45 @@ export default function PatientDashboard() {
                     <Activity className="w-5 h-5 text-blue-500 mr-2" />
                     <span className="text-sm font-medium">Stress Level</span>
                   </div>
-                  {hasAssessments && (
+                  {hasAssessments && userMetrics.stressLevel > 0 && (
                     <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">Tracked</span>
                   )}
                 </div>
-                <div className="text-3xl font-bold">{userMetrics.stressLevel}%</div>
-                <p className="text-xs text-slate-500 mt-2">
-                  {hasAssessments ? "From assessment data" : "No data available yet"}
-                </p>
+                
+                {userMetrics.stressLevel > 0 ? (
+                  <>
+                    <div className="text-3xl font-bold mb-1">
+                      {Math.round(userMetrics.stressLevel * 10)}%
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                      <div 
+                        className="h-2 rounded-full transition-all duration-500 ease-in-out"
+                        style={{ 
+                          width: `${Math.round(userMetrics.stressLevel * 10)}%`,
+                          backgroundColor: userMetrics.stressLevel < 3 ? '#4ade80' : 
+                                         userMetrics.stressLevel < 5 ? '#a3e635' : 
+                                         userMetrics.stressLevel < 7 ? '#facc15' : 
+                                         userMetrics.stressLevel < 8 ? '#fb923c' : '#ef4444'
+                        }}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      Based on your recent assessment
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-3xl font-bold mb-1">
+                      <span className="opacity-70">—</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                      <div className="h-2 rounded-full bg-gray-300 w-0"></div>
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      Complete your first assessment
+                    </p>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -515,9 +572,19 @@ export default function PatientDashboard() {
                     <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">Normal</span>
                   )}
                 </div>
-                <div className="text-3xl font-bold">{userMetrics.consistency}%</div>
+                <div className="text-3xl font-bold">
+                  {hasAssessments 
+                    ? userMetrics.consistency > 0 
+                      ? `${Math.round(userMetrics.consistency * 10)}%` 
+                      : <span className="opacity-70 animate-pulse">—</span> 
+                    : <span className="opacity-70">—</span>}
+                </div>
                 <p className="text-xs text-slate-500 mt-2">
-                  {hasAssessments ? "Daily tracking rate" : "Start tracking your mood"}
+                  {hasAssessments 
+                    ? userMetrics.consistency > 0 
+                      ? "Daily tracking rate" 
+                      : <span className="flex items-center"><span className="text-xs inline-block animate-pulse text-emerald-600">Gathering data<span className="animate-[bounce_1.5s_infinite]">...</span></span></span>
+                    : "Start tracking your mood"}
                 </p>
               </CardContent>
             </Card>
@@ -526,16 +593,13 @@ export default function PatientDashboard() {
 
         {/* Mood Check-in and Recent Assessments - 2 columns layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {/* Mood Assessment Card */}
-          <Card className="h-full">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-medium">Daily Check-in</CardTitle>
-              <CardDescription>How are you feeling today?</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <MoodAssessment />
-            </CardContent>
-          </Card>
+          {/* Emotional Health Wheel - replaces Daily Check-in */}
+          <EmotionalHealthWheel 
+            stressLevel={userMetrics.stressLevel} 
+            lastCheckIn={lastAssessmentDate}
+            onViewDetails={() => navigate('/patient-dashboard/reports')}
+            hasAssessments={hasAssessments}
+          />
 
           {/* Mood Summary Card */}
           <Card className="h-full bg-gradient-to-br from-white to-blue-50">
@@ -856,57 +920,79 @@ export default function PatientDashboard() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-medium">Journal Entries</h2>
-            <Button variant="outline" size="sm" className="text-blue-600">View All</Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-blue-600"
+              onClick={() => navigate('/patient-dashboard/journal')}
+            >
+              View All
+            </Button>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {/* Journal Entry */}
-            <Card className="hover:border-blue-200 cursor-pointer transition-colors">
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <Badge variant="outline" className="bg-green-50 border-green-200 text-green-700">
-                    Happy
-                  </Badge>
-                  <span className="text-xs text-slate-500">Apr 20, 2025</span>
-                </div>
-                <h3 className="font-medium mb-2 line-clamp-1">Morning Reflection</h3>
-                <p className="text-sm text-slate-600 line-clamp-3">
-                  Today I woke up feeling refreshed after a good night's sleep. I had a productive morning and managed to complete my daily meditation session...
-                </p>
-              </CardContent>
-            </Card>
-            
-            {/* Journal Entry */}
-            <Card className="hover:border-blue-200 cursor-pointer transition-colors">
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <Badge variant="outline" className="bg-yellow-50 border-yellow-200 text-yellow-700">
-                    Neutral
-                  </Badge>
-                  <span className="text-xs text-slate-500">Apr 18, 2025</span>
-                </div>
-                <h3 className="font-medium mb-2 line-clamp-1">Mid-week Thoughts</h3>
-                <p className="text-sm text-slate-600 line-clamp-3">
-                  Work has been challenging this week, but I'm managing to maintain a good balance. I felt a bit overwhelmed at times but remembered to use my breathing techniques...
-                </p>
-              </CardContent>
-            </Card>
-            
-            {/* Journal Entry */}
-            <Card className="hover:border-blue-200 cursor-pointer transition-colors">
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <Badge variant="outline" className="bg-red-50 border-red-200 text-red-700">
-                    Sad
-                  </Badge>
-                  <span className="text-xs text-slate-500">Apr 15, 2025</span>
-                </div>
-                <h3 className="font-medium mb-2 line-clamp-1">Difficult Day</h3>
-                <p className="text-sm text-slate-600 line-clamp-3">
-                  Today was challenging emotionally. I received some disappointing news and struggled to maintain my focus throughout the day. I'm going to try to rest well tonight...
-                </p>
-              </CardContent>
-            </Card>
+            {isLoading ? (
+              // Loading skeletons for journal entries
+              Array.from({ length: 3 }).map((_, index) => (
+                <Card key={index} className="hover:border-blue-200 cursor-pointer transition-colors">
+                  <CardContent className="p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <Skeleton className="h-5 w-20" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                    <Skeleton className="h-5 w-3/4 mb-2" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-2/3" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : recentJournalEntries.length === 0 ? (
+              // No entries message
+              <Card className="col-span-full p-5 text-center">
+                <CardContent>
+                  <p className="text-slate-500 mb-3">No journal entries yet</p>
+                  <Button 
+                    size="sm" 
+                    onClick={() => navigate('/patient-dashboard/journal/new')}
+                  >
+                    Create Your First Entry
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              // Display actual journal entries
+              recentJournalEntries.map((entry) => (
+                <Card 
+                  key={entry.id} 
+                  className="hover:border-blue-200 cursor-pointer transition-colors"
+                  onClick={() => navigate(`/patient-dashboard/journal/${entry.id}`)}
+                >
+                  <CardContent className="p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <Badge variant="outline" className={
+                        entry.mood === 'Happy' || entry.mood === 'Grateful' ? "bg-green-50 border-green-200 text-green-700" :
+                        entry.mood === 'Calm' ? "bg-blue-50 border-blue-200 text-blue-700" :
+                        entry.mood === 'Anxious' || entry.mood === 'Worried' ? "bg-yellow-50 border-yellow-200 text-yellow-700" :
+                        entry.mood === 'Sad' || entry.mood === 'Overwhelmed' ? "bg-red-50 border-red-200 text-red-700" :
+                        "bg-slate-50 border-slate-200 text-slate-700"
+                      }>
+                        {entry.mood || 'Neutral'}
+                      </Badge>
+                      <span className="text-xs text-slate-500">
+                        {new Date(entry.created_at).toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </span>
+                    </div>
+                    <h3 className="font-medium mb-2 line-clamp-1">{entry.title || 'Untitled Entry'}</h3>
+                    <p className="text-sm text-slate-600 line-clamp-3">
+                      {entry.content ? entry.content.replace(/<[^>]*>/g, '') : 'No content'}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         </div>
       </div>

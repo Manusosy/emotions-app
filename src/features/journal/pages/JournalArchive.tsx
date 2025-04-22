@@ -26,6 +26,7 @@ interface JournalEntry {
   created_at: string;
   updated_at: string;
   user_id: string;
+  tomorrows_intention?: string;
 }
 
 export default function JournalArchive() {

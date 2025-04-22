@@ -596,7 +596,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <nav className="flex flex-1 flex-col pt-5 pb-20">
               <div className="px-4 mb-5">
                 <div 
-                  className="rounded-xl bg-blue-50 p-3 cursor-pointer hover:bg-blue-100 transition-colors"
+                  className="rounded-xl p-3 cursor-pointer hover:bg-[#1AB0E0] transition-colors"
+                  style={{ backgroundColor: "#20C0F3" }}
                   onClick={() => navigate('/patient-dashboard/mood-tracker')}
                 >
                   <div className="flex items-center gap-3">
@@ -604,13 +605,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                       <HeartPulse className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-blue-600">Emotional Wellness</p>
-                      <p className="text-xs text-blue-700 font-semibold">Start Daily Check-in</p>
+                      <p className="text-xs font-medium text-white">Emotional Wellness</p>
+                      <p className="text-xs text-white font-semibold">Start Daily Check-in</p>
                     </div>
                     <Button 
                       size="icon" 
                       variant="ghost" 
-                      className="ml-auto h-8 w-8 rounded-full bg-white text-blue-600 hover:bg-blue-100"
+                      className="ml-auto h-8 w-8 rounded-full bg-white text-[#20C0F3] hover:bg-blue-100"
                       onClick={(e) => {
                         e.stopPropagation();
                         navigate('/patient-dashboard/mood-tracker');

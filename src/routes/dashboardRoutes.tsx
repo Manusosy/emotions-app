@@ -6,6 +6,7 @@ import FavoritesPage from "@/features/dashboard/pages/FavoritesPage";
 import Settings from "@/features/dashboard/pages/Settings";
 import Profile from "@/features/dashboard/pages/Profile";
 import DeleteAccount from "@/features/dashboard/pages/DeleteAccount";
+import StressReportPage from "@/features/dashboard/pages/StressReportPage";
 
 // Import journal pages
 import JournalPage from "@/features/journal/pages/JournalPage";
@@ -24,6 +25,10 @@ const dashboardRoutes: RouteObject[] = [
       {
         path: "appointments",
         element: <PatientAppointmentsPage />
+      },
+      {
+        path: "reports",
+        element: <StressReportPage />
       },
       {
         path: "journal",
