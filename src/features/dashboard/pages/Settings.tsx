@@ -16,6 +16,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
+import { getDeviceInfo, getFormattedDeviceInfo } from '@/utils/device-detection';
+import { authService } from '@/integrations/supabase/services/auth.service';
 
 // Define the schema for patient profile form
 const patientFormSchema = z.object({
@@ -71,6 +73,7 @@ export default function Settings() {
   const [uploading, setUploading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState(false);
+  const [currentDeviceInfo, setCurrentDeviceInfo] = useState('');
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -153,6 +156,34 @@ export default function Settings() {
       loadPatientProfile();
     }
   }, [user, setValue, watch]);
+
+  useEffect(() => {
+    // Update device information when component mounts
+    const updateDeviceInfo = async () => {
+      try {
+        if (!user?.id) return;
+        
+        // Get current device info
+        const deviceInfo = getDeviceInfo();
+        setCurrentDeviceInfo(`${deviceInfo.os} • ${deviceInfo.deviceType} • ${deviceInfo.browser}`);
+        
+        // Update user metadata with current device info
+        await authService.updateUserMetadata({
+          current_session: {
+            device_type: deviceInfo.deviceType,
+            browser: deviceInfo.browser,
+            os: deviceInfo.os,
+            last_login: new Date().toISOString(),
+            user_agent: deviceInfo.fullUserAgent
+          }
+        });
+      } catch (error) {
+        console.error('Error updating device info:', error);
+      }
+    };
+    
+    updateDeviceInfo();
+  }, [user]);
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
@@ -572,10 +603,14 @@ export default function Settings() {
                       <div className="flex justify-between p-3 rounded-lg bg-slate-50">
                         <div>
                           <p className="font-medium">Current session</p>
-                          <p className="text-sm text-slate-500">Windows • Chrome Browser</p>
+                          <p className="text-sm text-slate-500">
+                            {currentDeviceInfo || getFormattedDeviceInfo()}
+                          </p>
                         </div>
                         <div className="text-sm text-right">
-                          <p>{new Date().toLocaleDateString()}</p>
+                          <p>
+                            {format(new Date(), 'MMM d, yyyy')}
+                          </p>
                           <p className="text-green-600">Active now</p>
                         </div>
                       </div>

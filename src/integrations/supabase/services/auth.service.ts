@@ -1,5 +1,6 @@
 import { supabase } from '../client';
 import type { UserRole } from '@/hooks/use-auth';
+import { getDeviceInfo } from '@/utils/device-detection';
 
 export type AuthSignUpData = {
   email: string;
@@ -30,6 +31,9 @@ class AuthService {
     });
 
     try {
+      // Get device information
+      const deviceInfo = getDeviceInfo();
+
       // Step 1: Create auth user
       const authResponse = await supabase.auth.signUp({
         email: data.email,
@@ -42,6 +46,13 @@ class AuthService {
             role: data.role,
             country: data.country,
             gender: data.gender || null,
+            current_session: {
+              device_type: deviceInfo.deviceType,
+              browser: deviceInfo.browser,
+              os: deviceInfo.os,
+              last_login: new Date().toISOString(),
+              user_agent: deviceInfo.fullUserAgent
+            }
           }
         }
       });
@@ -78,6 +89,22 @@ class AuthService {
       if (authResponse.error) {
         console.error('Sign in error:', authResponse.error);
         throw authResponse.error;
+      }
+
+      // Capture device information
+      const deviceInfo = getDeviceInfo();
+      
+      // Store the device info in the user metadata
+      if (authResponse.data.user) {
+        await this.updateUserMetadata({
+          current_session: {
+            device_type: deviceInfo.deviceType,
+            browser: deviceInfo.browser,
+            os: deviceInfo.os,
+            last_login: new Date().toISOString(),
+            user_agent: deviceInfo.fullUserAgent
+          }
+        });
       }
 
       console.log('User signed in successfully:', authResponse.data.user?.id);
