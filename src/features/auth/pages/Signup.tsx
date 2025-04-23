@@ -177,16 +177,15 @@ export default function Signup() {
         console.log(`Signup successful, redirecting to: ${redirectUrl}`);
         navigate(decodeURIComponent(redirectUrl), { replace: true });
       } else {
-        // If no redirect URL, use default dashboard navigation
-        const role = formData.role;
-        const absoluteDashboardUrl = role === 'ambassador' 
-          ? 'http://localhost:8080/ambassador-dashboard'
-          : 'http://localhost:8080/patient-dashboard';
+        // If no redirect URL, use consistent direct navigation for both roles
+        const dashboardUrl = formData.role === 'ambassador' 
+          ? '/ambassador-dashboard'
+          : '/patient-dashboard';
         
-        console.log(`DIRECT NAVIGATION TO: ${absoluteDashboardUrl}`);
+        console.log(`DIRECT NAVIGATION TO: ${dashboardUrl}`);
         
-        // DIRECT NAVIGATION - NO REACT ROUTER 
-        window.location.href = absoluteDashboardUrl;
+        // DIRECT NAVIGATION - NO REACT ROUTER - for both patient and ambassador
+        window.location.href = dashboardUrl;
       }
       
     } catch (error: any) {

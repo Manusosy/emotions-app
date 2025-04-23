@@ -43,21 +43,21 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   useEffect(() => {
     // Verify user is authenticated, if not redirect to login
     if (!isAuthenticated) {
-      // Check localStorage first
+      // We're using ProtectedRoute, so we should rarely hit this case
+      // Only check localStorage as a backup and don't aggressively redirect
       const storedAuthState = localStorage.getItem('auth_state');
       if (storedAuthState) {
         try {
           const { isAuthenticated: storedAuth, userRole } = JSON.parse(storedAuthState);
+          // Only redirect if we're absolutely sure the user is not authenticated
           if (!storedAuth || userRole !== 'ambassador') {
-            navigate('/login', { replace: true });
+            console.warn("User not authenticated as ambassador in DashboardLayout, redirecting");
+            window.location.href = '/login';
           }
-          // If we have stored auth with correct role, don't redirect
+          // Otherwise, assume auth is still processing
         } catch (e) {
           console.error("Error parsing stored auth state:", e);
-          navigate('/login', { replace: true });
         }
-      } else {
-        navigate('/login', { replace: true });
       }
       return;
     }
@@ -71,11 +71,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   useEffect(() => {
     console.log("DashboardLayout checking auth - User:", user?.id);
-    if (!user?.id) {
-      console.log("No authenticated user in DashboardLayout, redirecting to login");
-      navigate('/login', { replace: true });
-      return;
-    }
+    // Remove redirect for missing user.id - it can be null temporarily while auth state is loading
     
     // Fetch unread notifications and messages count
     const fetchUnreadCounts = async () => {
@@ -109,7 +105,8 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/login', { replace: true });
+      // Use direct location change instead of React Router for a complete page refresh
+      window.location.href = '/login';
     } catch (error) {
       console.error('Error during logout:', error);
       toast.error('Failed to sign out. Please try again.');

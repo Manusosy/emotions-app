@@ -42,7 +42,6 @@ class AuthService {
             role: data.role,
             country: data.country,
             gender: data.gender || null,
-            onboarding_completed: true,
           }
         }
       });

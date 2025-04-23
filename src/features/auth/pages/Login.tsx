@@ -56,11 +56,13 @@ export default function Login() {
           console.log(`Login successful, redirecting to: ${redirectUrl}`);
           navigate(decodeURIComponent(redirectUrl), { replace: true });
         } else {
-          // If no redirect URL, navigate to dashboard
-          const dashboardUrl = getDashboardUrlForRole(data.user.user_metadata?.role || 'patient');
+          // If no redirect URL, get the dashboard URL for the user's role
+          const userRole = data.user.user_metadata?.role || 'patient';
+          const dashboardUrl = getDashboardUrlForRole(userRole);
           console.log(`Login successful, redirecting to dashboard: ${dashboardUrl}`);
           
           // Use window.location for a full page refresh to ensure auth state is recognized
+          // This applies to both patient and ambassador roles
           window.location.href = dashboardUrl;
         }
       }

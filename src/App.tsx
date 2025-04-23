@@ -56,6 +56,9 @@ import HelpCenterPage from "@/features/dashboard/pages/HelpCenterPage";
 import MessagesPage from "@/features/dashboard/pages/MessagesPage";
 import AmbassadorMessagesPage from "@/features/ambassadors/pages/MessagesPage";
 import ScrollToTop from "@/components/layout/ScrollToTop";
+import SettingsPage from "@/features/ambassadors/pages/SettingsPage";
+import ProfilePage from "@/features/ambassadors/pages/ProfilePage";
+import DeleteAccountPage from "@/features/ambassadors/pages/DeleteAccountPage";
 
 // Type definition for UserRole
 type UserRole = 'patient' | 'ambassador' | 'admin';
@@ -109,8 +112,6 @@ const ProtectedRoute = ({
   const { pathname } = useLocation();
   const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
-  const [countdown, setCountdown] = useState<number | null>(null);
-  const [redirectPath, setRedirectPath] = useState<string | null>(null);
   const { isAuthenticated, userRole, isLoading, getDashboardUrlForRole } = useAuth();
 
   const effectiveAllowedRoles = requiredRole ? [requiredRole] : allowedRoles;
@@ -158,8 +159,8 @@ const ProtectedRoute = ({
       if (!isAuthenticated) {
         console.log("User not authenticated, redirecting to login");
         const loginPath = `/login?redirect=${encodeURIComponent(pathname)}`;
-        setRedirectPath(loginPath);
-        setCountdown(1); // Reduced countdown for better UX
+        // Use direct window.location for consistent behavior and to prevent React Router state issues
+        window.location.href = loginPath;
         return;
       }
 
@@ -174,8 +175,8 @@ const ProtectedRoute = ({
         );
         // Redirect to appropriate dashboard based on role
         const dashboardPath = getDashboardUrlForRole(userRole);
-        setRedirectPath(dashboardPath);
-        setCountdown(1); // Reduced countdown for better UX
+        // Use direct window.location for consistent behavior
+        window.location.href = dashboardPath;
         return;
       }
 
@@ -187,33 +188,11 @@ const ProtectedRoute = ({
     checkAuth();
   }, [isAuthenticated, userRole, pathname, effectiveAllowedRoles, navigate, isLoading, getDashboardUrlForRole, hasCheckedAuth, isAuthorized]);
 
-  // Countdown effect
-  useEffect(() => {
-    if (countdown === null || redirectPath === null) return;
-    
-    if (countdown === 0) {
-      navigate(redirectPath);
-      setHasCheckedAuth(true);
-      return;
-    }
-    
-    const timer = setTimeout(() => {
-      setCountdown(countdown - 1);
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, [countdown, redirectPath, navigate]);
-
-  if (isLoading || countdown !== null) {
+  if (isLoading) {
     return (
       <div className="flex flex-col h-screen items-center justify-center">
         <Spinner size="lg" className="mb-4" />
-        {countdown !== null && redirectPath && (
-          <div className="text-center">
-            <p className="text-lg font-medium mb-2">Please wait</p>
-            <p>Redirecting to dashboard in {countdown} seconds...</p>
-          </div>
-        )}
+        <p className="text-lg font-medium">Loading...</p>
       </div>
     );
   }
@@ -340,17 +319,17 @@ const AppContent = () => {
               } />
               <Route path="/ambassador-dashboard/profile" element={
                 <ProtectedRoute requiredRole="ambassador">
-                  <Profile />
+                  <ProfilePage />
                 </ProtectedRoute>
               } />
               <Route path="/ambassador-dashboard/settings" element={
                 <ProtectedRoute requiredRole="ambassador">
-                  <Settings />
+                  <SettingsPage />
                 </ProtectedRoute>
               } />
               <Route path="/ambassador-dashboard/settings/delete-account" element={
                 <ProtectedRoute requiredRole="ambassador">
-                  <DeleteAccount />
+                  <DeleteAccountPage />
                 </ProtectedRoute>
               } />
               <Route path="/ambassador-dashboard/*" element={

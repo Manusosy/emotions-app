@@ -37,7 +37,8 @@ import {
   Clock3,
   HeartPulse,
   Search,
-  Trash2
+  Trash2,
+  MessageSquare
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -114,8 +115,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, logout, isAuthenticated } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
-  const [unreadNotifications, setUnreadNotifications] = useState(3);
-  const [unreadMessages, setUnreadMessages] = useState(2);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [unreadMessages, setUnreadMessages] = useState(0);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [notificationOpen, setNotificationOpen] = useState(false);
@@ -134,15 +135,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         try {
           const { isAuthenticated: storedAuth } = JSON.parse(storedAuthState);
           if (!storedAuth) {
-            navigate('/login', { replace: true });
+            // Use direct location change instead of React Router for a complete page refresh
+            window.location.href = '/login';
           }
           // If we have stored auth, don't redirect
         } catch (e) {
           console.error("Error parsing stored auth state:", e);
-          navigate('/login', { replace: true });
+          window.location.href = '/login';
         }
       } else {
-        navigate('/login', { replace: true });
+        window.location.href = '/login';
       }
       return;
     }
@@ -173,8 +175,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             .eq('unread', true)
         ]);
 
-        setUnreadNotifications(notificationsResponse.count || 3);
-        setUnreadMessages(messagesResponse.count || 2);
+        setUnreadNotifications(notificationsResponse.count || 0);
+        setUnreadMessages(messagesResponse.count || 0);
       } catch (error) {
         console.error('Error fetching unread counts:', error);
       }
@@ -200,6 +202,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         
         if (error) throw error;
 
+        // Create welcome notification for new users
+        const welcomeNotification = {
+          id: 'welcome-1',
+          title: 'Welcome to Emotions',
+          content: 'Hi! Welcome to Emotions. Feel free to take a tour around and familiarize yourself with our cool features to help you monitor, analyze and receive personalized recommendations to do with your mental health. Try our Journal feature, or Stress analytics feature or even emotional checkin!',
+          created_at: new Date().toISOString(),
+          read: false,
+          type: 'welcome' as const
+        } as Notification;
+
         if (data && data.length > 0) {
           // Map database fields to our Notification interface
           const mappedNotifications: Notification[] = data.map((item: DbNotification) => ({
@@ -211,18 +223,23 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             type: 'other' as const,  // Default type if not available
             user_id: item.user_id
           }));
-          setNotifications(mappedNotifications);
+          
+          // Check if welcome notification exists
+          const hasWelcomeNotification = mappedNotifications.some(n => n.title.includes('Welcome'));
+          
+          // If no welcome notification exists, add it to the beginning of the array
+          if (!hasWelcomeNotification) {
+            setNotifications([welcomeNotification, ...mappedNotifications]);
+            // Increment unread notifications counter for the welcome message
+            setUnreadNotifications(prev => prev + 1);
+          } else {
+            setNotifications(mappedNotifications);
+          }
         } else {
-          // Create welcome notification for new users
-          const welcomeNotification: Notification = {
-            id: 'welcome-1',
-            title: 'Welcome to Emotions Health',
-            content: 'Thank you for joining our platform. Start by tracking your mood and exploring available resources.',
-            created_at: new Date().toISOString(),
-            read: false,
-            type: 'welcome'
-          };
+          // No notifications exist, add welcome notification
           setNotifications([welcomeNotification]);
+          // Set unread notification counter to 1 for the welcome message
+          setUnreadNotifications(1);
         }
       } catch (error) {
         console.error('Error fetching notifications:', error);
@@ -257,6 +274,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const markNotificationAsRead = async (id: string) => {
     try {
+      // Find the notification
+      const notification = notifications.find(n => n.id === id);
+      
+      // Only proceed if notification exists and is unread
+      if (!notification || notification.read) return;
+      
       // Update local state immediately for UI responsiveness
       setNotifications(notifications.map(n => 
         n.id === id ? { ...n, read: true } : n
@@ -267,26 +290,39 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       // If this is a real notification (not mock), update in database
       if (id !== 'welcome-1' && user?.id) {
-        await supabase
+        const { error } = await supabase
           .from('notifications')
           .update({ read: true })
           .eq('id', id)
           .eq('user_id', user.id);
+          
+        if (error) {
+          console.error('Database error marking notification as read:', error);
+          throw error;
+        }
       }
     } catch (error) {
       console.error('Error marking notification as read:', error);
+      
+      // Revert UI changes on error
+      setNotifications(notifications.map(n => 
+        n.id === id ? { ...n, read: false } : n
+      ));
+      setUnreadNotifications(prev => prev + 1);
     }
   };
 
   const deleteNotification = async (id: string) => {
     try {
+      // Find if the notification is unread before removing it
+      const notification = notifications.find(n => n.id === id);
+      const isUnread = notification && !notification.read;
+      
       // Update local state immediately
-      const updatedNotifications = notifications.filter(n => n.id !== id);
-      setNotifications(updatedNotifications);
+      setNotifications(notifications.filter(n => n.id !== id));
       
       // If it was unread, update the unread count
-      const notification = notifications.find(n => n.id === id);
-      if (notification && !notification.read) {
+      if (isUnread) {
         setUnreadNotifications(prev => Math.max(0, prev - 1));
       }
       
@@ -312,28 +348,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       markNotificationAsRead(notification.id);
     }
     
-    // Handle different notification types
-    if (notification.type === 'welcome') {
-      // For welcome notification, just close the notification panel
-      setNotificationOpen(false);
-    } else if (notification.content.includes('journal')) {
-      // For journal-related notifications, navigate to the journal entry
-      setNotificationOpen(false);
-      
-      // Extract journal ID if it exists in the notification content
-      const journalIdMatch = notification.content.match(/journal\/(\d+)/);
-      if (journalIdMatch && journalIdMatch[1]) {
-        navigate(`/patient-dashboard/journal/${journalIdMatch[1]}`);
-      } else {
-        // If no specific journal entry, go to journal page
-        navigate('/patient-dashboard/journal');
-      }
-    } else {
-      // For all other notifications, show in dialog
-      setSelectedNotification(notification);
-      setNotificationDialogOpen(true);
-      setNotificationOpen(false);
-    }
+    // Close notification panel
+    setNotificationOpen(false);
+    
+    // Navigate to the notifications page for all notifications
+    navigate('/patient-dashboard/notifications');
   };
 
   const handleNotificationDialogClose = () => {
@@ -344,7 +363,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/login', { replace: true });
+      // Use direct location change instead of React Router for a complete page refresh
+      window.location.href = '/login';
     } catch (error) {
       console.error('Error during logout:', error);
       toast.error('Failed to sign out. Please try again.');
@@ -354,6 +374,46 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const firstName = user?.user_metadata?.first_name || 'User';
   const lastName = user?.user_metadata?.last_name || '';
   
+  // Add this function to mark all notifications as read
+  const markAllAsRead = async () => {
+    try {
+      // Store original notifications state for rollback if needed
+      const originalNotifications = [...notifications];
+      
+      // Update local state
+      const updatedNotifications = notifications.map(n => ({ ...n, read: true }));
+      setNotifications(updatedNotifications);
+      
+      // Reset unread count
+      setUnreadNotifications(0);
+      
+      // Update in database
+      if (user?.id) {
+        const { error } = await supabase
+          .from('notifications')
+          .update({ read: true })
+          .eq('user_id', user.id)
+          .eq('read', false);
+        
+        if (error) {
+          console.error('Database error marking all notifications as read:', error);
+          throw error;
+        }
+        
+        toast.success("All notifications marked as read");
+      }
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      toast.error("Failed to update notifications");
+      
+      // Restore original state on error
+      if (notifications) {
+        setNotifications(notifications);
+        setUnreadNotifications(notifications.filter(n => !n.read).length);
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Include the welcome dialog */}
@@ -392,7 +452,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       </Dialog>
       
       {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-40 w-full">
+      <header className="fixed top-0 left-0 right-0 z-50 w-full bg-white border-b border-slate-200 shadow-sm">
         <div className="flex h-16 items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-4">
             <Button
@@ -438,22 +498,30 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="relative"
+                  className="relative h-8 w-8 rounded-full hover:bg-slate-100"
                 >
                   <Bell className="h-5 w-5" />
                   {unreadNotifications > 0 && (
-                    <Badge 
-                      variant="destructive" 
-                      className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                    >
-                      {unreadNotifications}
-                    </Badge>
+                    <div className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></div>
                   )}
                 </Button>
               </PopoverTrigger>
               <PopoverContent ref={notificationRef} className="w-80 p-0 mr-4">
-                <div className="px-4 py-3 border-b border-slate-200">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
                   <h3 className="font-semibold">Notifications</h3>
+                  {unreadNotifications > 0 && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-xs h-7 px-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        markAllAsRead();
+                      }}
+                    >
+                      Mark all as read
+                    </Button>
+                  )}
                 </div>
                 <div className="max-h-[300px] overflow-y-auto">
                   {notifications.length > 0 ? (
@@ -516,17 +584,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="relative"
+              className="relative h-8 w-8 rounded-full hover:bg-slate-100"
               onClick={() => navigate('/patient-dashboard/messages')}
             >
-              <Inbox className="h-5 w-5" />
+              <MessageSquare className="h-5 w-5" />
               {unreadMessages > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                >
-                  {unreadMessages}
-                </Badge>
+                <div className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></div>
               )}
             </Button>
 
@@ -570,7 +633,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       </header>
 
       {/* Mobile Search */}
-      <div className="md:hidden px-4 py-2">
+      <div className="md:hidden px-4 py-2 fixed top-16 z-40 w-full bg-white border-b border-slate-200">
         <form onSubmit={handleSearch} className="flex w-full">
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -585,14 +648,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </form>
       </div>
 
-      <div className="flex">
+      <div className="flex pt-16">
         {/* Sidebar */}
         <aside
           className={`fixed inset-y-0 z-30 flex w-64 flex-col bg-white border-r border-slate-200 top-16 transition-transform duration-300 lg:translate-x-0 ${
             sidebarOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
-          <div className="flex grow flex-col overflow-y-auto">
+          <div className="flex grow flex-col overflow-y-auto pt-0">
             <nav className="flex flex-1 flex-col pt-5 pb-20">
               <div className="px-4 mb-5">
                 <div 
@@ -675,7 +738,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </aside>
 
         {/* Main Content */}
-        <main className={`flex-1 transition-all duration-300 w-full ${sidebarOpen ? "lg:pl-64" : ""}`}>
+        <main className={`flex-1 transition-all duration-300 w-full mt-0 ${sidebarOpen ? "lg:pl-64" : ""}`}>
           <div className="py-4 px-3 sm:py-6 sm:px-6 lg:px-8">
             <div className="max-w-full overflow-x-auto">
               {children}

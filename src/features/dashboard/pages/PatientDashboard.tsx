@@ -32,7 +32,8 @@ import {
   ChevronRight,
   Activity,
   BarChart,
-  HeartPulse
+  HeartPulse,
+  Download
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +45,24 @@ import MoodSummaryCard from "../components/MoodSummaryCard";
 import EmotionalHealthWheel from "../components/EmotionalHealthWheel";
 import { Appointment, Message, UserProfile } from "@/types/database.types";
 import { format, parseISO } from "date-fns";
+import { jsPDF } from "jspdf";
+import 'jspdf-autotable';
+
+// Define interfaces for appointment data
+interface Ambassador {
+  name: string;
+  specialization: string;
+}
+
+interface Appointment {
+  id: string;
+  date: string;
+  time: string;
+  type: string;
+  status: string;
+  ambassador?: Ambassador;
+  notes?: string;
+}
 
 export default function PatientDashboard() {
   const navigate = useNavigate();
@@ -52,7 +71,56 @@ export default function PatientDashboard() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
+  const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([
+    {
+      id: 'EMHA01',
+      date: '12 Nov 2023',
+      time: '10:00 AM',
+      type: 'Video Consultation',
+      status: 'Upcoming',
+      ambassador: {
+        name: 'Dr. Sophie Chen',
+        specialization: 'Psychiatrist'
+      },
+      notes: 'Follow-up on medication efficacy'
+    },
+    {
+      id: 'EMHA02',
+      date: '18 Nov 2023',
+      time: '2:30 PM',
+      type: 'Phone Call',
+      status: 'Upcoming',
+      ambassador: {
+        name: 'Michael Roberts',
+        specialization: 'Wellness Coach'
+      },
+      notes: 'Weekly check-in'
+    },
+    {
+      id: 'EMHA03',
+      date: '25 Nov 2023',
+      time: '11:15 AM',
+      type: 'In-person',
+      status: 'Upcoming',
+      ambassador: {
+        name: 'Dr. James Wilson',
+        specialization: 'Therapist'
+      },
+      notes: 'Therapy session'
+    },
+    {
+      id: 'EMHA04',
+      date: '30 Nov 2023',
+      time: '4:00 PM',
+      type: 'Video Consultation',
+      status: 'Upcoming',
+      ambassador: {
+        name: 'Emma Thompson',
+        specialization: 'Nutritionist'
+      },
+      notes: 'Dietary plan review'
+    }
+  ]);
   const [supportGroups, setSupportGroups] = useState<any[]>([]);
   const [recentJournalEntries, setRecentJournalEntries] = useState<any[]>([]);
   const [appointmentFilter, setAppointmentFilter] = useState<string>("all");
@@ -63,7 +131,9 @@ export default function PatientDashboard() {
     moodScore: 0,
     stressLevel: 0,
     consistency: 0,
-    lastCheckInStatus: "No check-ins yet"
+    lastCheckInStatus: "No check-ins yet",
+    streak: 0,
+    firstCheckInDate: ""
   });
   const [hasAssessments, setHasAssessments] = useState(false);
 
@@ -352,11 +422,62 @@ export default function PatientDashboard() {
                 moodScore: 0, // Will be filled from mood tracking if available
                 stressLevel: stressLevel,
                 consistency: metricsData?.consistency || 0,
-                lastCheckInStatus: "Active"
+                lastCheckInStatus: "Active",
+                streak: 0,
+                firstCheckInDate: ""
               });
               
               setLastAssessmentDate(assessmentDateString);
               setHasAssessments(true);
+            }
+
+            // Calculate streak by checking consecutive days with entries
+            const dates = assessments.map(a => new Date(a.created_at).toDateString());
+            const uniqueDates = [...new Set(dates)].map(d => new Date(d));
+            uniqueDates.sort((a, b) => b.getTime() - a.getTime()); // Sort descending
+            
+            // Get today's date without time
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            // Check if the most recent entry is from today
+            const mostRecentDate = uniqueDates[0];
+            mostRecentDate.setHours(0, 0, 0, 0);
+            
+            let streak = 0;
+            const msInDay = 24 * 60 * 60 * 1000;
+            
+            if (mostRecentDate.getTime() === today.getTime()) {
+              // Start counting streak from today
+              streak = 1;
+              let prevDate = today;
+              
+              // Check previous days
+              for (let i = 1; i < uniqueDates.length; i++) {
+                const currentDate = uniqueDates[i];
+                currentDate.setHours(0, 0, 0, 0);
+                
+                // If the current date is exactly one day before the previous date
+                const dayDiff = (prevDate.getTime() - currentDate.getTime()) / msInDay;
+                if (dayDiff === 1) {
+                  streak++;
+                  prevDate = currentDate;
+                } else {
+                  break; // Streak broken
+                }
+              }
+            }
+            
+            // Get first check-in date
+            const oldestDate = new Date(assessments[assessments.length - 1].created_at);
+            const firstCheckInDate = `${oldestDate.toLocaleString('default', { month: 'short' })} ${oldestDate.getDate()}, ${oldestDate.getFullYear()}`;
+            
+            if (isMounted) {
+              setUserMetrics(prevMetrics => ({
+                ...prevMetrics,
+                streak: streak,
+                firstCheckInDate: firstCheckInDate
+              }));
             }
           } else {
             // New user with no assessments
@@ -365,7 +486,9 @@ export default function PatientDashboard() {
                 moodScore: 0,
                 stressLevel: 0,
                 consistency: 0,
-                lastCheckInStatus: "No check-ins yet"
+                lastCheckInStatus: "No check-ins yet",
+                streak: 0,
+                firstCheckInDate: ""
               });
               setHasAssessments(false);
               setLastAssessmentDate("Not taken");
@@ -457,6 +580,121 @@ export default function PatientDashboard() {
       navigate('/login');
     } catch (error) {
       toast.error("Failed to log out");
+    }
+  };
+
+  const handleExportPDF = () => {
+    try {
+      // Create a new jsPDF instance
+      const doc = new jsPDF();
+      
+      // Add title
+      doc.setFontSize(20);
+      doc.setTextColor(32, 192, 243); // #20C0F3
+      doc.text("Upcoming Appointments", 105, 15, { align: 'center' });
+      
+      // Add patient information
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Patient: ${profile?.first_name || 'John'} ${profile?.last_name || 'Doe'}`, 20, 30);
+      doc.text(`ID: ${profile?.patient_id || 'P123456'}`, 20, 40);
+      doc.text("Date Generated: " + new Date().toLocaleDateString(), 20, 50);
+      
+      // Create table data
+      const tableColumn = ["ID", "Date", "Time", "Type", "Ambassador", "Notes"];
+      const tableRows = upcomingAppointments.map(appointment => [
+        appointment.id,
+        appointment.date,
+        appointment.time,
+        appointment.type,
+        appointment.ambassador ? appointment.ambassador.name : "-",
+        appointment.notes || "-"
+      ]);
+      
+      // Add table to document - need to cast to any for autoTable to work
+      const autoTable = (doc as any).autoTable;
+      if (typeof autoTable === 'function') {
+        autoTable({
+          head: [tableColumn],
+          body: tableRows,
+          startY: 60,
+          theme: 'grid',
+          styles: {
+            fontSize: 10,
+            cellPadding: 3,
+            lineColor: [220, 220, 220]
+          },
+          headStyles: {
+            fillColor: [32, 192, 243], // #20C0F3
+            textColor: [255, 255, 255],
+            fontStyle: 'bold'
+          },
+          alternateRowStyles: {
+            fillColor: [240, 240, 240]
+          }
+        });
+        
+        // Add footer
+        const finalY = (doc as any).lastAutoTable.finalY + 20;
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text("EmotionHealth - Your Mental Health Partner", 105, finalY, { align: 'center' });
+      }
+      
+      // Save the PDF
+      doc.save("Upcoming-Appointments.pdf");
+      toast.success("Appointments exported successfully");
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      toast.error("Failed to export appointments");
+    }
+  };
+
+  const handleExportAppointment = (appointmentId: string) => {
+    try {
+      const appointment = upcomingAppointments.find(app => app.id === appointmentId);
+      
+      if (!appointment) {
+        toast.error("Appointment not found");
+        return;
+      }
+      
+      const doc = new jsPDF();
+      
+      // Add title
+      doc.setFontSize(20);
+      doc.setTextColor(32, 192, 243); // #20C0F3
+      doc.text("Appointment Details", 105, 15, { align: 'center' });
+      
+      // Add appointment information
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Appointment ID: ${appointment.id}`, 20, 30);
+      doc.text(`Date: ${appointment.date}`, 20, 40);
+      doc.text(`Time: ${appointment.time}`, 20, 50);
+      doc.text(`Type: ${appointment.type}`, 20, 60);
+      doc.text(`Status: ${appointment.status}`, 20, 70);
+      
+      if (appointment.ambassador) {
+        doc.text(`Ambassador: ${appointment.ambassador.name}`, 20, 80);
+        doc.text(`Specialization: ${appointment.ambassador.specialization}`, 20, 90);
+      }
+      
+      if (appointment.notes) {
+        doc.text(`Notes: ${appointment.notes}`, 20, 100);
+      }
+      
+      // Add footer
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text("EmotionHealth - Your Mental Health Partner", 105, 280, { align: 'center' });
+      
+      // Save the PDF
+      doc.save(`Appointment-${appointmentId}.pdf`);
+      toast.success("Appointment details exported successfully");
+    } catch (error) {
+      console.error("Error exporting appointment PDF:", error);
+      toast.error("Failed to export appointment");
     }
   };
 
@@ -569,22 +807,31 @@ export default function PatientDashboard() {
                     <span className="text-sm font-medium">Consistency</span>
                   </div>
                   {hasAssessments && (
-                    <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">Normal</span>
+                    <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">
+                      {userMetrics.streak > 0 ? `${userMetrics.streak} day${userMetrics.streak !== 1 ? 's' : ''} streak` : 'Active Streak'}
+                    </span>
                   )}
                 </div>
                 <div className="text-3xl font-bold">
                   {hasAssessments 
                     ? userMetrics.consistency > 0 
                       ? `${Math.round(userMetrics.consistency * 10)}%` 
-                      : <span className="opacity-70 animate-pulse">—</span> 
+                      : userMetrics.streak > 0 
+                        ? `${userMetrics.streak} day${userMetrics.streak !== 1 ? 's' : ''}` 
+                        : <span className="opacity-70 animate-pulse">—</span> 
                     : <span className="opacity-70">—</span>}
                 </div>
                 <p className="text-xs text-slate-500 mt-2">
                   {hasAssessments 
                     ? userMetrics.consistency > 0 
-                      ? "Daily tracking rate" 
-                      : <span className="flex items-center"><span className="text-xs inline-block animate-pulse text-emerald-600">Gathering data<span className="animate-[bounce_1.5s_infinite]">...</span></span></span>
+                      ? userMetrics.streak > 1 
+                        ? `Keep your ${userMetrics.streak}-day streak going!` 
+                        : "Keep showing up daily"
+                      : <span className="flex items-center"><span className="text-xs inline-block text-emerald-600">Keep showing up daily</span></span>
                     : "Start tracking your mood"}
+                  {userMetrics.firstCheckInDate && (
+                    <span className="block mt-1 text-slate-400">Since {userMetrics.firstCheckInDate}</span>
+                  )}
                 </p>
               </CardContent>
             </Card>
@@ -636,26 +883,26 @@ export default function PatientDashboard() {
                     <ChevronRight className="h-4 w-4 rotate-90" />
                   </div>
                 </div>
-                <Button variant="outline" size="sm">
-                  <FileText className="h-4 w-4 mr-1" />
-                  Export
+                <Button variant="outline" size="sm" onClick={handleExportPDF}>
+                  <Download className="h-4 w-4 mr-1" />
+                  Export All
                 </Button>
               </div>
             </div>
           </div>
 
           {/* Appointments Table */}
-          <Card className="shadow-sm">
+          <Card className="shadow-sm overflow-hidden">
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-slate-100">
-                      <th className="text-left text-sm font-medium text-slate-700 p-4">ID</th>
-                      <th className="text-left text-sm font-medium text-slate-700 p-4">M.H Ambassador</th>
-                      <th className="text-left text-sm font-medium text-slate-700 p-4">Date</th>
-                      <th className="text-left text-sm font-medium text-slate-700 p-4">Type</th>
-                      <th className="text-left text-sm font-medium text-slate-700 p-4">Status</th>
+                    <tr style={{ backgroundColor: '#20C0F3' }} className="rounded-t-lg">
+                      <th className="text-left text-sm font-medium text-white p-4 first:rounded-tl-lg">ID</th>
+                      <th className="text-left text-sm font-medium text-white p-4">M.H Ambassador</th>
+                      <th className="text-left text-sm font-medium text-white p-4">Date</th>
+                      <th className="text-left text-sm font-medium text-white p-4">Type</th>
+                      <th className="text-left text-sm font-medium text-white p-4 last:rounded-tr-lg">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
@@ -683,12 +930,22 @@ export default function PatientDashboard() {
                       <td className="p-4 text-sm">25 Apr 2025, 10:30 AM</td>
                       <td className="p-4 text-sm">Video Call</td>
                       <td className="p-4">
-                        <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 font-medium px-3 py-1 rounded-full">
-                          <span className="flex items-center">
-                            <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 mr-1.5"></span>
-                            Upcoming
-                          </span>
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 font-medium px-3 py-1 rounded-full">
+                            <span className="flex items-center">
+                              <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 mr-1.5"></span>
+                              Upcoming
+                            </span>
+                          </Badge>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-7 w-7 p-0" 
+                            onClick={() => handleExportAppointment('EMHA01')}
+                          >
+                            <FileText className="h-3.5 w-3.5 text-slate-600" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                     )}
@@ -717,12 +974,22 @@ export default function PatientDashboard() {
                       <td className="p-4 text-sm">18 Apr 2025, 11:40 AM</td>
                       <td className="p-4 text-sm">Video Call</td>
                       <td className="p-4">
-                        <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 font-medium px-3 py-1 rounded-full">
-                          <span className="flex items-center">
-                            <span className="h-1.5 w-1.5 rounded-full bg-purple-500 mr-1.5"></span>
-                            Completed
-                          </span>
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 font-medium px-3 py-1 rounded-full">
+                            <span className="flex items-center">
+                              <span className="h-1.5 w-1.5 rounded-full bg-purple-500 mr-1.5"></span>
+                              Completed
+                            </span>
+                          </Badge>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-7 w-7 p-0" 
+                            onClick={() => handleExportAppointment('EMHA02')}
+                          >
+                            <FileText className="h-3.5 w-3.5 text-slate-600" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                     )}
@@ -758,11 +1025,14 @@ export default function PatientDashboard() {
                               Completed
                             </span>
                           </Badge>
-                          <div className="flex">
-                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                              <FileText className="h-3.5 w-3.5 text-slate-600" />
-                            </Button>
-                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-7 w-7 p-0" 
+                            onClick={() => handleExportAppointment('EMHA03')}
+                          >
+                            <FileText className="h-3.5 w-3.5 text-slate-600" />
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -799,11 +1069,14 @@ export default function PatientDashboard() {
                               Completed
                             </span>
                           </Badge>
-                          <div className="flex">
-                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                              <FileText className="h-3.5 w-3.5 text-slate-600" />
-                            </Button>
-                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-7 w-7 p-0" 
+                            onClick={() => handleExportAppointment('EMHA04')}
+                          >
+                            <FileText className="h-3.5 w-3.5 text-slate-600" />
+                          </Button>
                         </div>
                       </td>
                     </tr>

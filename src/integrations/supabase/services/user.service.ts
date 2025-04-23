@@ -7,7 +7,6 @@ export type UserProfile = {
   full_name?: string;
   avatar_url?: string;
   role?: UserRole;
-  onboarding_completed?: boolean;
   country?: string;
   gender?: string;
 };
@@ -29,7 +28,6 @@ class UserService {
           email: profile.email,
           full_name: profile.full_name,
           role: profile.role || 'patient',
-          onboarding_completed: profile.onboarding_completed || false,
         }
       ])
       .select()
@@ -68,15 +66,6 @@ class UserService {
     // Then update the profile
     return await this.updateUserProfile(userId, {
       avatar_url: filePath
-    });
-  }
-
-  /**
-   * Complete user onboarding
-   */
-  async completeOnboarding(userId: string) {
-    return await this.updateUserProfile(userId, {
-      onboarding_completed: true
     });
   }
 

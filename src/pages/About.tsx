@@ -11,6 +11,19 @@ const About = () => {
     window.scrollTo(0, 0);
   }, []);
 
+  // Ensure mobile menu is closed when navigating from this page
+  const handleNavigation = (path: string, e: React.MouseEvent) => {
+    // Try to close mobile menu if it's open
+    const mobileMenuToggle = document.querySelector('.md\\:hidden button') as HTMLButtonElement | null;
+    const mobileMenuOpen = document.querySelector('.md\\:hidden .py-4') !== null;
+    
+    if (mobileMenuOpen && mobileMenuToggle) {
+      mobileMenuToggle.click();
+    }
+    
+    safeNavigate(path, e);
+  };
+
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
@@ -453,14 +466,14 @@ const About = () => {
             <div className="flex gap-4 flex-wrap">
               <a 
                 href="/contact"
-                onClick={(e) => safeNavigate("/contact", e)}
+                onClick={(e) => handleNavigation("/contact", e)}
                 className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
               >
                 Contact Us
               </a>
               <a 
                 href="/faqs"
-                onClick={(e) => safeNavigate("/faqs", e)}
+                onClick={(e) => handleNavigation("/faqs", e)}
                 className="px-6 py-3 border border-blue-500 text-blue-500 rounded-lg hover:bg-blue-50 transition-colors font-medium"
               >
                 Learn More (FAQs)

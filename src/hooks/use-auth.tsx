@@ -56,12 +56,13 @@ export const useAuth = () => {
         userId: session.user.id
       }));
       
-      // Auto-redirect to dashboard when authenticated
-      const dashboardUrl = getDashboardUrlForRole(role as UserRole);
-      console.log(`Auto redirecting to dashboard: ${dashboardUrl}`);
-      
-      // Use window.location for a complete refresh to ensure auth state is recognized
+      // Only auto-redirect if on login/signup pages
       if (window.location.pathname === '/login' || window.location.pathname === '/signup') {
+        // Auto-redirect to dashboard when authenticated
+        const dashboardUrl = getDashboardUrlForRole(role as UserRole);
+        console.log(`Auto redirecting to dashboard: ${dashboardUrl}`);
+        
+        // Use window.location for a complete refresh to ensure auth state is recognized
         window.location.href = dashboardUrl;
       }
     } else {
@@ -108,7 +109,7 @@ export const useAuth = () => {
         console.log('Setting up auth listeners...');
         
         // Subscribe to auth state changes
-        const subscription = authService.onAuthStateChange(
+        const { data: authListenerData } = authService.onAuthStateChange(
           (event, session) => {
             console.log('Auth state changed:', event);
             
@@ -142,7 +143,10 @@ export const useAuth = () => {
         authInitializedRef.current = true;
         
         return () => {
-          subscription.unsubscribe();
+          // Properly unsubscribe from auth listener
+          if (authListenerData?.subscription?.unsubscribe) {
+            authListenerData.subscription.unsubscribe();
+          }
         };
       } catch (error) {
         console.error('Error in auth setup:', error);
@@ -282,9 +286,7 @@ export const useAuth = () => {
       // Clear stored authentication state
       localStorage.removeItem('auth_state');
       
-      // Redirect to login page
-      window.location.href = '/login';
-      
+      // Let the component handle redirects
       return;
     } catch (error: any) {
       console.error('Logout error:', error);

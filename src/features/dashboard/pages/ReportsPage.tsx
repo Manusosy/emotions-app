@@ -35,6 +35,7 @@ import { format, subDays, isValid } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import StressProgressChart from "../components/StressProgressChart";
+import ConsistencyHeatmap from "../components/ConsistencyHeatmap";
 
 // Define types for our data
 interface Assessment {
@@ -72,6 +73,8 @@ export default function ReportsPage() {
     lastMoodEntryDate: null as Date | null,
     healthPercentage: 0
   });
+  const [checkInDates, setCheckInDates] = useState<Date[]>([]);
+  const [firstCheckInDate, setFirstCheckInDate] = useState<Date | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -182,6 +185,14 @@ export default function ReportsPage() {
         100, 
         Math.round((assessments.length / Math.max(1, daysSinceFirstAssessment / 7)) * 100)
       );
+      
+      // Set the first check-in date
+      const oldestAssessment = new Date(assessments[assessments.length - 1].created_at);
+      setFirstCheckInDate(oldestAssessment);
+      
+      // Generate array of all check-in dates for the heatmap
+      const dates = assessments.map(a => new Date(a.created_at));
+      setCheckInDates(dates);
     }
     
     // Process mood entries if available
@@ -214,6 +225,18 @@ export default function ReportsPage() {
         // Higher mood = improved mood
         if (secondHalfAvg > firstHalfAvg + 0.5) metrics.moodTrend = 'improving';
         else if (secondHalfAvg < firstHalfAvg - 0.5) metrics.moodTrend = 'declining';
+      }
+      
+      // Add mood check-in dates to the heatmap data
+      const moodDates = moodEntries.map(m => new Date(m.created_at));
+      setCheckInDates(prev => [...prev, ...moodDates]);
+      
+      // Update first check-in date if mood entries are older
+      if (moodEntries.length > 0) {
+        const oldestMoodEntry = new Date(moodEntries[moodEntries.length - 1].created_at);
+        if (!firstCheckInDate || oldestMoodEntry < firstCheckInDate) {
+          setFirstCheckInDate(oldestMoodEntry);
+        }
       }
     }
     
@@ -718,8 +741,8 @@ export default function ReportsPage() {
                               <li className="flex items-start gap-2">
                                 <CheckCircle className="w-4 h-4 text-green-500 mt-0.5" />
                                 <span>{healthMetrics.stressTrend === 'declining' ? 
-                                  'Prioritize <b>sleep quality</b> and establish a calming bedtime routine' :
-                                  'Maintain <b>consistent sleep schedule</b> to support emotional health'}</span>
+                                  <>Prioritize <b>sleep quality</b> and establish a calming bedtime routine</> :
+                                  <>Maintain <b>consistent sleep schedule</b> to support emotional health</>}</span>
                               </li>
                               
                               <li className="flex items-start gap-2">
@@ -1489,6 +1512,20 @@ export default function ReportsPage() {
                             </div>
                           </div>
                         </div>
+                        
+                        {checkInDates.length >= 3 && (
+                          <div className="mt-6">
+                            <h3 className="font-medium text-lg mb-4">Consistency Tracking</h3>
+                            <ConsistencyHeatmap 
+                              checkInDates={checkInDates}
+                              firstCheckInDate={firstCheckInDate || undefined}
+                            />
+                            <p className="text-xs text-slate-500 text-center mt-3">
+                              This visualization shows your check-in patterns over time, with colored squares representing days you logged data.
+                              <br />Longer streaks show darker colors. Try to maintain a daily streak for best results!
+                            </p>
+                          </div>
+                        )}
                       </>
                     ) : (
                       <div className="text-center py-12">

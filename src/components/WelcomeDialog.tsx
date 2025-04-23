@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,7 +13,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { HeartHandshake, BookOpen, Heart } from "lucide-react";
+import { HeartHandshake, BookOpen, Heart, Activity, BrainCircuit } from "lucide-react";
 
 export default function WelcomeDialog() {
   const { user } = useAuth();
@@ -28,14 +29,49 @@ export default function WelcomeDialog() {
     }
   }, [user]);
 
+  const createWelcomeNotification = async () => {
+    if (!user?.id) return;
+    
+    try {
+      // Check if welcome notification already exists
+      const { data } = await supabase
+        .from('notifications')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('title', 'Welcome to Emotions')
+        .limit(1);
+      
+      // Only create if it doesn't already exist
+      if (!data || data.length === 0) {
+        await supabase
+          .from('notifications')
+          .insert({
+            user_id: user.id,
+            title: 'Welcome to Emotions',
+            message: 'Hi! Welcome to Emotions. Feel free to take a tour around and familiarize yourself with our cool features to help you monitor, analyze and receive personalized recommendations to do with your mental health. Try our Journal feature, or Stress analytics feature or even emotional checkin!',
+            read: false,
+            type: 'welcome'
+          });
+      }
+    } catch (error) {
+      console.error('Error creating welcome notification:', error);
+    }
+  };
+
   const handleClose = () => {
     localStorage.setItem("hasSeenWelcome", "true");
     setOpen(false);
+    createWelcomeNotification();
   };
 
-  const handleExploreResources = () => {
+  const handleEmotionalCheckin = () => {
     handleClose();
-    navigate("/patient-dashboard/resources");
+    navigate("/patient-dashboard/mood-tracker");
+  };
+
+  const handleStressAnalysis = () => {
+    handleClose();
+    navigate("/patient-dashboard/reports");
   };
 
   return (
@@ -46,37 +82,52 @@ export default function WelcomeDialog() {
             <HeartHandshake className="h-8 w-8 text-blue-600" />
           </div>
           <AlertDialogTitle className="text-xl text-center">
-            Welcome to Emotions Health, {firstName}!
+            Hi, {firstName}! Welcome to Emotions
           </AlertDialogTitle>
           <AlertDialogDescription className="text-center">
-            We're glad you're here. Emotions Health helps you manage your emotional
-            wellbeing, track your progress, and connect with professionals when needed.
+            Feel free to take a tour around and familiarize yourself with our cool features to help you monitor, analyze and receive personalized recommendations to do with your mental health. Try our Journal feature, or Stress analytics feature or even emotional checkin!
           </AlertDialogDescription>
         </AlertDialogHeader>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
-          <div className="flex flex-col items-center gap-2 p-4 rounded-lg border border-slate-200 hover:border-blue-200 hover:bg-blue-50/40 transition-colors">
-            <BookOpen className="h-8 w-8 text-blue-600" />
-            <h3 className="font-medium text-center">Explore Resources</h3>
-            <p className="text-xs text-slate-500 text-center">
-              Browse articles, videos, and support groups
-            </p>
-          </div>
-          <div className="flex flex-col items-center gap-2 p-4 rounded-lg border border-slate-200 hover:border-blue-200 hover:bg-blue-50/40 transition-colors">
-            <Heart className="h-8 w-8 text-rose-600" />
-            <h3 className="font-medium text-center">Track Your Mood</h3>
-            <p className="text-xs text-slate-500 text-center">
-              Log your emotions to monitor your progress
-            </p>
-          </div>
+        <div className="grid grid-cols-1 gap-4 my-4">
+          <Button 
+            variant="outline" 
+            className="flex items-center justify-center gap-2 h-auto py-4 hover:bg-blue-50 border-blue-200"
+            onClick={handleEmotionalCheckin}
+          >
+            <Heart className="h-5 w-5 text-rose-600 flex-shrink-0" />
+            <div className="text-left">
+              <h3 className="font-medium">Emotional Check-in</h3>
+              <p className="text-xs text-slate-500">
+                Track how you're feeling today
+              </p>
+            </div>
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            className="flex items-center justify-center gap-2 h-auto py-4 hover:bg-blue-50 border-blue-200"
+            onClick={handleStressAnalysis}
+          >
+            <BrainCircuit className="h-5 w-5 text-blue-600 flex-shrink-0" />
+            <div className="text-left">
+              <h3 className="font-medium">Stress Analysis</h3>
+              <p className="text-xs text-slate-500">
+                Start your mental wellbeing assessment
+              </p>
+            </div>
+          </Button>
         </div>
         
         <AlertDialogFooter className="mt-2">
           <AlertDialogCancel onClick={handleClose}>
-            Close
+            Maybe Later
           </AlertDialogCancel>
-          <AlertDialogAction onClick={handleExploreResources} className="bg-blue-600 hover:bg-blue-700">
-            Explore Resources
+          <AlertDialogAction 
+            onClick={handleEmotionalCheckin} 
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Start Check-in
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
