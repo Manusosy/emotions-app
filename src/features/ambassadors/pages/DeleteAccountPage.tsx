@@ -12,7 +12,7 @@ import { toast } from "sonner";
 
 export default function DeleteAccountPage() {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, signout } = useAuth();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [confirmationChecked, setConfirmationChecked] = useState(false);
@@ -64,7 +64,7 @@ export default function DeleteAccountPage() {
       }
       
       // Log out the user
-      await logout();
+      await signout();
       
       // Redirect to home page
       window.location.href = "/";

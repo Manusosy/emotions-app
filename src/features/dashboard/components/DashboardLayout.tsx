@@ -112,7 +112,7 @@ const patientNavigation = [
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout: signout, isAuthenticated } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
@@ -272,43 +272,65 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   };
 
-  const markNotificationAsRead = async (id: string) => {
-    try {
-      // Find the notification
-      const notification = notifications.find(n => n.id === id);
-      
-      // Only proceed if notification exists and is unread
-      if (!notification || notification.read) return;
-      
-      // Update local state immediately for UI responsiveness
-      setNotifications(notifications.map(n => 
-        n.id === id ? { ...n, read: true } : n
-      ));
-      
-      // Update unread count
-      setUnreadNotifications(prev => Math.max(0, prev - 1));
+  const fetchNotificationCount = async () => {
+    if (!user?.id) return;
 
-      // If this is a real notification (not mock), update in database
-      if (id !== 'welcome-1' && user?.id) {
-        const { error } = await supabase
-          .from('notifications')
-          .update({ read: true })
-          .eq('id', id)
-          .eq('user_id', user.id);
-          
-        if (error) {
-          console.error('Database error marking notification as read:', error);
-          throw error;
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('id, read')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Filter out notifications that are marked as read in localStorage
+      const filteredData = data ? data.filter(n => {
+        // If marked read in localStorage, consider it read regardless of database
+        return !(localStorage.getItem(`notification_${n.id}_read`) === 'true');
+      }) : [];
+
+      // Count actually unread items after localStorage check
+      const unreadCount = filteredData.filter(item => !item.read).length;
+      
+      setUnreadNotifications(unreadCount > 0 || (unreadCount === 0 && data?.length === 0) ? unreadCount : 0);
+    } catch (error) {
+      console.error('Error fetching notification count:', error);
+    }
+  };
+
+  const markNotificationAsRead = async (id: string, read: boolean) => {
+    try {
+      // For both UI responsiveness and persistence
+      if (read) {
+        localStorage.setItem(`notification_${id}_read`, 'true');
+        
+        // Immediately update the unread count in the UI for responsiveness
+        if (unreadNotifications > 0) {
+          setUnreadNotifications(prev => prev - 1);
         }
+      }
+
+      // For demo notifications, don't update database
+      if (id === 'welcome-1') {
+        return;
+      }
+
+      // Update in database
+      const { error } = await supabase
+        .from('notifications')
+        .update({ 
+          read: read,
+          updated_at: new Date().toISOString() // Add timestamp to ensure update is processed
+        })
+        .eq('id', id)
+        .eq('user_id', user?.id || '');
+
+      if (error) {
+        throw error;
       }
     } catch (error) {
       console.error('Error marking notification as read:', error);
-      
-      // Revert UI changes on error
-      setNotifications(notifications.map(n => 
-        n.id === id ? { ...n, read: false } : n
-      ));
-      setUnreadNotifications(prev => prev + 1);
+      // On error, still keep localStorage updated to ensure the best UX
     }
   };
 
@@ -345,7 +367,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const handleNotificationClick = (notification: Notification) => {
     // Mark as read if unread
     if (!notification.read) {
-      markNotificationAsRead(notification.id);
+      markNotificationAsRead(notification.id, true);
     }
     
     // Close notification panel
@@ -360,13 +382,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     setSelectedNotification(null);
   };
 
-  const handleLogout = async () => {
+  const handleSignout = async () => {
     try {
-      await logout();
+      await signout();
       // Use direct location change instead of React Router for a complete page refresh
       window.location.href = '/login';
     } catch (error) {
-      console.error('Error during logout:', error);
+      console.error('Error during signout:', error);
       toast.error('Failed to sign out. Please try again.');
     }
   };
@@ -375,42 +397,60 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const lastName = user?.user_metadata?.last_name || '';
   
   // Add this function to mark all notifications as read
-  const markAllAsRead = async () => {
+  const markAllNotificationsAsRead = async () => {
     try {
-      // Store original notifications state for rollback if needed
-      const originalNotifications = [...notifications];
+      // First, get all notifications for this user
+      const { data, error: fetchError } = await supabase
+        .from('notifications')
+        .select('id')
+        .eq('user_id', user?.id || '');
+
+      if (fetchError) throw fetchError;
+
+      // Create a batch of notifications to mark as read
+      const notificationsToUpdate = [...notifications].filter(n => !n.read);
       
-      // Update local state
-      const updatedNotifications = notifications.map(n => ({ ...n, read: true }));
-      setNotifications(updatedNotifications);
-      
-      // Reset unread count
+      // Mark all as read in localStorage for immediate UI effect
+      notificationsToUpdate.forEach(notification => {
+        localStorage.setItem(`notification_${notification.id}_read`, 'true');
+      });
+
+      // Also mark the welcome notification if it exists
+      localStorage.setItem('notification_welcome-1_read', 'true');
+
+      // Update UI state immediately
+      setNotifications(prev => 
+        prev.map(notification => ({ ...notification, read: true }))
+      );
       setUnreadNotifications(0);
-      
-      // Update in database
-      if (user?.id) {
-        const { error } = await supabase
+
+      // Update database - include retry logic
+      const updateNotifications = async (retryCount = 0) => {
+        const { error: updateError } = await supabase
           .from('notifications')
-          .update({ read: true })
-          .eq('user_id', user.id)
-          .eq('read', false);
-        
-        if (error) {
-          console.error('Database error marking all notifications as read:', error);
-          throw error;
+          .update({ 
+            read: true, 
+            updated_at: new Date().toISOString() // Add timestamp to ensure update is processed
+          })
+          .eq('user_id', user?.id || '');
+
+        if (updateError) {
+          if (retryCount < 2) { // Retry up to 2 times
+            console.log(`Retrying database update (${retryCount + 1})...`);
+            setTimeout(() => updateNotifications(retryCount + 1), 1000);
+          } else {
+            throw updateError;
+          }
         }
-        
-        toast.success("All notifications marked as read");
-      }
+      };
+
+      await updateNotifications();
+      
+      // Refresh notification count after successful update
+      fetchNotificationCount();
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
-      toast.error("Failed to update notifications");
-      
-      // Restore original state on error
-      if (notifications) {
-        setNotifications(notifications);
-        setUnreadNotifications(notifications.filter(n => !n.read).length);
-      }
+      // On error, still keep localStorage updated to ensure the best UX
     }
   };
 
@@ -516,7 +556,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                       className="text-xs h-7 px-2"
                       onClick={(e) => {
                         e.stopPropagation();
-                        markAllAsRead();
+                        markAllNotificationsAsRead();
                       }}
                     >
                       Mark all as read
@@ -622,9 +662,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <span>Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
+                <DropdownMenuItem onClick={handleSignout}>
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign Out</span>
+                  <span>Signout</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -727,10 +767,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <Button
                   variant="ghost"
                   className="w-full justify-start gap-x-3 text-red-600 hover:bg-red-50 hover:text-red-700"
-                  onClick={handleLogout}
+                  onClick={handleSignout}
                 >
                   <LogOut className="h-5 w-5" aria-hidden="true" />
-                  Sign Out
+                  Signout
                 </Button>
               </div>
             </nav>

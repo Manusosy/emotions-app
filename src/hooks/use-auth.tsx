@@ -265,10 +265,10 @@ export const useAuth = () => {
     }
   };
 
-  const logout = async () => {
+  const signout = async () => {
     if (isAuthenticating) return;
     
-    console.log("Logout function called");
+    console.log("Signout function called");
     setIsAuthenticating(true);
     
     try {
@@ -289,7 +289,7 @@ export const useAuth = () => {
       // Let the component handle redirects
       return;
     } catch (error: any) {
-      console.error('Logout error:', error);
+      console.error('Signout error:', error);
       toast.error('Failed to sign out: ' + (error.message || 'Unknown error'));
       throw error; 
     } finally {
@@ -334,7 +334,7 @@ export const useAuth = () => {
     isAuthenticated,
     login,
     signup,
-    logout,
+    signout,
     getFullName,
     getDashboardUrl,
     getDashboardUrlForRole,

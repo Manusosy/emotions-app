@@ -72,22 +72,26 @@ export default function NotificationsPage() {
           title: 'Welcome to Emotions',
           content: 'Hi! Welcome to Emotions. Feel free to take a tour around and familiarize yourself with our cool features to help you monitor, analyze and receive personalized recommendations to do with your mental health. Try our Journal feature, or Stress analytics feature or even emotional checkin!',
           created_at: new Date().toISOString(),
-          read: false,
+          read: localStorage.getItem(`notification_welcome-1_read`) === 'true',
           type: 'welcome',
           user_id: user.id
         };
         
         setNotifications([welcomeNotification]);
-        setUnreadCount(1);
+        setUnreadCount(welcomeNotification.read ? 0 : 1);
       } else {
-        // Map database notifications to our interface
+        // Map database notifications to our interface and check localStorage for read status
         const mappedNotifications: Notification[] = data.map(item => {
+          // Check both database and localStorage for read status
+          // If marked as read in localStorage, consider it read regardless of database state
+          const isReadInLocalStorage = localStorage.getItem(`notification_${item.id}_read`) === 'true';
+          
           return {
             id: item.id,
             title: item.title,
             content: item.message || '',
             created_at: item.created_at,
-            read: item.read,
+            read: isReadInLocalStorage || item.read,
             type: ((item as any).type as 'welcome' | 'update' | 'reminder' | 'other') || 'other',
             action_url: (item as any).action_url,
             user_id: item.user_id
@@ -137,74 +141,91 @@ export default function NotificationsPage() {
     }
   };
 
-  const toggleReadStatus = async (id: string, currentStatus: boolean) => {
+  const toggleReadStatus = async (notification: Notification) => {
     try {
-      // Toggle the read status
-      const newReadStatus = !currentStatus;
+      // Update local state immediately for responsive UI
+      const updatedNotifications = notifications.map((n) =>
+        n.id === notification.id ? { ...n, read: !n.read } : n
+      );
+      setNotifications(updatedNotifications);
       
-      // Update UI first for responsiveness
-      setNotifications(notifications.map(n => 
-        n.id === id ? { ...n, read: newReadStatus } : n
-      ));
+      // Update localStorage immediately
+      const newReadStatus = !notification.read;
+      localStorage.setItem(`notification_${notification.id}_read`, newReadStatus ? 'true' : 'false');
       
-      // Update unread count
-      if (newReadStatus) {
-        setUnreadCount(prev => Math.max(0, prev - 1));
-      } else {
-        setUnreadCount(prev => prev + 1);
-      }
+      // Calculate new unread count
+      const newUnreadCount = updatedNotifications.filter((n) => !n.read).length;
+      setUnreadCount(newUnreadCount);
 
-      // For demo notifications, don't try to update the database
-      if (id === 'welcome-1') {
-        return;
-      }
-      
-      // Update in database - make sure to include user_id in the query to avoid conflicts
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: newReadStatus })
-        .eq('id', id)
-        .eq('user_id', user?.id || '');
-        
-      if (error) {
-        console.error('Error updating notification in database:', error);
-        throw error;
-      }
+      // Update in database with retry logic
+      const updateNotification = async (retryCount = 0) => {
+        const { error } = await supabase
+          .from('notifications')
+          .update({ 
+            read: newReadStatus,
+            updated_at: new Date().toISOString() // Add timestamp to ensure update is processed
+          })
+          .eq('id', notification.id);
+
+        if (error) {
+          if (retryCount < 2) { // Retry up to 2 times
+            console.log(`Retrying database update for notification ${notification.id} (${retryCount + 1})...`);
+            setTimeout(() => updateNotification(retryCount + 1), 1000);
+          } else {
+            throw error;
+          }
+        }
+      };
+
+      await updateNotification();
     } catch (error) {
       console.error('Error toggling notification read status:', error);
-      // Revert UI changes on error
-      setNotifications(notifications.map(n => 
-        n.id === id ? { ...n, read: currentStatus } : n
-      ));
-      
-      // Revert unread count
-      if (!currentStatus) {
-        setUnreadCount(prev => Math.max(0, prev - 1));
-      } else {
-        setUnreadCount(prev => prev + 1);
-      }
+      // Keep the UI state as updated even if the database update fails
     }
   };
 
   const markAllAsRead = async () => {
     try {
-      // Update UI first
-      setNotifications(notifications.map(n => ({ ...n, read: true })));
+      // Filter unread notifications
+      const unreadNotifications = notifications.filter(n => !n.read);
+      
+      // Update localStorage immediately for all notifications
+      unreadNotifications.forEach(notification => {
+        localStorage.setItem(`notification_${notification.id}_read`, 'true');
+      });
+      
+      // Update local state immediately
+      const updatedNotifications = notifications.map(n => ({ ...n, read: true }));
+      setNotifications(updatedNotifications);
       setUnreadCount(0);
-      
-      // Update in database
-      const realNotificationIds = notifications
-        .filter(n => n.id !== 'welcome-1' && !n.read)
-        .map(n => n.id);
-      
-      if (realNotificationIds.length > 0) {
-        await supabase
-          .from('notifications')
-          .update({ read: true })
-          .in('id', realNotificationIds);
-      }
+
+      // Update all notifications in database with retry logic
+      const updateAllNotifications = async (retryCount = 0) => {
+        if (user?.id) {
+          const { error } = await supabase
+            .from('notifications')
+            .update({ 
+              read: true,
+              updated_at: new Date().toISOString() // Add timestamp to ensure update is processed
+            })
+            .eq('user_id', user.id)
+            .eq('read', false); // Only update unread notifications
+
+          if (error) {
+            if (retryCount < 2) { // Retry up to 2 times
+              console.log(`Retrying database update for all notifications (${retryCount + 1})...`);
+              setTimeout(() => updateAllNotifications(retryCount + 1), 1000);
+            } else {
+              throw error;
+            }
+          }
+        }
+      };
+
+      await updateAllNotifications();
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
+      // Keep the UI state as updated even if the database update fails
     }
   };
 
@@ -236,7 +257,7 @@ export default function NotificationsPage() {
   const handleNotificationClick = (notification: Notification) => {
     // Mark as read if unread and persist to database immediately
     if (!notification.read) {
-      toggleReadStatus(notification.id, notification.read);
+      toggleReadStatus(notification);
     }
     
     // Navigate if there's an action URL
@@ -370,7 +391,7 @@ export default function NotificationsPage() {
                                 <span>Mark as read</span>
                                 <Switch 
                                   checked={notification.read} 
-                                  onCheckedChange={() => toggleReadStatus(notification.id, notification.read)}
+                                  onCheckedChange={() => toggleReadStatus(notification)}
                                 />
                               </div>
                             </div>

@@ -34,7 +34,7 @@ interface DashboardLayoutProps {
 export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { user, logout, getFullName, isAuthenticated } = useAuth();
+  const { user, logout: signout, getFullName, isAuthenticated } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
@@ -102,13 +102,13 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     fetchUnreadCounts();
   }, [user?.id, navigate]);
 
-  const handleLogout = async () => {
+  const handleSignout = async () => {
     try {
-      await logout();
+      await signout();
       // Use direct location change instead of React Router for a complete page refresh
       window.location.href = '/login';
     } catch (error) {
-      console.error('Error during logout:', error);
+      console.error('Error during signout:', error);
       toast.error('Failed to sign out. Please try again.');
     }
   };
@@ -267,10 +267,10 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 <Button
                   variant="ghost"
                   className="w-full justify-start gap-x-3 text-red-600 hover:bg-red-50 hover:text-red-700"
-                  onClick={handleLogout}
+                  onClick={handleSignout}
                 >
                   <LogOut className="h-5 w-5" aria-hidden="true" />
-                  Logout
+                  Signout
                 </Button>
               </li>
             </ul>

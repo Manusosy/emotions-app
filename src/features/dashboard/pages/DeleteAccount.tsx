@@ -19,7 +19,7 @@ export default function DeleteAccount() {
     confirmation: false
   });
   const [isDeleting, setIsDeleting] = useState(false);
-  const { logout, user } = useAuth();
+  const { signout, user } = useAuth();
   const navigate = useNavigate();
 
   const isFormValid = 
@@ -45,7 +45,7 @@ export default function DeleteAccount() {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Log out the user
-      await logout();
+      await signout();
       
       // Navigate to home
       navigate("/", { replace: true });

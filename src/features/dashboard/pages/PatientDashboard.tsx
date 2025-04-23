@@ -574,12 +574,12 @@ export default function PatientDashboard() {
     navigate('/settings');
   };
 
-  const handleLogout = async () => {
+  const handleSignout = async () => {
     try {
       await supabase.auth.signOut();
       navigate('/login');
     } catch (error) {
-      toast.error("Failed to log out");
+      toast.error("Failed to sign out");
     }
   };
 
@@ -818,7 +818,7 @@ export default function PatientDashboard() {
                       ? `${Math.round(userMetrics.consistency * 10)}%` 
                       : userMetrics.streak > 0 
                         ? `${userMetrics.streak} day${userMetrics.streak !== 1 ? 's' : ''}` 
-                        : <span className="opacity-70 animate-pulse">—</span> 
+                      : <span className="opacity-70 animate-pulse">—</span> 
                     : <span className="opacity-70">—</span>}
                 </div>
                 <p className="text-xs text-slate-500 mt-2">
@@ -931,12 +931,12 @@ export default function PatientDashboard() {
                       <td className="p-4 text-sm">Video Call</td>
                       <td className="p-4">
                         <div className="flex items-center gap-2">
-                          <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 font-medium px-3 py-1 rounded-full">
-                            <span className="flex items-center">
-                              <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 mr-1.5"></span>
-                              Upcoming
-                            </span>
-                          </Badge>
+                        <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 font-medium px-3 py-1 rounded-full">
+                          <span className="flex items-center">
+                            <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 mr-1.5"></span>
+                            Upcoming
+                          </span>
+                        </Badge>
                           <Button 
                             variant="ghost" 
                             size="sm" 
@@ -975,12 +975,12 @@ export default function PatientDashboard() {
                       <td className="p-4 text-sm">Video Call</td>
                       <td className="p-4">
                         <div className="flex items-center gap-2">
-                          <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 font-medium px-3 py-1 rounded-full">
-                            <span className="flex items-center">
-                              <span className="h-1.5 w-1.5 rounded-full bg-purple-500 mr-1.5"></span>
-                              Completed
-                            </span>
-                          </Badge>
+                        <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 font-medium px-3 py-1 rounded-full">
+                          <span className="flex items-center">
+                            <span className="h-1.5 w-1.5 rounded-full bg-purple-500 mr-1.5"></span>
+                            Completed
+                          </span>
+                        </Badge>
                           <Button 
                             variant="ghost" 
                             size="sm" 
@@ -1031,8 +1031,8 @@ export default function PatientDashboard() {
                             className="h-7 w-7 p-0" 
                             onClick={() => handleExportAppointment('EMHA03')}
                           >
-                            <FileText className="h-3.5 w-3.5 text-slate-600" />
-                          </Button>
+                              <FileText className="h-3.5 w-3.5 text-slate-600" />
+                            </Button>
                         </div>
                       </td>
                     </tr>
@@ -1075,8 +1075,8 @@ export default function PatientDashboard() {
                             className="h-7 w-7 p-0" 
                             onClick={() => handleExportAppointment('EMHA04')}
                           >
-                            <FileText className="h-3.5 w-3.5 text-slate-600" />
-                          </Button>
+                              <FileText className="h-3.5 w-3.5 text-slate-600" />
+                            </Button>
                         </div>
                       </td>
                     </tr>

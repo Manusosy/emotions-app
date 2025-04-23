@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/use-auth';
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [localAuthState, setLocalAuthState] = useState({ isAuthenticated: false, userRole: null });
-  const { isAuthenticated, userRole, logout, getDashboardUrlForRole } = useAuth();
+  const { isAuthenticated, userRole, logout: signout, getDashboardUrlForRole } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -44,13 +44,15 @@ export default function Navbar() {
   const effectiveIsAuthenticated = isAuthenticated || localAuthState.isAuthenticated;
   const effectiveUserRole = userRole || localAuthState.userRole;
 
-  const handleLogout = async () => {
+  const handleSignout = async () => {
     try {
       setIsMobileMenuOpen(false);
-      await logout();
-      // After logout, let the auth state handle the redirect
+      console.log("Starting signout...");
+      
+      await signout();
+      // After signout, let the auth state handle the redirect
     } catch (error) {
-      console.error("Logout failed:", error);
+      console.error("Signout failed:", error);
     }
   };
 
@@ -122,11 +124,11 @@ export default function Navbar() {
                 </Link>
                 <Button 
                   variant="ghost" 
-                  onClick={handleLogout}
+                  onClick={handleSignout}
                   className="text-white hover:bg-[#fda802] rounded-full px-6 font-medium transition-all"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  Logout
+                  Signout
                 </Button>
               </>
             ) : (
@@ -170,11 +172,11 @@ export default function Navbar() {
                 <Button 
                   variant="ghost" 
                   size="sm"
-                  onClick={handleLogout}
+                  onClick={handleSignout}
                   className="text-white hover:bg-[#fda802] rounded-full font-medium transition-all flex items-center"
                 >
                   <LogOut className="h-4 w-4 mr-1" />
-                  <span className="text-xs">Logout</span>
+                  <span className="text-xs">Signout</span>
                 </Button>
               </div>
             ) : (
@@ -246,12 +248,12 @@ export default function Navbar() {
                     </span>
                   </a>
                   <button 
-                    onClick={handleLogout}
+                    onClick={handleSignout}
                     className="w-full text-left px-4 py-2 hover:bg-[#fda802] rounded-lg transition-colors"
                   >
                     <span className="flex items-center">
                       <LogOut className="mr-2 h-4 w-4" />
-                      Logout
+                      Signout
                     </span>
                   </button>
                 </>

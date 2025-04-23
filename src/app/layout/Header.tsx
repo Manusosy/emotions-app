@@ -7,18 +7,18 @@ import { useAuth } from "@/hooks/use-auth";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, isAuthenticated, isAuthenticating, getDashboardUrl, logout } = useAuth();
+  const { user, isAuthenticated, isAuthenticating, getDashboardUrl, signout } = useAuth();
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width: 768px)");
 
-  const handleSignOut = async (e: React.MouseEvent) => {
+  const handleSignout = async (e: React.MouseEvent) => {
     e.preventDefault();
     console.log('Header: Sign out button clicked');
     try {
-      await logout();
+      await signout();
       navigate('/');
     } catch (error) {
-      console.error('Error during logout in header:', error);
+      console.error('Error during signout in header:', error);
     }
   };
 
@@ -71,11 +71,11 @@ const Header = () => {
                 <Button 
                   size="sm" 
                   className="bg-white text-[#0078FF] hover:bg-white/90 text-sm flex items-center gap-1"
-                  onClick={handleSignOut}
+                  onClick={handleSignout}
                   disabled={isAuthenticating}
                 >
                   <LogOut className="w-4 h-4" />
-                  <span>{isAuthenticating ? 'Signing out...' : 'Logout'}</span>
+                  <span>{isAuthenticating ? 'Signing out...' : 'Signout'}</span>
                 </Button>
               </>
             ) : (
@@ -164,12 +164,12 @@ const Header = () => {
                       className="w-full bg-white text-[#0078FF] hover:bg-white/90 py-2 text-sm flex items-center justify-center gap-1" 
                       onClick={() => {
                         setIsMenuOpen(false);
-                        handleSignOut({ preventDefault: () => {} } as React.MouseEvent);
+                        handleSignout({ preventDefault: () => {} } as React.MouseEvent);
                       }}
                       disabled={isAuthenticating}
                     >
                       <LogOut className="w-4 h-4" />
-                      <span>{isAuthenticating ? 'Signing out...' : 'Logout'}</span>
+                      <span>{isAuthenticating ? 'Signing out...' : 'Signout'}</span>
                     </Button>
                   </>
                 ) : (

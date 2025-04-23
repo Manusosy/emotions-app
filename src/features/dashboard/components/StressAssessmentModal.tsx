@@ -5,7 +5,8 @@ import { Slider } from "@/components/ui/slider";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
-import { Activity, Brain, HeartPulse, Sparkles } from "lucide-react";
+import { Activity, ArrowRight, Brain, HeartPulse, Sparkles } from "lucide-react";
+import "./styles.css"; // This will be created if it doesn't exist
 
 // Assessment questions from the image
 const stressQuestions = [
@@ -253,10 +254,10 @@ export default function StressAssessmentModal() {
         {!isComplete ? (
           // Question display
           <div className="space-y-6 my-4">
-            {/* Progress indicator */}
+            {/* Progress indicator - keeping the blue color */}
             <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
               <div 
-                className="h-full bg-blue-500 transition-all duration-300"
+                className="h-full bg-blue-500 transition-all duration-300" 
                 style={{ width: `${((currentStep + 1) / stressQuestions.length) * 100}%` }}
               ></div>
             </div>
@@ -273,14 +274,52 @@ export default function StressAssessmentModal() {
                   <span>Extremely</span>
                 </div>
                 
-                <Slider
-                  value={[currentResponse?.score || 3]}
-                  min={1}
-                  max={5}
-                  step={0.1} // Smaller step for smoother movement
-                  onValueChange={(val) => handleScoreChange(currentQuestion.id, currentQuestion.type, val[0])}
-                  className="w-full"
-                />
+                {/* Create a custom slider that's fully styled as orange-yellow */}
+                <div className="py-6 px-2 relative">
+                  {/* The main track */}
+                  <div className="w-full h-2 rounded-full bg-slate-200"></div>
+                  
+                  {/* The filled part of the track */}
+                  <div 
+                    className="absolute top-[50%] left-0 h-2 rounded-full bg-amber-400 transform -translate-y-1/2" 
+                    style={{ width: `${((currentResponse?.score || 3) - 1) / 4 * 100}%` }}
+                  ></div>
+                  
+                  {/* The draggable thumb */}
+                  <div 
+                    className="absolute top-[50%] h-6 w-6 rounded-full bg-amber-400 border-2 border-amber-500 transform -translate-y-1/2 cursor-grab"
+                    style={{ 
+                      left: `calc(${((currentResponse?.score || 3) - 1) / 4 * 100}%)`,
+                      marginLeft: "-12px" // Center the 24px thumb
+                    }}
+                    onMouseDown={(e) => {
+                      const slider = e.currentTarget.parentElement;
+                      if (!slider) return;
+                      
+                      const sliderRect = slider.getBoundingClientRect();
+                      const sliderWidth = sliderRect.width;
+                      
+                      const handleDrag = (moveEvent: MouseEvent) => {
+                        moveEvent.preventDefault();
+                        const offsetX = moveEvent.clientX - sliderRect.left;
+                        const percentage = Math.max(0, Math.min(1, offsetX / sliderWidth));
+                        const score = percentage * 4 + 1; // Convert to 1-5 scale
+                        
+                        if (currentQuestion) {
+                          handleScoreChange(currentQuestion.id, currentQuestion.type, score);
+                        }
+                      };
+                      
+                      const handleMouseUp = () => {
+                        document.removeEventListener('mousemove', handleDrag);
+                        document.removeEventListener('mouseup', handleMouseUp);
+                      };
+                      
+                      document.addEventListener('mousemove', handleDrag);
+                      document.addEventListener('mouseup', handleMouseUp);
+                    }}
+                  ></div>
+                </div>
                 
                 {/* Score indicator */}
                 <div className="flex justify-center mt-2">
@@ -303,9 +342,10 @@ export default function StressAssessmentModal() {
               
               <Button
                 onClick={handleNext}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-[#20C0F3] hover:bg-[#1ba8d5] text-white flex items-center gap-1"
               >
                 {currentStep === stressQuestions.length - 1 ? 'Review' : 'Next'}
+                <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
           </div>
