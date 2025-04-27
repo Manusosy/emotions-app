@@ -1,6 +1,6 @@
 {
   "framework": "vite",
-  "buildCommand": "node ./scripts/vercel-build.js",
+  "buildCommand": "npm install --no-optional --platform=linux --no-package-lock && node ./scripts/vercel-build.js",
   "devCommand": "npm run dev",
   "outputDirectory": "dist",
   "installCommand": "echo Skipping default install",
@@ -39,6 +39,11 @@
       ]
     }
   ],
+  "build": {
+    "env": {
+      "NPM_FLAGS": "--platform=linux --no-optional"
+    }
+  },
   "env": {
     "VITE_SUPABASE_URL": "https://ekpiqiatfwozmepkgbbe.supabase.co",
     "VITE_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVrcGlxaWF0Zndvem1lcGtnYmJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk2OTc3MzYsImV4cCI6MjA1NTI3MzczNn0.qPD707Lp5FiAjlQwfC1bbG-O2WuNUe_ZYRjox6Dmb-Y"
