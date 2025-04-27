@@ -586,7 +586,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                         to={item.href}
                         className={`flex items-center px-3 py-2 mx-2 rounded-lg text-sm transition-colors ${
                           isActive
-                            ? "bg-white text-[#0B7DA3] shadow-sm font-medium"
+                            ? "bg-white text-[#0B7DA3] shadow-md font-medium border-0"
                             : "text-white/70 hover:text-white hover:bg-white/10"
                         } ${!sidebarOpen ? "justify-center" : ""} relative`}
                       >
@@ -630,7 +630,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                     )}
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuContent align="end" className="w-56 bg-white shadow-md border-0">
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => navigate("/ambassador-dashboard/profile")}>
@@ -659,7 +659,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
       {/* Compact Header - Only shows outside sidebar */}
       <header className={cn(
-        "fixed top-0 right-0 z-50 bg-white border-b border-gray-200",
+        "fixed top-0 right-0 z-50 bg-white shadow-sm border-b border-gray-200",
         "transition-all duration-300",
         sidebarOpen ? "left-64" : "left-20"
       )}>
@@ -676,7 +676,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               <Input
                 type="search"
                 placeholder="Search dashboard..."
-                className="w-full pl-10 pr-4 rounded-full border-gray-200"
+                className="w-full pl-10 pr-4 rounded-full border-gray-200 bg-white shadow-sm"
                 value={searchQuery}
                 onChange={(e) => handleSearchInput(e.target.value)}
                 onFocus={() => setIsSearchOpen(searchQuery.length > 0)}
@@ -763,11 +763,12 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         "flex-1 overflow-y-auto py-4 px-4 sm:px-6 lg:px-8",
         "pt-20", // Add padding for header
         "transition-all duration-200 ease-in-out",
+        "bg-gray-50",
         sidebarOpen ? "lg:ml-64" : "lg:ml-20"
       )}>
         <div className="mx-auto max-w-7xl">
           {children}
-      </div>
+        </div>
       </main>
 
       {/* Mobile sidebar overlay */}
@@ -780,7 +781,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
       {/* Notification Dialog */}
       <Dialog open={notificationDialogOpen} onOpenChange={setNotificationDialogOpen}>
-        <DialogContent>
+        <DialogContent className="bg-white shadow-md border-0">
           <DialogHeader>
             <DialogTitle>{selectedNotification?.title}</DialogTitle>
             <DialogDescription>
