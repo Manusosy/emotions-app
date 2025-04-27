@@ -74,36 +74,57 @@ export default function Settings() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState(false);
   const [currentDeviceInfo, setCurrentDeviceInfo] = useState('');
+  const [hasInitialized, setHasInitialized] = useState(false);
+  const [hasUpdatedDeviceInfo, setHasUpdatedDeviceInfo] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Pre-load form data with empty values to reduce flickering
+  const defaultValues: PatientFormValues = {
+    first_name: '',
+    last_name: '',
+    phone_number: '',
+    gender: 'prefer-not-to-say',
+    date_of_birth: '',
+    country: '',
+    address: '',
+    city: '',
+    state: '',
+    pincode: '',
+    avatar_url: '',
+    about_me: '',
+  };
+
   const { register, handleSubmit, formState: { errors }, setValue, watch, control } = useForm<PatientFormValues>({
     resolver: zodResolver(patientFormSchema),
-    defaultValues: {
-      first_name: '',
-      last_name: '',
-      phone_number: '',
-      gender: 'prefer-not-to-say',
-      date_of_birth: '',
-      country: '',
-      address: '',
-      city: '',
-      state: '',
-      pincode: '',
-      avatar_url: '',
-      about_me: '',
-    }
+    defaultValues,
+    // Don't validate on mount to reduce initial load time
+    mode: 'onSubmit'
   });
 
+  // Load user profile data only once
   useEffect(() => {
     const loadPatientProfile = async () => {
+      // Skip if we've already initialized to prevent blinking
+      if (hasInitialized) return;
+      
       try {
-        setLoading(true);
         if (!user?.id) return;
         
-        // Get user metadata first
-        const { data: userData } = await supabase.auth.getUser();
+        // Immediately set default values to prevent form field flickering
+        Object.keys(defaultValues).forEach(key => {
+          setValue(key as keyof PatientFormValues, defaultValues[key as keyof PatientFormValues]);
+        });
+        
+        // Load both user metadata and profile data in parallel for speed
+        const [userDataResult, profileDataResult] = await Promise.all([
+          supabase.auth.getUser(),
+          supabase.from('patient_profiles').select('*').eq('id', user.id).single()
+        ]);
+        
+        const userData = userDataResult.data;
+        const profileData = profileDataResult.data;
         
         if (userData && userData.user) {
           const userMeta = userData.user.user_metadata;
@@ -123,15 +144,8 @@ export default function Settings() {
           setValue('about_me', userMeta?.about_me || '');
         }
         
-        // Try to get additional profile data from patient_profiles table if it exists
-        const { data: profileData, error } = await supabase
-          .from('patient_profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-          
-        if (!error && profileData) {
-          // Update form with any additional data from profile table
+        // Update with profile data if it exists
+        if (profileData) {
           setValue('first_name', profileData.first_name || watch('first_name'));
           setValue('last_name', profileData.last_name || watch('last_name'));
           setValue('phone_number', profileData.phone_number || watch('phone_number'));
@@ -145,45 +159,70 @@ export default function Settings() {
           setValue('avatar_url', profileData.avatar_url || watch('avatar_url'));
           setValue('about_me', profileData.about_me || watch('about_me'));
         }
+        
+        // Mark as initialized to prevent repeat loading
+        setHasInitialized(true);
       } catch (error) {
         console.error('Error loading profile:', error);
       } finally {
+        // Remove loading state immediately
         setLoading(false);
       }
     };
 
+    // If we have user data, load profile immediately
     if (user?.id) {
       loadPatientProfile();
+    } else {
+      // If no user yet, wait a bit and check again
+      const timer = setTimeout(() => {
+        if (user?.id && !hasInitialized) {
+          loadPatientProfile();
+        } else {
+          // Give up and show the form without data after a short timeout
+          setLoading(false);
+        }
+      }, 200); // Reduced timeout
+      
+      return () => clearTimeout(timer);
     }
-  }, [user, setValue, watch]);
+  }, [user, setValue, watch, hasInitialized, defaultValues]);
 
   useEffect(() => {
-    // Update device information when component mounts
+    // Update device information when component mounts, but only after main data loads
     const updateDeviceInfo = async () => {
-      try {
-        if (!user?.id) return;
-        
-        // Get current device info
-        const deviceInfo = getDeviceInfo();
-        setCurrentDeviceInfo(`${deviceInfo.os} • ${deviceInfo.deviceType} • ${deviceInfo.browser}`);
-        
-        // Update user metadata with current device info
-        await authService.updateUserMetadata({
-          current_session: {
-            device_type: deviceInfo.deviceType,
-            browser: deviceInfo.browser,
-            os: deviceInfo.os,
-            last_login: new Date().toISOString(),
-            user_agent: deviceInfo.fullUserAgent
-          }
-        });
-      } catch (error) {
-        console.error('Error updating device info:', error);
+      // Skip if already updated to prevent rerenders
+      if (hasUpdatedDeviceInfo) return;
+      
+      // Get current device info synchronously for UI
+      const deviceInfo = getDeviceInfo();
+      // Set device info immediately for UI
+      setCurrentDeviceInfo(`${deviceInfo.os} • ${deviceInfo.deviceType} • ${deviceInfo.browser}`);
+      setHasUpdatedDeviceInfo(true);
+      
+      // Do the API call asynchronously in the background later
+      if (user?.id) {
+        setTimeout(() => {
+          authService.updateUserMetadata({
+            current_session: {
+              device_type: deviceInfo.deviceType,
+              browser: deviceInfo.browser,
+              os: deviceInfo.os,
+              last_login: new Date().toISOString(),
+              user_agent: deviceInfo.fullUserAgent
+            }
+          }).catch(err => {
+            console.error('Non-critical error updating device metadata:', err);
+          });
+        }, 1000); // Delay by 1 second to prioritize UI rendering
       }
     };
     
-    updateDeviceInfo();
-  }, [user]);
+    // Only run after main loading is done
+    if (!loading && user?.id) {
+      updateDeviceInfo();
+    }
+  }, [user, hasUpdatedDeviceInfo, loading, currentDeviceInfo]);
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
@@ -252,9 +291,12 @@ export default function Settings() {
       if (!user?.id) throw new Error('No user found');
 
       console.log("Submitting form data:", data);
+      
+      // Show success message early to improve perceived performance
+      setSaveSuccess(true);
 
       // Update user metadata
-      const { error: userError } = await supabase.auth.updateUser({
+      const updateUserPromise = supabase.auth.updateUser({
         data: { 
           first_name: data.first_name,
           last_name: data.last_name,
@@ -270,11 +312,6 @@ export default function Settings() {
           about_me: data.about_me
         },
       });
-
-      if (userError) {
-        console.error("Error updating user metadata:", userError);
-        throw userError;
-      }
 
       // Create a profile object with only the fields we know the database accepts
       const profileData = {
@@ -293,20 +330,33 @@ export default function Settings() {
       };
 
       // Also update or create patient profile record
-      const { error: profileError } = await supabase
+      const updateProfilePromise = supabase
         .from('patient_profiles')
         .upsert(profileData);
 
-      if (profileError) {
-        console.error("Error updating profile in database:", profileError);
-        throw profileError;
+      // Run both operations in parallel
+      const [userResult, profileResult] = await Promise.all([
+        updateUserPromise,
+        updateProfilePromise
+      ]);
+
+      if (userResult.error) {
+        console.error("Error updating user metadata:", userResult.error);
+        throw userResult.error;
+      }
+
+      if (profileResult.error) {
+        console.error("Error updating profile in database:", profileResult.error);
+        throw profileResult.error;
       }
 
       console.log("Profile successfully updated");
-      setSaveSuccess(true);
+      
+      // Success notification will auto-hide after 3 seconds
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
       console.error('Error saving profile:', error);
+      setSaveSuccess(false);
       setSaveError(true);
       setTimeout(() => setSaveError(false), 3000);
     }
@@ -316,9 +366,13 @@ export default function Settings() {
     return (
       <DashboardLayout>
         <div className="container mx-auto py-10 px-4">
-          <div className="space-y-6">
-            <Skeleton className="h-10 w-64" />
-            <Skeleton className="h-64 w-full rounded-xl" />
+          <div className="flex flex-col items-center justify-center">
+            <p className="text-[#20C0F3] font-medium mb-2">Please wait...</p>
+            <div className="flex space-x-2">
+              <div className="w-2 h-2 bg-[#20C0F3] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+              <div className="w-2 h-2 bg-[#20C0F3] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-2 h-2 bg-[#20C0F3] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            </div>
           </div>
         </div>
       </DashboardLayout>

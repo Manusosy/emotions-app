@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { subDays, addDays, format, eachDayOfInterval, startOfWeek, endOfWeek, isSameDay } from 'date-fns';
+import { subDays, addDays, format, eachDayOfInterval, startOfWeek, endOfWeek, isSameDay, differenceInDays } from 'date-fns';
 
 interface ConsistencyHeatmapProps {
   checkInDates: Date[];
@@ -109,10 +109,18 @@ export default function ConsistencyHeatmap({
     return 'bg-emerald-200';
   };
   
-  // Calculate consistency percentage
+  // Calculate consistency percentage - modified to be more accurate
   const totalDays = calendarDays.length;
   const checkedInDays = new Set(checkInDates.map(d => d.toDateString())).size;
-  const consistencyPercentage = totalDays > 0 ? Math.round((checkedInDays / totalDays) * 100) : 0;
+  
+  // More accurate consistency calculation based on actual data collection period
+  const daysSinceFirstCheckIn = firstCheckInDate ? 
+    differenceInDays(new Date(), firstCheckInDate) + 1 : // Add 1 to include the first day
+    totalDays;
+    
+  const expectedDays = Math.min(daysSinceFirstCheckIn, totalDays);
+  const consistencyPercentage = expectedDays > 0 ? 
+    Math.round((checkedInDays / expectedDays) * 100) : 0;
   
   // Calculate longest streak
   let longestStreak = 0;
@@ -120,6 +128,21 @@ export default function ConsistencyHeatmap({
   
   // Sort dates first
   const sortedDates = [...checkInDates].sort((a, b) => a.getTime() - b.getTime());
+  
+  // Calculate current streak - check if today or yesterday has an entry
+  let currentStreakActive = false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const yesterday = subDays(today, 1);
+  
+  // Check if today has an entry
+  const hasTodayEntry = sortedDates.some(date => isSameDay(date, today));
+  
+  // Check if yesterday has an entry (only relevant if today doesn't have one)
+  const hasYesterdayEntry = !hasTodayEntry && sortedDates.some(date => isSameDay(date, yesterday));
+  
+  // Current streak is active if there's an entry today or yesterday
+  currentStreakActive = hasTodayEntry || hasYesterdayEntry;
   
   for (let i = 0; i < sortedDates.length; i++) {
     if (i === 0) {
@@ -144,6 +167,11 @@ export default function ConsistencyHeatmap({
   // Check final streak
   longestStreak = Math.max(longestStreak, currentStreak);
   
+  // If the last entry isn't today or yesterday, current streak is 0
+  if (!currentStreakActive) {
+    currentStreak = 0;
+  }
+  
   return (
     <div className={`rounded-lg border border-slate-200 p-4 ${className}`}>
       <div className="mb-4 flex justify-between items-center">
@@ -153,7 +181,22 @@ export default function ConsistencyHeatmap({
         </div>
         <div className="text-right">
           <div className="font-semibold text-emerald-600">{consistencyPercentage}%</div>
-          <p className="text-xs text-slate-500">Consistency</p>
+          <div className="flex items-center justify-end">
+            <p className="text-xs text-slate-500">Consistency</p>
+            <div className="relative group ml-1">
+              <div className="cursor-help text-slate-400">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M12 16v-4"></path>
+                  <path d="M12 8h.01"></path>
+                </svg>
+              </div>
+              <div className="absolute z-10 invisible group-hover:visible bg-slate-800 text-white p-2 rounded shadow-lg text-xs right-0 w-48">
+                Consistency is calculated as the percentage of days you've checked in since your first activity.
+              </div>
+            </div>
+          </div>
+          <p className="text-xs text-slate-400">{checkedInDays}/{expectedDays} days</p>
         </div>
       </div>
       
@@ -193,14 +236,18 @@ export default function ConsistencyHeatmap({
         </div>
       </div>
       
-      <div className="grid grid-cols-2 gap-4 text-center">
+      <div className="grid grid-cols-3 gap-4 text-center">
         <div className="bg-slate-50 rounded-lg p-3">
           <div className="text-xl font-semibold text-emerald-600">{longestStreak}</div>
           <p className="text-xs text-slate-500">Longest streak</p>
         </div>
         <div className="bg-slate-50 rounded-lg p-3">
-          <div className="text-xl font-semibold text-indigo-600">{daysActive}</div>
-          <p className="text-xs text-slate-500">Days since first check-in</p>
+          <div className="text-xl font-semibold text-indigo-600">{currentStreak}</div>
+          <p className="text-xs text-slate-500">Current streak</p>
+        </div>
+        <div className="bg-slate-50 rounded-lg p-3">
+          <div className="text-xl font-semibold text-blue-600">{daysActive}</div>
+          <p className="text-xs text-slate-500">Days active</p>
         </div>
       </div>
       

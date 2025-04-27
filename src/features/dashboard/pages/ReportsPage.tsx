@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -36,6 +36,39 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import StressProgressChart from "../components/StressProgressChart";
 import ConsistencyHeatmap from "../components/ConsistencyHeatmap";
+
+// Custom error boundary component
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+  fallback: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  
+  static getDerivedStateFromError(): ErrorBoundaryState {
+    return { hasError: true };
+  }
+  
+  componentDidCatch(error: Error): void {
+    console.error("Error caught in ErrorBoundary:", error);
+  }
+  
+  render(): React.ReactNode {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    
+    return this.props.children;
+  }
+}
 
 // Define types for our data
 interface Assessment {
@@ -149,13 +182,17 @@ export default function ReportsPage() {
       metrics.healthPercentage = Math.max(0, 100 - (currentStress * 10));
       
       // Set last assessment date
-      metrics.lastAssessmentDate = new Date(assessments[0].created_at);
+      const lastAssessmentDate = new Date(assessments[0].created_at);
+      if (isValid(lastAssessmentDate)) {
+        metrics.lastAssessmentDate = lastAssessmentDate;
+      }
       
       // Calculate weekly average
       const oneWeekAgo = subDays(new Date(), 7);
-      const weeklyAssessments = assessments.filter(a => 
-        new Date(a.created_at) >= oneWeekAgo
-      );
+      const weeklyAssessments = assessments.filter(a => {
+        const date = new Date(a.created_at);
+        return isValid(date) && date >= oneWeekAgo;
+      });
       
       if (weeklyAssessments.length > 0) {
         metrics.weeklyStressAvg = weeklyAssessments.reduce((sum, a) => sum + a.stress_score, 0) / weeklyAssessments.length;
@@ -175,23 +212,42 @@ export default function ReportsPage() {
         else if (secondHalfAvg > firstHalfAvg + 0.5) metrics.stressTrend = 'declining';
       }
       
-      // Calculate consistency score
-      const daysSinceFirstAssessment = Math.ceil(
-        (new Date().getTime() - new Date(assessments[assessments.length - 1].created_at).getTime()) / 
-        (1000 * 60 * 60 * 24)
-      );
+      // Calculate consistency score with safety check for date validity
+      if (assessments.length > 0 && isValid(new Date(assessments[assessments.length - 1].created_at))) {
+        const oldestAssessment = new Date(assessments[assessments.length - 1].created_at);
+        const daysSinceFirstAssessment = Math.ceil(
+          (new Date().getTime() - oldestAssessment.getTime()) / 
+          (1000 * 60 * 60 * 24)
+        );
+        
+        // More reasonable consistency calculation:
+        // If it's been less than a week, we expect 1-2 check-ins
+        // For longer periods, we aim for roughly 1-2 check-ins per week
+        if (daysSinceFirstAssessment <= 7) {
+          // For a short period, even a single check-in is good progress
+          metrics.consistencyScore = Math.min(100, assessments.length * 50); // 50% for 1, 100% for 2+
+        } else {
+          // For longer periods, aim for 1-2 per week
+          const expectedCheckins = Math.ceil(daysSinceFirstAssessment / 7 * 1.5); // Expect ~1.5 per week
+          metrics.consistencyScore = Math.min(
+            100, 
+            Math.round((assessments.length / expectedCheckins) * 100)
+          );
+        }
+        
+        // Set the first check-in date
+        setFirstCheckInDate(oldestAssessment);
+      } else {
+        // Default if we can't determine dates properly
+        metrics.consistencyScore = assessments.length > 0 ? 100 : 0;
+      }
       
-      metrics.consistencyScore = Math.min(
-        100, 
-        Math.round((assessments.length / Math.max(1, daysSinceFirstAssessment / 7)) * 100)
-      );
+      // Generate array of all check-in dates for the heatmap with safety check
+      const dates = assessments.map(a => {
+        const date = new Date(a.created_at);
+        return isValid(date) ? date : null;
+      }).filter(Boolean) as Date[]; // Filter out invalid dates
       
-      // Set the first check-in date
-      const oldestAssessment = new Date(assessments[assessments.length - 1].created_at);
-      setFirstCheckInDate(oldestAssessment);
-      
-      // Generate array of all check-in dates for the heatmap
-      const dates = assessments.map(a => new Date(a.created_at));
       setCheckInDates(dates);
     }
     
@@ -227,14 +283,18 @@ export default function ReportsPage() {
         else if (secondHalfAvg < firstHalfAvg - 0.5) metrics.moodTrend = 'declining';
       }
       
-      // Add mood check-in dates to the heatmap data
-      const moodDates = moodEntries.map(m => new Date(m.created_at));
+      // Add mood check-in dates to the heatmap data if they're valid dates
+      const moodDates = moodEntries.map(m => {
+        const date = new Date(m.created_at);
+        return isValid(date) ? date : null;
+      }).filter(Boolean) as Date[]; // Filter out any invalid dates
+      
       setCheckInDates(prev => [...prev, ...moodDates]);
       
       // Update first check-in date if mood entries are older
       if (moodEntries.length > 0) {
         const oldestMoodEntry = new Date(moodEntries[moodEntries.length - 1].created_at);
-        if (!firstCheckInDate || oldestMoodEntry < firstCheckInDate) {
+        if (isValid(oldestMoodEntry) && (!firstCheckInDate || oldestMoodEntry < firstCheckInDate)) {
           setFirstCheckInDate(oldestMoodEntry);
         }
       }
@@ -1516,10 +1576,31 @@ export default function ReportsPage() {
                         {checkInDates.length >= 3 && (
                           <div className="mt-6">
                             <h3 className="font-medium text-lg mb-4">Consistency Tracking</h3>
-                            <ConsistencyHeatmap 
-                              checkInDates={checkInDates}
-                              firstCheckInDate={firstCheckInDate || undefined}
-                            />
+                            <ErrorBoundary
+                              fallback={
+                                <div className="text-center p-6 bg-slate-50 rounded-lg border">
+                                  <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" />
+                                  <p className="text-slate-600">There was an issue rendering the consistency heatmap.</p>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="mt-3"
+                                    onClick={() => {
+                                      // Reset check-in dates and try again
+                                      setCheckInDates([]);
+                                      fetchData();
+                                    }}
+                                  >
+                                    Refresh Data
+                                  </Button>
+                                </div>
+                              }
+                            >
+                              <ConsistencyHeatmap 
+                                checkInDates={checkInDates}
+                                firstCheckInDate={firstCheckInDate && isValid(firstCheckInDate) ? firstCheckInDate : undefined}
+                              />
+                            </ErrorBoundary>
                             <p className="text-xs text-slate-500 text-center mt-3">
                               This visualization shows your check-in patterns over time, with colored squares representing days you logged data.
                               <br />Longer streaks show darker colors. Try to maintain a daily streak for best results!

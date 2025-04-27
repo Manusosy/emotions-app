@@ -1,15 +1,12 @@
-import { useEffect, useState, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
   Calendar, 
   Users, 
-  Search, 
   BarChart3, 
   MessageSquare, 
-  Bell, 
   ChevronRight,
   User,
   Clock,
@@ -17,10 +14,9 @@ import {
 } from "lucide-react";
 import DashboardLayout from "../components/DashboardLayout";
 import { useAuth } from "@/hooks/use-auth";
-import { supabase } from "@/integrations/supabase/client";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { Progress } from "@/components/ui/progress";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 
 // Define the structure for statistics cards
@@ -41,7 +37,7 @@ interface Appointment {
   status: 'upcoming' | 'canceled' | 'completed';
 }
 
-const AmbassadorDashboard = () => {
+const NewAmbassadorDashboard = () => {
   const { user, getFullName } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -352,4 +348,4 @@ const AmbassadorDashboard = () => {
   );
 };
 
-export default AmbassadorDashboard;
+export default NewAmbassadorDashboard; 

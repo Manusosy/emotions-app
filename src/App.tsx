@@ -12,13 +12,14 @@ import NotFound from "./pages/NotFound";
 import JournalPage from "@/features/journal/pages/JournalPage";
 import DashboardJournalPage from "@/features/dashboard/pages/JournalPage";
 import NotificationsPage from "@/features/dashboard/pages/NotificationsPage";
+import AmbassadorNotificationsPage from "@/features/ambassadors/pages/NotificationsPage";
 import MoodTrackerPage from "@/features/dashboard/pages/MoodTrackerPage";
 import ReportsPage from "@/features/dashboard/pages/ReportsPage";
 import Footer from "@/components/layout/Footer";
 import ContactBanner from "@/components/layout/ContactBanner";
 import Ambassadors from "@/features/ambassadors/pages/Ambassadors";
 import AppointmentsPage from "@/features/ambassadors/pages/AppointmentsPage";
-import ClientsPage from "@/features/ambassadors/pages/ClientsPage";
+import PatientsPage from "@/features/ambassadors/pages/PatientsPage";
 import GroupsPage from "@/features/ambassadors/pages/GroupsPage";
 import ResourcesPage from "@/features/ambassadors/pages/ResourcesPage";
 import DashboardResourcesPage from "@/features/dashboard/pages/ResourcesPage";
@@ -287,9 +288,9 @@ const AppContent = () => {
                   <AppointmentsPage />
                 </ProtectedRoute>
               } />
-              <Route path="/ambassador-dashboard/clients" element={
+              <Route path="/ambassador-dashboard/patients" element={
                 <ProtectedRoute requiredRole="ambassador">
-                  <ClientsPage />
+                  <PatientsPage />
                 </ProtectedRoute>
               } />
               <Route path="/ambassador-dashboard/groups" element={
@@ -330,6 +331,11 @@ const AppContent = () => {
               <Route path="/ambassador-dashboard/settings/delete-account" element={
                 <ProtectedRoute requiredRole="ambassador">
                   <DeleteAccountPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/ambassador-dashboard/notifications" element={
+                <ProtectedRoute requiredRole="ambassador">
+                  <AmbassadorNotificationsPage />
                 </ProtectedRoute>
               } />
               <Route path="/ambassador-dashboard/*" element={

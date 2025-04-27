@@ -79,6 +79,14 @@ interface DbNotification {
   user_id: string;
 }
 
+interface SearchResult {
+  title: string;
+  description?: string;
+  icon?: any;
+  href: string;
+  category: string;
+}
+
 const patientNavigation = [
   { 
     section: "Main",
@@ -109,10 +117,111 @@ const patientNavigation = [
   }
 ];
 
+const searchableItems: SearchResult[] = [
+  // Overview
+  {
+    title: "Dashboard Overview",
+    description: "View your dashboard summary and upcoming activities",
+    icon: Home,
+    href: "/patient-dashboard",
+    category: "Pages"
+  },
+  // Appointments
+  {
+    title: "Appointments",
+    description: "View and manage your therapy appointments",
+    icon: Calendar,
+    href: "/patient-dashboard/appointments",
+    category: "Pages"
+  },
+  {
+    title: "Schedule Session",
+    description: "Book a new therapy session",
+    icon: Clock,
+    href: "/patient-dashboard/appointments/schedule",
+    category: "Appointments"
+  },
+  // Messages
+  {
+    title: "Messages",
+    description: "Chat with your therapist and support team",
+    icon: Inbox,
+    href: "/patient-dashboard/messages",
+    category: "Communication"
+  },
+  // Journal
+  {
+    title: "Journal",
+    description: "Write and manage your therapy journal entries",
+    icon: BookOpen,
+    href: "/patient-dashboard/journal",
+    category: "Wellbeing"
+  },
+  {
+    title: "New Journal Entry",
+    description: "Create a new journal entry",
+    icon: FileText,
+    href: "/patient-dashboard/journal/new",
+    category: "Wellbeing"
+  },
+  // Mood Tracking
+  {
+    title: "Mood Tracker",
+    description: "Track and analyze your daily mood patterns",
+    icon: Activity,
+    href: "/patient-dashboard/mood-tracker",
+    category: "Wellbeing"
+  },
+  {
+    title: "Mood Reports",
+    description: "View your mood tracking history and insights",
+    icon: FileText,
+    href: "/patient-dashboard/reports",
+    category: "Wellbeing"
+  },
+  // Resources
+  {
+    title: "Resource Library",
+    description: "Access therapeutic resources and materials",
+    icon: BookOpen,
+    href: "/patient-dashboard/resources",
+    category: "Support"
+  },
+  // Profile & Settings
+  {
+    title: "My Profile",
+    description: "View and update your profile information",
+    icon: User,
+    href: "/patient-dashboard/profile",
+    category: "Account"
+  },
+  {
+    title: "Favorite Items",
+    description: "Access your saved resources and content",
+    icon: Heart,
+    href: "/patient-dashboard/favorites",
+    category: "Account"
+  },
+  {
+    title: "Account Settings",
+    description: "Manage your account preferences",
+    icon: Settings,
+    href: "/patient-dashboard/settings",
+    category: "Account"
+  },
+  {
+    title: "Help Center",
+    description: "Get help and support",
+    icon: BadgeHelp,
+    href: "/patient-dashboard/help",
+    category: "Support"
+  }
+];
+
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { user, logout: signout, isAuthenticated } = useAuth();
+  const { user, signout, isAuthenticated } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
@@ -125,6 +234,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   // State for notification dialog
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
   const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Verify user is authenticated, if not redirect to login
@@ -135,16 +247,26 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         try {
           const { isAuthenticated: storedAuth } = JSON.parse(storedAuthState);
           if (!storedAuth) {
-            // Use direct location change instead of React Router for a complete page refresh
-            window.location.href = '/login';
+            // Debounce redirect to prevent flickering
+            const redirectTimer = setTimeout(() => {
+              // Use direct location change instead of React Router for a complete page refresh
+              window.location.href = '/login';
+            }, 300);
+            return () => clearTimeout(redirectTimer);
           }
           // If we have stored auth, don't redirect
         } catch (e) {
           console.error("Error parsing stored auth state:", e);
-          window.location.href = '/login';
+          const redirectTimer = setTimeout(() => {
+            window.location.href = '/login';
+          }, 300);
+          return () => clearTimeout(redirectTimer);
         }
       } else {
-        window.location.href = '/login';
+        const redirectTimer = setTimeout(() => {
+          window.location.href = '/login';
+        }, 300);
+        return () => clearTimeout(redirectTimer);
       }
       return;
     }
@@ -263,13 +385,44 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     };
   }, []);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      // Implement dashboard search functionality
-      console.log('Searching for:', searchQuery);
-      // This would typically navigate to search results or filter current view
+  // Close search dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setIsSearchOpen(false);
+      }
     }
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [searchRef]);
+
+  // Handle search input
+  const handleSearchInput = (value: string) => {
+    setSearchQuery(value);
+    setIsSearchOpen(value.length > 0);
+    
+    if (!value) {
+      setSearchResults([]);
+      return;
+    }
+
+    const results = searchableItems.filter(
+      item =>
+        item.title.toLowerCase().includes(value.toLowerCase()) ||
+        (item.description && item.description.toLowerCase().includes(value.toLowerCase()))
+    );
+
+    setSearchResults(results);
+  };
+
+  // Handle search result click
+  const handleSearchResultClick = (href: string) => {
+    setIsSearchOpen(false);
+    setSearchQuery('');
+    navigate(href);
   };
 
   const fetchNotificationCount = async () => {
@@ -393,9 +546,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   };
 
-  const firstName = user?.user_metadata?.first_name || 'User';
-  const lastName = user?.user_metadata?.last_name || '';
-  
   // Add this function to mark all notifications as read
   const markAllNotificationsAsRead = async () => {
     try {
@@ -454,6 +604,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   };
 
+  const firstName = user?.user_metadata?.first_name || 'User';
+  const lastName = user?.user_metadata?.last_name || '';
+  
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Include the welcome dialog */}
@@ -518,18 +671,65 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
 
           {/* Search Bar */}
-          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-8">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <div ref={searchRef} className="flex-1 max-w-2xl mx-4">
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (searchResults.length > 0) {
+                handleSearchResultClick(searchResults[0].href);
+              }
+            }} className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 type="search"
                 placeholder="Search dashboard..."
-                className="w-full pl-10 pr-4 rounded-full border-slate-200 focus-visible:ring-blue-500"
+                className="w-full pl-10 pr-4 rounded-full border-gray-200"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearchInput(e.target.value)}
+                onFocus={() => setIsSearchOpen(searchQuery.length > 0)}
               />
-            </div>
-          </form>
+
+              {/* Search Results Dropdown */}
+              {isSearchOpen && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-[400px] overflow-y-auto z-50">
+                  {searchResults.length > 0 ? (
+                    <div className="py-2">
+                      {Object.entries(
+                        searchResults.reduce((acc, item) => {
+                          acc[item.category] = [...(acc[item.category] || []), item];
+                          return acc;
+                        }, {} as Record<string, SearchResult[]>)
+                      ).map(([category, items]) => (
+                        <div key={category}>
+                          <div className="px-3 py-2 text-xs font-semibold text-gray-500 bg-gray-50">
+                            {category}
+                          </div>
+                          {items.map((item) => (
+                            <button
+                              key={item.href}
+                              className="w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center gap-3"
+                              onClick={() => handleSearchResultClick(item.href)}
+                            >
+                              {item.icon && <item.icon className="h-4 w-4 text-gray-500" />}
+                              <div>
+                                <div className="text-sm font-medium">{item.title}</div>
+                                {item.description && (
+                                  <div className="text-xs text-gray-500">{item.description}</div>
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 text-center text-gray-500">
+                      No results found
+                    </div>
+                  )}
+                </div>
+              )}
+            </form>
+          </div>
 
           <div className="flex items-center gap-3">
             {/* Notifications */}
@@ -674,15 +874,21 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* Mobile Search */}
       <div className="md:hidden px-4 py-2 fixed top-16 z-40 w-full bg-white border-b border-slate-200">
-        <form onSubmit={handleSearch} className="flex w-full">
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          if (searchResults.length > 0) {
+            handleSearchResultClick(searchResults[0].href);
+          }
+        }} className="flex w-full">
           <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               type="search"
               placeholder="Search dashboard..."
-              className="w-full pl-10 pr-4 rounded-full border-slate-200 focus-visible:ring-blue-500"
+              className="w-full pl-10 pr-4 rounded-full border-gray-200"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearchInput(e.target.value)}
+              onFocus={() => setIsSearchOpen(searchQuery.length > 0)}
             />
           </div>
         </form>

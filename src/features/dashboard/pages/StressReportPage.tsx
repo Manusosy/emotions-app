@@ -24,6 +24,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import StressProgressChart from "../components/StressProgressChart";
+import { Spinner } from "@/components/ui/spinner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Define types for our data
 interface Assessment {
@@ -622,7 +624,9 @@ export default function StressReportPage() {
           {/* Insights & Recommendations Tab */}
           <TabsContent value="insights" className="space-y-4">
             {isLoading ? (
-              <div className="py-8 text-center text-slate-500">Loading insights...</div>
+              <div className="flex justify-center py-8">
+                <Spinner size="md" text="Loading insights..." />
+              </div>
             ) : assessments.length < 2 ? (
               <Card>
                 <CardContent className="text-center py-8">
@@ -988,7 +992,9 @@ export default function StressReportPage() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <div className="py-8 text-center text-slate-500">Loading assessments...</div>
+                  <div className="flex justify-center py-8">
+                    <Spinner size="md" text="Loading assessments..." />
+                  </div>
                 ) : assessments.length === 0 ? (
                   <div className="py-8 text-center text-slate-500">
                     No stress assessments found. Complete your first assessment to see your results here.
@@ -1041,7 +1047,9 @@ export default function StressReportPage() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <div className="py-8 text-center text-slate-500">Loading progress data...</div>
+                  <div className="flex justify-center py-8">
+                    <Spinner size="md" text="Loading progress data..." />
+                  </div>
                 ) : assessments.length < 3 ? (
                   <div className="py-8 text-center text-slate-500">
                     <p className="mb-2">Complete at least 3 assessments to view progress tracking</p>

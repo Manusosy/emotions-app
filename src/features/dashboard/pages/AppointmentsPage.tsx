@@ -42,6 +42,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { Spinner } from "@/components/ui/spinner";
 
 // Ambassador profiles for quick booking
 const ambassadorProfiles = [
@@ -310,27 +311,8 @@ export default function AppointmentsPage() {
   const renderAppointmentList = () => {
     if (loading) {
       return (
-        <div className="space-y-4">
-          {[1, 2, 3].map((_, i) => (
-            <Card key={i} className="overflow-hidden shadow-sm">
-              <CardContent className="p-0">
-                <div className="p-6">
-                  <div className="flex items-start gap-6">
-                    <Skeleton className="h-16 w-16 rounded-full" />
-                    <div className="flex-1 space-y-2">
-                      <Skeleton className="h-5 w-32" />
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-4 w-48 mt-2" />
-                    </div>
-                    <div className="space-y-2 hidden md:block">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-4 w-24" />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="flex justify-center py-12">
+          <Spinner size="lg" text="Loading appointments..." />
         </div>
       );
     }

@@ -1,20 +1,10 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import DashboardLayout from "../components/DashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Bell, 
-  Check, 
-  Clock, 
-  MessageCircle, 
-  Settings, 
-  Trash2, 
-  FileText,
-  X 
-} from "lucide-react";
+import { Bell, Check, Clock, MessageCircle, Settings, Trash2, Users, FileText } from "lucide-react";
+import { DashboardLayout } from "../components/DashboardLayout";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { formatDistanceToNow } from "date-fns";
@@ -26,56 +16,130 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
-// Mock notification data for development and testing
+// Mock notification data
 const mockNotifications = [
   {
     id: "1",
-    type: "message",
-    content: "Dr. Sarah Johnson sent you a message about your recent check-in",
-    timestamp: "5 minutes ago",
+    type: "appointment",
+    content: "Therapy session with Maria Chen scheduled for tomorrow at 2:00 PM. Please review her latest mood tracking data before the session.",
+    timestamp: "10 minutes ago",
     read: false,
     avatar: "/placeholder.svg",
-    senderName: "Dr. Sarah Johnson"
+    senderName: "Appointment System",
+    title: "Upcoming Therapy Session"
   },
   {
     id: "2",
-    type: "appointment",
-    content: "Upcoming therapy session tomorrow at 10:00 AM",
-    timestamp: "1 hour ago",
+    type: "patient",
+    content: "URGENT: Your patient James Wilson reported severe anxiety symptoms in their latest check-in. Immediate attention may be required.",
+    timestamp: "30 minutes ago",
     read: false,
     avatar: "/placeholder.svg",
-    senderName: "System"
+    senderName: "Patient Monitoring System",
+    title: "Patient Alert"
   },
   {
     id: "3",
-    type: "journal",
-    content: "Reminder: You haven't completed your daily journal entry",
-    timestamp: "3 hours ago",
-    read: true,
-    avatar: null,
-    senderName: "System"
+    type: "group",
+    content: "Your 'Anxiety & Depression Support Group' session starts in 1 hour. 8 participants have confirmed attendance.",
+    timestamp: "1 hour ago",
+    read: false,
+    avatar: "/placeholder.svg",
+    senderName: "Group Management",
+    title: "Upcoming Group Session"
   },
   {
     id: "4",
-    type: "system",
-    content: "Your weekly mood report is now available for review",
-    timestamp: "Yesterday",
+    type: "message",
+    content: "Dr. Thompson has reviewed your treatment plan for patient Sarah Brown and left comments for your consideration.",
+    timestamp: "2 hours ago",
     read: true,
-    avatar: null,
-    senderName: "System"
+    avatar: "/placeholder.svg",
+    senderName: "Dr. Thompson",
+    title: "Treatment Plan Review"
   },
   {
     id: "5",
+    type: "system",
+    content: "Monthly supervision meeting with Dr. Rebecca Martinez scheduled for Friday at 3:00 PM. Please prepare your case presentations.",
+    timestamp: "3 hours ago",
+    read: true,
+    avatar: null,
+    senderName: "System",
+    title: "Supervision Schedule"
+  },
+  {
+    id: "6",
+    type: "appointment",
+    content: "Patient Alex Turner has requested to reschedule their session from Thursday 10:00 AM to Friday 2:00 PM. Please approve or suggest alternative times.",
+    timestamp: "4 hours ago",
+    read: true,
+    avatar: "/placeholder.svg",
+    senderName: "Scheduling System",
+    title: "Rescheduling Request"
+  },
+  {
+    id: "7",
+    type: "patient",
+    content: "New patient file received: Emily Davis, referred by Dr. Johnson for anxiety and depression. Please review and schedule initial consultation.",
+    timestamp: "5 hours ago",
+    read: true,
+    avatar: "/placeholder.svg",
+    senderName: "Patient Assignment",
+    title: "New Patient Assignment"
+  },
+  {
+    id: "8",
+    type: "group",
+    content: "Your trauma support group has reached capacity (12 members). Please review the waiting list and consider opening an additional group.",
+    timestamp: "1 day ago",
+    read: true,
+    avatar: "/placeholder.svg",
+    senderName: "Group Management",
+    title: "Group Capacity Alert"
+  },
+  {
+    id: "9",
+    type: "system",
+    content: "Reminder: Quarterly professional development workshop on 'Advanced CBT Techniques' is next week. 3 CPD credits available.",
+    timestamp: "1 day ago",
+    read: true,
+    avatar: null,
+    senderName: "Professional Development",
+    title: "Workshop Reminder"
+  },
+  {
+    id: "10",
     type: "message",
-    content: "New resources available in the Anxiety Management collection",
+    content: "Clinical team meeting minutes from yesterday have been shared with you. Key topics: new treatment protocols and case load distribution.",
+    timestamp: "2 days ago",
+    read: true,
+    avatar: "/placeholder.svg",
+    senderName: "Clinical Team",
+    title: "Meeting Minutes"
+  },
+  {
+    id: "11",
+    type: "system",
+    content: "Your monthly patient outcome reports are ready for review. Overall improvement noted in 78% of your active cases.",
     timestamp: "2 days ago",
     read: true,
     avatar: null,
-    senderName: "System"
+    senderName: "Analytics System",
+    title: "Performance Metrics"
+  },
+  {
+    id: "12",
+    type: "patient",
+    content: "Risk assessment alert: Patient Michael Roberts reported suicidal ideation in their mood tracker. Please follow up within 24 hours.",
+    timestamp: "2 days ago",
+    read: true,
+    avatar: "/placeholder.svg",
+    senderName: "Risk Monitoring",
+    title: "Urgent Risk Alert"
   }
 ];
 
@@ -89,19 +153,18 @@ interface Notification {
   senderName: string;
   title?: string;
   created_at?: string;
-  action_url?: string;
   user_id?: string;
 }
 
 interface NotificationPreferences {
   emailNotifications: boolean;
   appointmentReminders: boolean;
-  moodTrackingReminders: boolean;
+  patientUpdates: boolean;
+  groupNotifications: boolean;
   marketingCommunications: boolean;
 }
 
 export default function NotificationsPage() {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [activeTab, setActiveTab] = useState("all");
@@ -109,7 +172,8 @@ export default function NotificationsPage() {
   const [preferences, setPreferences] = useState<NotificationPreferences>({
     emailNotifications: true,
     appointmentReminders: true,
-    moodTrackingReminders: true,
+    patientUpdates: true,
+    groupNotifications: true,
     marketingCommunications: false,
   });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -121,79 +185,22 @@ export default function NotificationsPage() {
   }, [user?.id]);
 
   const fetchNotifications = async () => {
-    if (!user?.id) return;
-
     try {
-      setLoading(true);
-      
-      // For production use the database
-      if (process.env.NODE_ENV === 'production') {
+      if (!user?.id) return;
+
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
         .eq('user_id', user.id)
+        .eq('user_type', 'ambassador')
         .order('created_at', { ascending: false });
-      
+
       if (error) throw error;
 
-        // Map database notifications to our interface
-        let userNotifications: Notification[] = [];
-        
-        if (data && data.length > 0) {
-          userNotifications = data.map(item => {
-            // Determine notification type based on content or database type
-            let type = 'system';
-            if (item.title?.toLowerCase().includes('appointment') || item.message?.toLowerCase().includes('appointment')) {
-              type = 'appointment';
-            } else if (item.title?.toLowerCase().includes('message') || item.message?.toLowerCase().includes('message')) {
-              type = 'message';
-            } else if (item.title?.toLowerCase().includes('journal') || item.message?.toLowerCase().includes('journal')) {
-              type = 'journal';
-            } else if (item.type) {
-              type = item.type;
-            }
-            
-            // Convert database field names to our notification interface
-          return {
-            id: item.id,
-              type: type,
-              content: item.message || '',
-              timestamp: formatNotificationDate(item.created_at),
-              read: item.read,
-              avatar: null,
-              senderName: item.sender_name || 'System',
-            title: item.title,
-            created_at: item.created_at,
-            user_id: item.user_id
-          };
-        });
-        }
-        
-        // Add welcome notification if no notifications exist
-        if (userNotifications.length === 0) {
-          userNotifications = [{
-            id: 'welcome-1',
-            type: 'system',
-            content: 'Welcome to Emotions. Feel free to explore our features to help you monitor, analyze and receive personalized recommendations for your mental health.',
-            timestamp: 'Just now',
-            read: false,
-            avatar: null,
-            senderName: 'System',
-            title: 'Welcome to Emotions',
-            created_at: new Date().toISOString(),
-            user_id: user.id
-          }];
-        }
-        
-        setNotifications(userNotifications);
-      } else {
-        // For development, use mock data
-        setNotifications(mockNotifications);
-      }
+      setNotifications(data || []);
     } catch (error) {
       console.error('Error fetching notifications:', error);
-      // Fallback to mock data in case of error
-      setNotifications(mockNotifications);
+      toast.error('Failed to load notifications');
     } finally {
       setLoading(false);
     }
@@ -219,7 +226,8 @@ export default function NotificationsPage() {
         setPreferences({
           emailNotifications: data.notification_preferences.emailNotifications ?? true,
           appointmentReminders: data.notification_preferences.appointmentReminders ?? true,
-          moodTrackingReminders: data.notification_preferences.moodTrackingReminders ?? true,
+          patientUpdates: data.notification_preferences.patientUpdates ?? true,
+          groupNotifications: data.notification_preferences.groupNotifications ?? true,
           marketingCommunications: data.notification_preferences.marketingCommunications ?? false,
         });
       }
@@ -257,7 +265,7 @@ export default function NotificationsPage() {
       return 'Unknown date';
     }
   };
-
+  
   // Filter notifications based on active tab
   const filteredNotifications = notifications.filter(notification => {
     if (activeTab === "all") return true;
@@ -271,27 +279,27 @@ export default function NotificationsPage() {
   // Mark all as read
   const markAllAsRead = async () => {
     try {
-      // Update local state first for responsive UI
-      setNotifications(notifications.map(n => ({ ...n, read: true })));
-      
-      // Update read status in database for real notifications (not welcome notification)
-      if (user?.id && process.env.NODE_ENV === 'production') {
-        const { error } = await supabase
-          .from('notifications')
-          .update({ 
-            read: true,
-            updated_at: new Date().toISOString()
-            })
-            .eq('user_id', user.id)
-          .eq('read', false);
-          
-        if (error) throw error;
-      }
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('user_id', user?.id)
+        .eq('user_type', 'ambassador')
+        .eq('read', false);
+
+      if (error) throw error;
+
+      setNotifications(notifications.map(notification => ({
+        ...notification,
+        read: true
+      })));
+
+      toast.success('All notifications marked as read');
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
+      toast.error('Failed to mark all notifications as read');
     }
   };
-
+  
   // Delete notification
   const deleteNotification = async (id: string) => {
     try {
@@ -299,7 +307,7 @@ export default function NotificationsPage() {
       setNotifications(notifications.filter(n => n.id !== id));
       
       // Skip database operation for welcome notification or in development
-      if (id === 'welcome-1' || process.env.NODE_ENV !== 'production') return;
+      if (id === 'welcome-amb-1' || process.env.NODE_ENV !== 'production') return;
       
       // Delete from database
       const { error } = await supabase
@@ -312,7 +320,7 @@ export default function NotificationsPage() {
       console.error('Error deleting notification:', error);
     }
   };
-
+  
   // Mark as read
   const markAsRead = async (id: string) => {
     try {
@@ -322,7 +330,7 @@ export default function NotificationsPage() {
       ));
       
       // Skip database operation for welcome notification or in development
-      if (id === 'welcome-1' || process.env.NODE_ENV !== 'production') return;
+      if (id === 'welcome-amb-1' || process.env.NODE_ENV !== 'production') return;
       
       // Update in database
       const { error } = await supabase
@@ -342,11 +350,13 @@ export default function NotificationsPage() {
   const getIconByType = (type: string) => {
     switch (type) {
       case "message":
-        return <MessageCircle className="h-5 w-5 text-blue-600" />;
+        return <MessageCircle className="h-5 w-5 text-ambassador-lavender" />;
       case "appointment":
-        return <Clock className="h-5 w-5 text-purple-600" />;
-      case "journal":
-        return <FileText className="h-5 w-5 text-green-600" />;
+        return <Clock className="h-5 w-5 text-ambassador-teal" />;
+      case "patient":
+        return <Users className="h-5 w-5 text-amber-600" />;
+      case "group":
+        return <Users className="h-5 w-5 text-blue-600" />;
       case "system":
       default:
         return <Bell className="h-5 w-5 text-gray-600" />;
@@ -360,21 +370,21 @@ export default function NotificationsPage() {
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-semibold">Notifications</h1>
             {unreadCount > 0 && (
-              <Badge className="bg-blue-600/20 text-blue-600 border-0 px-3 py-1 rounded-full">
+              <Badge className="bg-ambassador-lavender/20 text-ambassador-lavender border-0 px-3 py-1 rounded-full">
                 {unreadCount} unread
               </Badge>
             )}
           </div>
           <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={markAllAsRead}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={markAllAsRead} 
               className="flex items-center gap-2"
-              >
+            >
               <Check className="h-4 w-4" />
-                Mark all as read
-              </Button>
+              Mark all as read
+            </Button>
             <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="icon">
@@ -405,7 +415,7 @@ export default function NotificationsPage() {
                   <div className="flex items-center justify-between border-b pb-4">
                     <div>
                       <h4 className="font-medium">Appointment Reminders</h4>
-                      <p className="text-sm text-slate-500">Get notified about upcoming appointments</p>
+                      <p className="text-sm text-slate-500">Get notified about upcoming appointments with patients</p>
                     </div>
                     <div>
                       <Switch 
@@ -420,15 +430,31 @@ export default function NotificationsPage() {
                   
                   <div className="flex items-center justify-between border-b pb-4">
                     <div>
-                      <h4 className="font-medium">Mood Tracking Reminders</h4>
-                      <p className="text-sm text-slate-500">Receive reminders to track your mood</p>
+                      <h4 className="font-medium">Patient Updates</h4>
+                      <p className="text-sm text-slate-500">Receive updates about your patients' activities and progress</p>
                     </div>
                     <div>
                       <Switch 
-                        id="mood-tracking-notifications" 
-                        checked={preferences.moodTrackingReminders} 
+                        id="patient-updates" 
+                        checked={preferences.patientUpdates} 
                         onCheckedChange={(checked) => 
-                          setPreferences(prev => ({ ...prev, moodTrackingReminders: checked }))
+                          setPreferences(prev => ({ ...prev, patientUpdates: checked }))
+                        }
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between border-b pb-4">
+                    <div>
+                      <h4 className="font-medium">Group Notifications</h4>
+                      <p className="text-sm text-slate-500">Get notifications about group activities and member requests</p>
+                    </div>
+                    <div>
+                      <Switch 
+                        id="group-notifications" 
+                        checked={preferences.groupNotifications} 
+                        onCheckedChange={(checked) => 
+                          setPreferences(prev => ({ ...prev, groupNotifications: checked }))
                         }
                       />
                     </div>
@@ -462,6 +488,7 @@ export default function NotificationsPage() {
                       saveNotificationPreferences();
                       setIsSettingsOpen(false);
                     }}
+                    className="bg-ambassador-lavender hover:bg-ambassador-lavender/90"
                   >
                     Save Changes
                   </Button>
@@ -477,42 +504,48 @@ export default function NotificationsPage() {
               <TabsList className="flex h-12 justify-start bg-transparent p-0 w-full">
                 <TabsTrigger
                   value="all"
-                  className="flex-1 data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:shadow-none rounded-none h-12"
+                  className="flex-1 data-[state=active]:border-b-2 data-[state=active]:border-ambassador-lavender data-[state=active]:shadow-none rounded-none h-12"
                 >
                   All
                 </TabsTrigger>
                 <TabsTrigger
                   value="unread"
-                  className="flex-1 data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:shadow-none rounded-none h-12"
+                  className="flex-1 data-[state=active]:border-b-2 data-[state=active]:border-ambassador-lavender data-[state=active]:shadow-none rounded-none h-12"
                 >
                   Unread
                 </TabsTrigger>
                 <TabsTrigger
                   value="message"
-                  className="flex-1 data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:shadow-none rounded-none h-12"
+                  className="flex-1 data-[state=active]:border-b-2 data-[state=active]:border-ambassador-lavender data-[state=active]:shadow-none rounded-none h-12"
                 >
                   Messages
                 </TabsTrigger>
                 <TabsTrigger
                   value="appointment"
-                  className="flex-1 data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:shadow-none rounded-none h-12"
+                  className="flex-1 data-[state=active]:border-b-2 data-[state=active]:border-ambassador-lavender data-[state=active]:shadow-none rounded-none h-12"
                 >
                   Appointments
                 </TabsTrigger>
                 <TabsTrigger
-                  value="journal"
-                  className="flex-1 data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:shadow-none rounded-none h-12"
+                  value="patient"
+                  className="flex-1 data-[state=active]:border-b-2 data-[state=active]:border-ambassador-lavender data-[state=active]:shadow-none rounded-none h-12"
                 >
-                  Journal
+                  Patients
                 </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
+                <TabsTrigger
+                  value="group"
+                  className="flex-1 data-[state=active]:border-b-2 data-[state=active]:border-ambassador-lavender data-[state=active]:shadow-none rounded-none h-12"
+                >
+                  Groups
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
 
           <CardContent className="p-0">
             {loading ? (
               <div className="py-16 text-center">
-                <div className="animate-spin h-10 w-10 mx-auto rounded-full border-t-2 border-blue-600 border-r-2 border-transparent"></div>
+                <div className="animate-spin h-10 w-10 mx-auto rounded-full border-t-2 border-ambassador-lavender border-r-2 border-transparent"></div>
                 <p className="mt-4 text-gray-500">Loading notifications...</p>
               </div>
             ) : filteredNotifications.length > 0 ? (
@@ -530,18 +563,18 @@ export default function NotificationsPage() {
                             alt={notification.senderName} 
                             className="w-full h-full object-cover"
                           />
-              </div>
-            ) : (
+                        </div>
+                      ) : (
                         <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-100">
                           {getIconByType(notification.type)}
                         </div>
                       )}
-                          </div>
+                    </div>
                     <div className="flex-1">
                       <div className="flex items-start justify-between">
                         <p className={`text-sm ${!notification.read ? 'font-medium' : ''}`}>
-                            {notification.content}
-                          </p>
+                          {notification.content}
+                        </p>
                         <div className="flex items-center gap-2 ml-4">
                           {!notification.read && (
                             <Button 
@@ -579,4 +612,4 @@ export default function NotificationsPage() {
       </div>
     </DashboardLayout>
   );
-}
+} 

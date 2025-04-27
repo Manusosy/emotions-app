@@ -129,4 +129,5 @@ export interface Resource {
   created_at: string;
   downloads?: number;
   shares?: number;
+  ambassador_id?: string;
 }
