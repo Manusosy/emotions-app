@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChartBar } from "lucide-react";
+import { BarChart } from "lucide-react";
 import StressAssessmentModal from "./StressAssessmentModal";
 
 type EmotionalHealthWheelProps = {
@@ -126,7 +126,7 @@ export default function EmotionalHealthWheel({
             onClick={onViewDetails}
             disabled={!hasAssessments}
           >
-            <ChartBar className="mr-2 h-4 w-4" />
+            <BarChart className="mr-2 h-4 w-4" />
             {hasAssessments ? "View Details" : "No Data Available"}
           </Button>
         </div>
