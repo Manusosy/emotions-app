@@ -6,23 +6,43 @@
  * It skips TypeScript type checking to allow builds to complete despite TS errors.
  */
 
-const { execSync } = require('child_process');
-const os = require('os');
+import { execSync } from 'child_process';
 
-console.log('Vercel Build: Starting build process...');
+console.log('Running custom Vercel build script...');
 
-try {
-  // Run the install-platform-deps script first to ensure platform-specific dependencies
-  console.log('Vercel Build: Installing platform-specific dependencies...');
-  execSync('node ./scripts/install-platform-deps.js', { stdio: 'inherit' });
+// Check if we're on Vercel
+const isVercel = process.env.VERCEL === '1';
 
-  // Run the Vite build command directly, skipping TypeScript checks completely
-  console.log('Vercel Build: Running Vite build (bypassing TypeScript checks)...');
-  execSync('vite build', { stdio: 'inherit' });
-
-  console.log('Vercel Build: Build completed successfully!');
-} catch (error) {
-  console.error('Vercel Build: Error during build process:');
-  console.error(error);
-  process.exit(1);
+if (isVercel) {
+  console.log('Building in Vercel environment');
+  
+  try {
+    // Install dependencies without platform-specific binaries
+    console.log('Installing dependencies...');
+    execSync('npm install --no-optional --no-package-lock', { stdio: 'inherit' });
+    
+    // Install platform-specific dependencies for the current environment
+    console.log('Installing platform-specific dependencies...');
+    execSync('node ./scripts/install-platform-deps.js', { stdio: 'inherit' });
+    
+    // Run the build
+    console.log('Running build...');
+    execSync('npm run build', { stdio: 'inherit' });
+    
+    console.log('Build completed successfully');
+  } catch (error) {
+    console.error('Build failed:', error.message);
+    process.exit(1);
+  }
+} else {
+  // Local development
+  console.log('Building in local environment');
+  
+  try {
+    execSync('npm run build', { stdio: 'inherit' });
+    console.log('Local build completed successfully');
+  } catch (error) {
+    console.error('Local build failed:', error.message);
+    process.exit(1);
+  }
 } 
