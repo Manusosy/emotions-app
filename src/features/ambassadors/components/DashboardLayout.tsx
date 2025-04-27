@@ -569,7 +569,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             {ambassadorNavigation.map((section) => (
               <div key={section.section} className="mb-4">
                 {sidebarOpen && (
-                  <h3 className="px-4 text-sm font-medium text-white/70 uppercase tracking-wider mb-2">
+                  <h3 className="px-4 text-sm font-medium text-white uppercase tracking-wider mb-2">
                     {section.section}
                   </h3>
                 )}
@@ -587,10 +587,10 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                         className={`flex items-center px-3 py-2 mx-2 rounded-lg text-sm transition-colors ${
                           isActive
                             ? "bg-white text-[#0B7DA3] shadow-md font-medium border-0"
-                            : "text-white/70 hover:text-white hover:bg-white/10"
+                            : "text-white hover:bg-white/10"
                         } ${!sidebarOpen ? "justify-center" : ""} relative`}
                       >
-                        <item.icon className={`h-5 w-5 ${isActive ? "text-[#0B7DA3]" : "text-white/70"}`} />
+                        <item.icon className={`h-5 w-5 ${isActive ? "text-[#0B7DA3]" : "text-white"}`} />
                         {sidebarOpen && (
                           <span className="ml-3">{item.name}</span>
                         )}
