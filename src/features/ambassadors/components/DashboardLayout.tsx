@@ -536,11 +536,11 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       <aside
         className={`fixed top-0 left-0 h-screen transition-all duration-300 z-50 ${
           sidebarOpen ? "w-64" : "w-0 lg:w-20 overflow-hidden"
-        } bg-[#20C0F3] border-r border-[#20C0F3]/20`}
+        } bg-white border-r border-gray-200`}
       >
         <div className="h-full flex flex-col">
           {/* Logo area */}
-          <div className="p-4 flex items-center justify-between border-b border-white/10">
+          <div className="p-4 flex items-center justify-between border-b border-gray-200">
             <Link to="/ambassador-dashboard" className="flex items-center space-x-2">
               {sidebarOpen ? (
                 <img 
@@ -549,7 +549,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   className="h-8 w-auto"
                 />
               ) : (
-                <Brain className="h-7 w-7 text-white" />
+                <Brain className="h-7 w-7 text-[#20C0F3]" />
               )}
             </Link>
             {!isMobile && (
@@ -557,19 +557,19 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   variant="ghost"
                   size="icon"
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:flex hidden text-white hover:bg-white/20"
+                className="lg:flex hidden text-gray-500 hover:bg-gray-100"
                 >
                 <ChevronLeft className={`h-5 w-5 transition-transform ${!sidebarOpen ? 'rotate-180' : ''}`} />
                 </Button>
             )}
-              </div>
+          </div>
 
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto py-4">
             {ambassadorNavigation.map((section) => (
               <div key={section.section} className="mb-4">
                 {sidebarOpen && (
-                  <h3 className="px-4 text-sm font-medium text-white/70 uppercase tracking-wider mb-2">
+                  <h3 className="px-4 text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">
                     {section.section}
                   </h3>
                 )}
@@ -586,11 +586,11 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                         to={item.href}
                         className={`flex items-center px-3 py-2 mx-2 rounded-lg text-sm transition-colors ${
                           isActive
-                            ? "bg-white text-[#20C0F3] shadow-sm"
-                            : "text-white/70 hover:text-white hover:bg-white/10"
+                            ? "bg-white text-[#0B7DA3] shadow-sm border border-gray-200 font-medium"
+                            : "text-gray-500 hover:text-[#20C0F3] hover:bg-gray-100"
                         } ${!sidebarOpen ? "justify-center" : ""} relative`}
                       >
-                        <item.icon className={`h-5 w-5 ${isActive ? "text-[#20C0F3]" : "text-white/70"}`} />
+                        <item.icon className={`h-5 w-5 ${isActive ? "text-[#0B7DA3]" : "text-gray-500"}`} />
                         {sidebarOpen && (
                           <span className="ml-3">{item.name}</span>
                         )}
@@ -613,19 +613,19 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           </nav>
 
           {/* User menu and logout */}
-          <div className="border-t border-white/10 mt-auto">
+          <div className="border-t border-gray-200 mt-auto">
             <div className="p-4">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className={`w-full flex items-center ${!sidebarOpen ? "justify-center" : "justify-start"} gap-2 px-2 text-white hover:bg-white/20`}>
+                  <Button variant="ghost" className={`w-full flex items-center ${!sidebarOpen ? "justify-center" : "justify-start"} gap-2 px-2 text-gray-700 hover:bg-gray-100`}>
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={user?.user_metadata?.avatar_url} />
-                      <AvatarFallback className="bg-white/10 text-white">{getFullName()?.charAt(0)}</AvatarFallback>
+                      <AvatarFallback className="bg-[#20C0F3]/10 text-[#20C0F3]">{getFullName()?.charAt(0)}</AvatarFallback>
                           </Avatar>
                     {sidebarOpen && (
                       <div className="flex-1 text-left">
-                        <p className="text-sm font-medium truncate text-white">{getFullName()}</p>
-                        <p className="text-xs text-white/90 truncate">{user?.email}</p>
+                        <p className="text-sm font-medium truncate text-gray-700">{getFullName()}</p>
+                        <p className="text-xs text-gray-500 truncate">{user?.email}</p>
                       </div>
                     )}
                         </Button>
@@ -644,7 +644,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   </div>
             <Button 
               variant="ghost" 
-              className={`w-full flex items-center justify-center text-white hover:bg-white/20 p-4 ${
+              className={`w-full flex items-center justify-center text-gray-700 hover:bg-gray-100 p-4 ${
                 sidebarOpen ? "justify-start px-6" : "justify-center"
               }`}
               onClick={handleSignout}
