@@ -2,6 +2,19 @@
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 DROP TRIGGER IF EXISTS on_auth_user_updated ON auth.users;
 
+-- Update this part at the beginning of the file
+DO $$
+BEGIN
+    -- Check if the profiles table exists before attempting to drop policies on it
+    IF EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' AND table_name = 'profiles'
+    ) THEN
+        DROP POLICY IF EXISTS "Public can view ambassador profiles" ON public.profiles;
+    END IF;
+END
+$$;
+
 -- Create a simplified function for handling new users
 CREATE OR REPLACE FUNCTION public.handle_new_user() 
 RETURNS TRIGGER AS $$

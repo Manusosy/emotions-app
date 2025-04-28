@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useAuth } from "@/hooks/use-auth";
 import WelcomeDialog from "@/components/WelcomeDialog";
@@ -38,7 +38,8 @@ import {
   HeartPulse,
   Search,
   Trash2,
-  MessageSquare
+  MessageSquare,
+  ShieldAlert
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -237,6 +238,44 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+
+  // Check if user is admin
+  const isAdmin = user?.user_metadata?.role === 'admin';
+  
+  // Create dynamic navigation based on user role
+  const navigationWithAdminLink = useMemo(() => {
+    // Deep copy the patient navigation
+    const navigation = JSON.parse(JSON.stringify(patientNavigation));
+    
+    // Add admin link for admin users
+    if (isAdmin) {
+      // Find the Account section
+      const accountSection = navigation.find((section: any) => section.section === "Account");
+      if (accountSection) {
+        // Add Admin Panel link before Help Center
+        const helpCenterIndex = accountSection.items.findIndex((item: any) => item.name === "Help Center");
+        const adminLink = { 
+          name: "Admin Panel", 
+          href: "/admin", 
+          icon: ShieldAlert
+        };
+        
+        if (helpCenterIndex !== -1) {
+          accountSection.items.splice(helpCenterIndex, 0, adminLink);
+        } else {
+          accountSection.items.push(adminLink);
+        }
+      }
+    }
+    
+    return navigation;
+  }, [isAdmin]);
+
+  // Check if the icon is a valid React component
+  const isValidIcon = (icon: any): icon is React.ComponentType<any> => {
+    return typeof icon === 'function' || 
+           (typeof icon === 'object' && icon !== null && 'render' in icon);
+  };
 
   useEffect(() => {
     // Verify user is authenticated, if not redirect to login
@@ -709,7 +748,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                               className="w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center gap-3"
                               onClick={() => handleSearchResultClick(item.href)}
                             >
-                              {item.icon && <item.icon className="h-4 w-4 text-gray-500" />}
+                              {isValidIcon(item.icon) ? (
+                                <item.icon className="h-4 w-4 text-gray-500" />
+                              ) : null}
                               <div>
                                 <div className="text-sm font-medium">{item.title}</div>
                                 {item.description && (
@@ -933,7 +974,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
               
               <ul role="list" className="flex flex-1 flex-col px-3 gap-y-5">
-                {patientNavigation.map((section) => (
+                {navigationWithAdminLink.map((section) => (
                   <li key={section.section}>
                     <div className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                       {section.section}
@@ -955,10 +996,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                 if (isMobile) setSidebarOpen(false);
                               }}
                             >
-                              <item.icon 
-                                className={`h-5 w-5 flex-shrink-0 ${isActive ? "text-blue-700" : "text-slate-500"}`} 
-                                aria-hidden="true" 
-                              />
+                              {isValidIcon(item.icon) ? (
+                                <item.icon 
+                                  className={`h-5 w-5 flex-shrink-0 ${isActive ? "text-blue-700" : "text-slate-500"}`} 
+                                  aria-hidden="true" 
+                                />
+                              ) : null}
                               {item.name}
                             </Button>
                           </li>

@@ -11,6 +11,9 @@ export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Check if user is admin
+  const isAdmin = userRole === 'admin';
+
   // Close mobile menu on location change
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -106,6 +109,11 @@ export default function Navbar() {
               <Link to="/help-groups" className="text-white/90 hover:text-white px-4 py-1.5 rounded-full transition-all hover:bg-[#fda802] text-sm font-medium">
                 Help Groups
               </Link>
+              {isAdmin && (
+                <Link to="/admin" className="text-white/90 hover:text-white px-4 py-1.5 rounded-full transition-all hover:bg-[#fda802] text-sm font-medium bg-red-600/30">
+                  Admin
+                </Link>
+              )}
             </div>
           </div>
 
@@ -236,6 +244,11 @@ export default function Navbar() {
             <a href="/help-groups" className="block px-4 py-2 hover:bg-[#fda802] rounded-lg transition-colors" onClick={(e) => handleNavigation("/help-groups", e)}>
               Help Groups
             </a>
+            {isAdmin && (
+              <a href="/admin" className="block px-4 py-2 hover:bg-[#fda802] bg-red-600/30 rounded-lg transition-colors" onClick={(e) => handleNavigation("/admin", e)}>
+                Admin Panel
+              </a>
+            )}
             
             {/* Mobile Menu Auth Buttons */}
             <div className="py-2 border-t border-blue-600/20">

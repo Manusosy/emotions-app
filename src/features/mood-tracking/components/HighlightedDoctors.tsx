@@ -2,16 +2,19 @@ import { useState, useEffect } from "react";
 import { Star, MapPin, Clock, Globe2, GraduationCap } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
 import BookingButton from "@/features/booking/components/BookingButton";
 // Import supabase conditionally to handle potential errors better
 let supabaseClient: any;
+let ambassadorService: any;
 try {
   const { supabase } = require("@/integrations/supabase/client");
+  const { ambassadorService: ambService } = require("@/integrations/supabase/services/ambassador.service");
   supabaseClient = supabase;
+  ambassadorService = ambService;
 } catch (error) {
-  console.error("Failed to load Supabase client:", error);
+  console.error("Failed to load Supabase client or ambassador service:", error);
   supabaseClient = null;
+  ambassadorService = null;
 }
 
 interface Ambassador {
@@ -89,9 +92,9 @@ export default function AmbassadorsGrid() {
   }, []);
 
   const fetchAmbassadors = async () => {
-    // If Supabase client failed to load, use mock data
-    if (!supabaseClient) {
-      console.log("Using mock data due to Supabase client unavailability");
+    // If ambassador service failed to load, use mock data
+    if (!ambassadorService) {
+      console.log("Using mock data due to ambassador service unavailability");
       setAmbassadors(mockAmbassadors);
       setIsLoading(false);
       return;
@@ -101,37 +104,41 @@ export default function AmbassadorsGrid() {
       // Wrap in setTimeout to prevent blocking the UI
       setTimeout(async () => {
         try {
-          const { data, error } = await supabaseClient
-            .from('users')
-            .select('*, ambassador_profiles:ambassador_profiles(*)')
-            .eq('role', 'ambassador');
+          // Use ambassador service to get available ambassadors with 80% profile completeness
+          const result = await ambassadorService.getAvailableAmbassadors(10);
           
-          if (error) throw error;
-          
-          if (data && data.length > 0) {
-            const mappedAmbassadors = data.map(user => ({
-              id: user.id,
-              full_name: user.user_metadata?.full_name || 'Ambassador',
-              avatar_url: user.user_metadata?.avatar_url || '/default-avatar.png',
-              specialties: user.ambassador_profiles?.speciality?.split(',') || [],
-              location: user.ambassador_profiles?.location || 'Location not specified',
-              duration: user.ambassador_profiles?.session_duration || '30 Min',
-              rating: user.ambassador_profiles?.rating || 5.0,
-              // Explicitly check for 'Available' status to determine availability
-              available: user.ambassador_profiles?.availability_status === 'Available',
-              languages: user.ambassador_profiles?.languages?.split(',') || ['English'],
-              education: user.ambassador_profiles?.education || '',
-              experience: user.ambassador_profiles?.experience || ''
+          if (result.success && result.data && result.data.length > 0) {
+            // Map to the expected Ambassador interface format
+            const mappedAmbassadors = result.data.map(ambassador => ({
+              id: ambassador.id,
+              full_name: ambassador.name || 'Ambassador',
+              avatar_url: ambassador.avatar || '/default-avatar.png',
+              specialties: ambassador.specialty ? 
+                (typeof ambassador.specialty === 'string' ? ambassador.specialty.split(',') : [ambassador.specialty]) : 
+                ['Mental Health Support'],
+              location: ambassador.location || 'Remote',
+              duration: ambassador.session_duration || '30 Min',
+              rating: ambassador.rating || 4.7,
+              available: ambassador.available !== false, // Default to available if not specified
+              languages: ambassador.languages && Array.isArray(ambassador.languages) ? 
+                ambassador.languages : ['English'],
+              education: (typeof ambassador.education === 'string') ? 
+                ambassador.education : 
+                (ambassador.education && ambassador.education[0]?.degree) || 'Mental Health Professional',
+              experience: (typeof ambassador.experience === 'string') ? 
+                ambassador.experience : 
+                `${ambassador.experience || 3}+ years`
             }));
             
             setAmbassadors(mappedAmbassadors);
           } else {
             // Fallback to mock data if no real data available
+            console.log("No ambassador data returned, using mock data");
             setAmbassadors(mockAmbassadors);
           }
         } catch (error: any) {
-          console.error("Failed to fetch from Supabase:", error);
-          // No need to show an error toast - just silently fallback to mock data
+          console.error("Failed to fetch ambassadors:", error);
+          // Silently fallback to mock data
           setAmbassadors(mockAmbassadors);
         } finally {
           setIsLoading(false);
@@ -143,8 +150,11 @@ export default function AmbassadorsGrid() {
     }
   };
 
-  const viewAmbassadorProfile = (ambassadorId: string) => {
-    navigate(`/ambassadors/${ambassadorId}`);
+  const viewAmbassadorProfile = (ambassadorId: string, ambassadorName: string) => {
+    // Create a URL-friendly version of the name
+    const nameSlug = ambassadorName.toLowerCase().replace(/ /g, '-');
+    // Navigate to the ambassador profile with the name-based URL and ID as a query parameter
+    navigate(`/ambassadors/${nameSlug}?id=${ambassadorId}`);
   };
 
   // Show loading state
@@ -196,7 +206,7 @@ export default function AmbassadorsGrid() {
         {ambassadors.map((ambassador) => (
           <Card key={ambassador.id} className="overflow-hidden hover:shadow-lg transition-shadow">
             <div className="flex flex-col gap-4 p-6">
-              <div className="flex items-center gap-4 cursor-pointer" onClick={() => viewAmbassadorProfile(ambassador.id)}>
+              <div className="flex items-center gap-4 cursor-pointer" onClick={() => viewAmbassadorProfile(ambassador.id, ambassador.full_name)}>
                 <img
                   src={ambassador.avatar_url || '/default-avatar.png'}
                   alt={ambassador.full_name}
@@ -266,7 +276,7 @@ export default function AmbassadorsGrid() {
               </div>
 
               <BookingButton
-                ambassadorId={parseInt(ambassador.id)}
+                ambassadorId={parseInt(ambassador.id) || 0}
                 className="w-full mt-2"
                 buttonText={ambassador.available ? "Book Session" : "Unavailable"}
                 disabled={!ambassador.available}

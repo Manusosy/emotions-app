@@ -43,10 +43,11 @@ import MoodAnalytics from "../components/MoodAnalytics";
 import MoodAssessment from "../components/MoodAssessment";
 import MoodSummaryCard from "../components/MoodSummaryCard";
 import EmotionalHealthWheel from "../components/EmotionalHealthWheel";
-import { Appointment, Message, UserProfile } from "@/types/database.types";
+import { Appointment as AppointmentRecord, Message, UserProfile } from "@/types/database.types";
 import { format, parseISO } from "date-fns";
 import { jsPDF } from "jspdf";
 import 'jspdf-autotable';
+import { patientService } from "@/integrations/supabase/services/patient.service";
 
 // Define interfaces for appointment data
 interface Ambassador {
@@ -136,6 +137,8 @@ export default function PatientDashboard() {
     firstCheckInDate: ""
   });
   const [hasAssessments, setHasAssessments] = useState(false);
+  const [appointmentReports, setAppointmentReports] = useState<any[]>([]);
+  const [reportsLoading, setReportsLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
@@ -529,11 +532,38 @@ export default function PatientDashboard() {
             setIsLoading(false);
           }
         }
+
+        // Fetch appointment reports using patientService
+        setReportsLoading(true);
+        try {
+          const { success, data, error } = await patientService.getAppointmentReports(
+            session.user.id, 
+            appointmentFilter
+          );
+          
+          if (success && data) {
+            setAppointmentReports(data);
+          } else if (error) {
+            console.error("Error fetching appointment reports:", error);
+            // Fall back to mock reports if real data fetch fails
+            setAppointmentReports(patientService.getMockAppointmentReports(appointmentFilter));
+          } else {
+            // If no data or empty array, use mock data
+            setAppointmentReports(patientService.getMockAppointmentReports(appointmentFilter));
+          }
+        } catch (err) {
+          console.error("Exception in appointment reports fetch:", err);
+          setAppointmentReports(patientService.getMockAppointmentReports(appointmentFilter));
+        } finally {
+          setReportsLoading(false);
+        }
       } catch (error: any) {
         console.error("Error fetching dashboard data:", error);
         if (isMounted) {
           toast.error(error.message || "Failed to load dashboard data");
         }
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -542,6 +572,37 @@ export default function PatientDashboard() {
       isMounted = false;
     };
   }, [navigate]);
+
+  // Update appointment reports when filter changes
+  useEffect(() => {
+    const updateAppointmentReports = async () => {
+      if (!user?.id) return;
+      
+      setReportsLoading(true);
+      try {
+        const { success, data, error } = await patientService.getAppointmentReports(
+          user.id, 
+          appointmentFilter
+        );
+        
+        if (success && data) {
+          setAppointmentReports(data);
+        } else if (error) {
+          console.error("Error fetching filtered appointment reports:", error);
+          setAppointmentReports(patientService.getMockAppointmentReports(appointmentFilter));
+        } else {
+          setAppointmentReports(patientService.getMockAppointmentReports(appointmentFilter));
+        }
+      } catch (err) {
+        console.error("Exception in filtered appointment reports fetch:", err);
+        setAppointmentReports(patientService.getMockAppointmentReports(appointmentFilter));
+      } finally {
+        setReportsLoading(false);
+      }
+    };
+    
+    updateAppointmentReports();
+  }, [user, appointmentFilter]);
 
   const handleUpdateProfile = async (updatedData: Partial<UserProfile>) => {
     try {
@@ -585,74 +646,62 @@ export default function PatientDashboard() {
 
   const handleExportPDF = () => {
     try {
-      // Create a new jsPDF instance
       const doc = new jsPDF();
-      
+
       // Add title
-      doc.setFontSize(20);
-      doc.setTextColor(32, 192, 243); // #20C0F3
-      doc.text("Upcoming Appointments", 105, 15, { align: 'center' });
-      
-      // Add patient information
-      doc.setFontSize(12);
+      doc.setFontSize(18);
+      doc.setTextColor(0, 0, 150);
+      doc.text('Appointment Reports', 14, 20);
+
+      // Add patient info
+      doc.setFontSize(11);
       doc.setTextColor(0, 0, 0);
-      doc.text(`Patient: ${profile?.first_name || 'John'} ${profile?.last_name || 'Doe'}`, 20, 30);
-      doc.text(`ID: ${profile?.patient_id || 'P123456'}`, 20, 40);
-      doc.text("Date Generated: " + new Date().toLocaleDateString(), 20, 50);
-      
-      // Create table data
-      const tableColumn = ["ID", "Date", "Time", "Type", "Ambassador", "Notes"];
-      const tableRows = upcomingAppointments.map(appointment => [
-        appointment.id,
-        appointment.date,
-        appointment.time,
-        appointment.type,
-        appointment.ambassador ? appointment.ambassador.name : "-",
-        appointment.notes || "-"
+      doc.text(`Patient: ${profile?.first_name} ${profile?.last_name}`, 14, 30);
+      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 36);
+
+      // Create data for table
+      const tableRows = appointmentReports.map(report => [
+        report.id, 
+        report.ambassador.name,
+        `${report.date}, ${report.time}`,
+        report.type,
+        report.status
       ]);
-      
-      // Add table to document - need to cast to any for autoTable to work
-      const autoTable = (doc as any).autoTable;
-      if (typeof autoTable === 'function') {
-        autoTable({
-          head: [tableColumn],
-          body: tableRows,
-          startY: 60,
-          theme: 'grid',
-          styles: {
-            fontSize: 10,
-            cellPadding: 3,
-            lineColor: [220, 220, 220]
-          },
-          headStyles: {
-            fillColor: [32, 192, 243], // #20C0F3
-            textColor: [255, 255, 255],
-            fontStyle: 'bold'
-          },
-          alternateRowStyles: {
-            fillColor: [240, 240, 240]
-          }
-        });
-        
-        // Add footer
-        const finalY = (doc as any).lastAutoTable.finalY + 20;
-        doc.setFontSize(10);
-        doc.setTextColor(100, 100, 100);
-        doc.text("EmotionHealth - Your Mental Health Partner", 105, finalY, { align: 'center' });
-      }
-      
+
+      // Add table with appointment data
+      (doc as any).autoTable({
+        head: [['ID', 'Mental Health Ambassador', 'Date', 'Type', 'Status']],
+        body: tableRows,
+        startY: 45,
+        styles: { 
+          fontSize: 9,
+          cellPadding: 3
+        },
+        headStyles: { 
+          fillColor: [32, 192, 243],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+          fillColor: [240, 247, 255]
+        }
+      });
+
       // Save the PDF
-      doc.save("Upcoming-Appointments.pdf");
-      toast.success("Appointments exported successfully");
+      const fileName = `appointment_report_${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(fileName);
+      
+      toast.success("Appointment report has been downloaded");
     } catch (error) {
-      console.error("Error exporting PDF:", error);
+      console.error("Error generating PDF:", error);
       toast.error("Failed to export appointments");
     }
   };
 
   const handleExportAppointment = (appointmentId: string) => {
     try {
-      const appointment = upcomingAppointments.find(app => app.id === appointmentId);
+      // Find the appointment in the reports
+      const appointment = appointmentReports.find(report => report.id === appointmentId);
       
       if (!appointment) {
         toast.error("Appointment not found");
@@ -660,41 +709,43 @@ export default function PatientDashboard() {
       }
       
       const doc = new jsPDF();
-      
+
       // Add title
-      doc.setFontSize(20);
-      doc.setTextColor(32, 192, 243); // #20C0F3
-      doc.text("Appointment Details", 105, 15, { align: 'center' });
-      
-      // Add appointment information
+      doc.setFontSize(18);
+      doc.setTextColor(0, 0, 150);
+      doc.text('Appointment Details', 14, 20);
+
+      // Add appointment info
       doc.setFontSize(12);
       doc.setTextColor(0, 0, 0);
-      doc.text(`Appointment ID: ${appointment.id}`, 20, 30);
-      doc.text(`Date: ${appointment.date}`, 20, 40);
-      doc.text(`Time: ${appointment.time}`, 20, 50);
-      doc.text(`Type: ${appointment.type}`, 20, 60);
-      doc.text(`Status: ${appointment.status}`, 20, 70);
       
-      if (appointment.ambassador) {
-        doc.text(`Ambassador: ${appointment.ambassador.name}`, 20, 80);
-        doc.text(`Specialization: ${appointment.ambassador.specialization}`, 20, 90);
-      }
+      // Appointment details
+      doc.text(`ID: ${appointment.id}`, 14, 35);
+      doc.text(`Ambassador: ${appointment.ambassador.name}`, 14, 45);
+      doc.text(`Specialization: ${appointment.ambassador.specialization}`, 14, 55);
+      doc.text(`Date: ${appointment.date}`, 14, 65);
+      doc.text(`Time: ${appointment.time}`, 14, 75);
+      doc.text(`Type: ${appointment.type}`, 14, 85);
+      doc.text(`Status: ${appointment.status}`, 14, 95);
       
+      // Add notes if available
       if (appointment.notes) {
-        doc.text(`Notes: ${appointment.notes}`, 20, 100);
+        doc.text('Notes:', 14, 110);
+        doc.setFontSize(10);
+        
+        // Split notes into multiple lines if needed
+        const splitNotes = doc.splitTextToSize(appointment.notes, 180);
+        doc.text(splitNotes, 14, 120);
       }
-      
-      // Add footer
-      doc.setFontSize(10);
-      doc.setTextColor(100, 100, 100);
-      doc.text("EmotionHealth - Your Mental Health Partner", 105, 280, { align: 'center' });
-      
+
       // Save the PDF
-      doc.save(`Appointment-${appointmentId}.pdf`);
-      toast.success("Appointment details exported successfully");
+      const fileName = `appointment_${appointmentId.replace('#', '')}_${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(fileName);
+      
+      toast.success("Appointment details have been downloaded");
     } catch (error) {
-      console.error("Error exporting appointment PDF:", error);
-      toast.error("Failed to export appointment");
+      console.error("Error generating PDF:", error);
+      toast.error("Failed to export appointment details");
     }
   };
 
@@ -870,9 +921,11 @@ export default function PatientDashboard() {
                 <div className="relative">
                   <select 
                     className="appearance-none bg-white border border-slate-200 rounded-md pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                    defaultValue="all"
-                    onChange={(e) => setAppointmentFilter(e.target.value)}
                     value={appointmentFilter}
+                    onChange={(e) => {
+                      setAppointmentFilter(e.target.value);
+                      // Loading indicator will be shown by the useEffect that watches appointmentFilter
+                    }}
                   >
                     <option value="all">All Appointments</option>
                     <option value="upcoming">Upcoming</option>
@@ -883,7 +936,7 @@ export default function PatientDashboard() {
                     <ChevronRight className="h-4 w-4 rotate-90" />
                   </div>
                 </div>
-                <Button variant="outline" size="sm" onClick={handleExportPDF}>
+                <Button variant="outline" size="sm" onClick={handleExportPDF} disabled={reportsLoading || appointmentReports.length === 0}>
                   <Download className="h-4 w-4 mr-1" />
                   Export All
                 </Button>
@@ -906,282 +959,120 @@ export default function PatientDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
-                    {/* Appointment Row 1 */}
-                    {(appointmentFilter === "all" || appointmentFilter === "upcoming") && (
-                    <tr className="hover:bg-blue-50/30 transition-colors">
-                      <td className="p-4">
-                        <span className="text-blue-600 font-medium">#EMHA01</span>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
-                            <img 
-                              src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80"
-                              alt="Ruby Perrin"
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <div>
-                            <div className="font-medium">Dr. Ruby Perrin</div>
-                            <div className="text-xs text-slate-500">Depression & Anxiety Specialist</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-4 text-sm">25 Apr 2025, 10:30 AM</td>
-                      <td className="p-4 text-sm">Video Call</td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                        <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 font-medium px-3 py-1 rounded-full">
-                          <span className="flex items-center">
-                            <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 mr-1.5"></span>
-                            Upcoming
-                          </span>
-                        </Badge>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-7 w-7 p-0" 
-                            onClick={() => handleExportAppointment('EMHA01')}
-                          >
-                            <FileText className="h-3.5 w-3.5 text-slate-600" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                    )}
+                    {reportsLoading ? (
+                      // Loading skeleton
+                      Array(4).fill(null).map((_, i) => (
+                        <tr key={`skeleton-${i}`} className="animate-pulse">
+                          <td className="p-4">
+                            <div className="h-4 bg-slate-200 rounded w-20"></div>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-slate-200"></div>
+                              <div className="space-y-2">
+                                <div className="h-4 bg-slate-200 rounded w-32"></div>
+                                <div className="h-3 bg-slate-200 rounded w-24"></div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <div className="h-4 bg-slate-200 rounded w-28"></div>
+                          </td>
+                          <td className="p-4">
+                            <div className="h-4 bg-slate-200 rounded w-16"></div>
+                          </td>
+                          <td className="p-4">
+                            <div className="h-6 bg-slate-200 rounded w-24"></div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : appointmentReports.length === 0 ? (
+                      // No appointments found
+                      <tr>
+                        <td colSpan={5} className="p-8 text-center text-slate-500">
+                          No appointments found matching your filter criteria
+                        </td>
+                      </tr>
+                    ) : (
+                      // Render actual appointment data
+                      appointmentReports.map((report) => {
+                        // Determine status badge styling
+                        const getBadgeClasses = (status: string) => {
+                          switch(status.toLowerCase()) {
+                            case 'upcoming':
+                              return "bg-indigo-100 text-indigo-700 hover:bg-indigo-200";
+                            case 'completed':
+                              return "bg-purple-100 text-purple-700 hover:bg-purple-200";
+                            case 'cancelled':
+                              return "bg-red-100 text-red-700 hover:bg-red-200";
+                            default:
+                              return "bg-slate-100 text-slate-700 hover:bg-slate-200";
+                          }
+                        };
 
-                    {/* Appointment Row 2 */}
-                    {(appointmentFilter === "all" || appointmentFilter === "completed") && (
-                    <tr className="hover:bg-blue-50/30 transition-colors">
-                      <td className="p-4">
-                        <span className="text-blue-600 font-medium">#EMHA02</span>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-cyan-100 flex items-center justify-center overflow-hidden">
-                            <img 
-                              src="https://images.unsplash.com/photo-1582750433449-648ed127bb54?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80"
-                              alt="Darren Elder"
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <div>
-                            <div className="font-medium">Dr. Darren Elder</div>
-                            <div className="text-xs text-slate-500">Trauma & PTSD Specialist</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-4 text-sm">18 Apr 2025, 11:40 AM</td>
-                      <td className="p-4 text-sm">Video Call</td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                        <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 font-medium px-3 py-1 rounded-full">
-                          <span className="flex items-center">
-                            <span className="h-1.5 w-1.5 rounded-full bg-purple-500 mr-1.5"></span>
-                            Completed
-                          </span>
-                        </Badge>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-7 w-7 p-0" 
-                            onClick={() => handleExportAppointment('EMHA02')}
-                          >
-                            <FileText className="h-3.5 w-3.5 text-slate-600" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                    )}
+                        // Determine badge dot color
+                        const getDotColor = (status: string) => {
+                          switch(status.toLowerCase()) {
+                            case 'upcoming':
+                              return "bg-indigo-500";
+                            case 'completed':
+                              return "bg-purple-500";
+                            case 'cancelled':
+                              return "bg-red-500";
+                            default:
+                              return "bg-slate-500";
+                          }
+                        };
 
-                    {/* Adding Past Appointment: Dr. Deborah Angel */}
-                    {(appointmentFilter === "all" || appointmentFilter === "completed") && (
-                    <tr className="hover:bg-blue-50/30 transition-colors">
-                      <td className="p-4">
-                        <span className="text-blue-600 font-medium">#EMHA03</span>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
-                            <img 
-                              src="https://images.unsplash.com/photo-1614608997588-8173059e05e6?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80"
-                              alt="Deborah Angel"
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <div>
-                            <div className="font-medium">Dr. Deborah Angel</div>
-                            <div className="text-xs text-slate-500">Relationship & Family Specialist</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-4 text-sm">12 Apr 2025, 04:00 PM</td>
-                      <td className="p-4 text-sm">Chat</td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 font-medium px-3 py-1 rounded-full">
-                            <span className="flex items-center">
-                              <span className="h-1.5 w-1.5 rounded-full bg-purple-500 mr-1.5"></span>
-                              Completed
-                            </span>
-                          </Badge>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-7 w-7 p-0" 
-                            onClick={() => handleExportAppointment('EMHA03')}
-                          >
-                              <FileText className="h-3.5 w-3.5 text-slate-600" />
-                            </Button>
-                        </div>
-                      </td>
-                    </tr>
-                    )}
-
-                    {/* Adding Past Appointment: Dr. Sofia Brient */}
-                    {(appointmentFilter === "all" || appointmentFilter === "completed") && (
-                    <tr className="hover:bg-blue-50/30 transition-colors">
-                      <td className="p-4">
-                        <span className="text-blue-600 font-medium">#EMHA04</span>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center overflow-hidden">
-                            <img 
-                              src="https://images.unsplash.com/photo-1594824476967-48c8b964273f?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80"
-                              alt="Sofia Brient"
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <div>
-                            <div className="font-medium">Dr. Sofia Brient</div>
-                            <div className="text-xs text-slate-500">Addiction & Recovery Specialist</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-4 text-sm">10 Apr 2025, 10:00 AM</td>
-                      <td className="p-4 text-sm">Video Call</td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 font-medium px-3 py-1 rounded-full">
-                            <span className="flex items-center">
-                              <span className="h-1.5 w-1.5 rounded-full bg-purple-500 mr-1.5"></span>
-                              Completed
-                            </span>
-                          </Badge>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-7 w-7 p-0" 
-                            onClick={() => handleExportAppointment('EMHA04')}
-                          >
-                              <FileText className="h-3.5 w-3.5 text-slate-600" />
-                            </Button>
-                        </div>
-                      </td>
-                    </tr>
-                    )}
-
-                    {/* Appointment Row 3 */}
-                    {(appointmentFilter === "all" || appointmentFilter === "completed") && (
-                    <tr className="hover:bg-blue-50/30 transition-colors">
-                      <td className="p-4">
-                        <span className="text-blue-600 font-medium">#EMHA05</span>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center overflow-hidden">
-                            <img 
-                              src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80"
-                              alt="Ruby Perrin"
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <div>
-                            <div className="font-medium">Dr. Ruby Perrin</div>
-                            <div className="text-xs text-slate-500">Depression & Anxiety Specialist</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-4 text-sm">02 Apr 2025, 09:20 AM</td>
-                      <td className="p-4 text-sm">Audio Call</td>
-                      <td className="p-4">
-                        <Badge className="bg-green-100 text-green-700 hover:bg-green-200 font-medium px-3 py-1 rounded-full">
-                          <span className="flex items-center">
-                            <span className="h-1.5 w-1.5 rounded-full bg-green-500 mr-1.5"></span>
-                            Completed
-                          </span>
-                        </Badge>
-                      </td>
-                    </tr>
-                    )}
-
-                    {/* Appointment Row 4 */}
-                    {(appointmentFilter === "all" || appointmentFilter === "cancelled") && (
-                    <tr className="hover:bg-blue-50/30 transition-colors">
-                      <td className="p-4">
-                        <span className="text-blue-600 font-medium">#EMHA06</span>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center overflow-hidden">
-                            <img 
-                              src="https://images.unsplash.com/photo-1582750433449-648ed127bb54?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80"
-                              alt="Darren Elder"
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <div>
-                            <div className="font-medium">Dr. Darren Elder</div>
-                            <div className="text-xs text-slate-500">Trauma & PTSD Specialist</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-4 text-sm">15 Apr 2025, 04:10 PM</td>
-                      <td className="p-4 text-sm">Audio Call</td>
-                      <td className="p-4">
-                        <Badge className="bg-red-100 text-red-700 hover:bg-red-200 font-medium px-3 py-1 rounded-full">
-                          <span className="flex items-center">
-                            <span className="h-1.5 w-1.5 rounded-full bg-red-500 mr-1.5"></span>
-                            Cancelled
-                          </span>
-                        </Badge>
-                      </td>
-                    </tr>
-                    )}
-
-                    {/* Appointment Row 5 */}
-                    {(appointmentFilter === "all" || appointmentFilter === "upcoming") && (
-                    <tr className="hover:bg-blue-50/30 transition-colors">
-                      <td className="p-4">
-                        <span className="text-blue-600 font-medium">#EMHA07</span>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden">
-                            <img 
-                              src="https://images.unsplash.com/photo-1594824476967-48c8b964273f?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80"
-                              alt="Sofia Brient"
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <div>
-                            <div className="font-medium">Dr. Sofia Brient</div>
-                            <div className="text-xs text-slate-500">Addiction & Recovery Specialist</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-4 text-sm">30 Apr 2025, 06:00 PM</td>
-                      <td className="p-4 text-sm">Chat</td>
-                      <td className="p-4">
-                        <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 font-medium px-3 py-1 rounded-full">
-                          <span className="flex items-center">
-                            <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 mr-1.5"></span>
-                            Upcoming
-                          </span>
-                        </Badge>
-                      </td>
-                    </tr>
+                        return (
+                          <tr key={report.id} className="hover:bg-blue-50/30 transition-colors">
+                            <td className="p-4">
+                              <span className="text-blue-600 font-medium">{report.id}</span>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
+                                  {report.ambassador.avatar_url ? (
+                                    <img 
+                                      src={report.ambassador.avatar_url}
+                                      alt={report.ambassador.name}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <span className="text-blue-500 font-medium">
+                                      {report.ambassador.name.split(' ').map(n => n[0]).join('')}
+                                    </span>
+                                  )}
+                                </div>
+                                <div>
+                                  <div className="font-medium">{report.ambassador.name}</div>
+                                  <div className="text-xs text-slate-500">{report.ambassador.specialization}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-4 text-sm">{`${report.date}, ${report.time}`}</td>
+                            <td className="p-4 text-sm">{report.type}</td>
+                            <td className="p-4">
+                              <div className="flex items-center gap-2">
+                                <Badge className={`${getBadgeClasses(report.status)} font-medium px-3 py-1 rounded-full`}>
+                                  <span className="flex items-center">
+                                    <span className={`h-1.5 w-1.5 rounded-full ${getDotColor(report.status)} mr-1.5`}></span>
+                                    {report.status}
+                                  </span>
+                                </Badge>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-7 w-7 p-0" 
+                                  onClick={() => handleExportAppointment(report.id)}
+                                >
+                                  <FileText className="h-3.5 w-3.5 text-slate-600" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>

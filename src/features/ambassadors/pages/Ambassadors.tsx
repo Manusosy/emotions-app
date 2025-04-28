@@ -5,9 +5,18 @@ import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { MapPin, ThumbsUp, MessageSquare, DollarSign, Info } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { motion } from "framer-motion"
 import { Link } from "react-router-dom"
 import BookingButton from "@/features/booking/components/BookingButton"
+
+// Import ambassador service
+let ambassadorService: any;
+try {
+  const { ambassadorService: ambService } = require("@/integrations/supabase/services/ambassador.service");
+  ambassadorService = ambService;
+} catch (error) {
+  console.error("Failed to load ambassador service:", error);
+  ambassadorService = null;
+}
 
 type Ambassador = {
   id: string
@@ -29,9 +38,13 @@ const Ambassadors = () => {
   const [gender, setGender] = useState<string[]>(["Male"])
   const [specialties, setSpecialties] = useState<string[]>(["Depression & Anxiety", "Trauma & PTSD"])
   const [filteredAmbassadors, setFilteredAmbassadors] = useState<Ambassador[]>([])
+  const [loading, setLoading] = useState(true)
+  const [realAmbassadors, setRealAmbassadors] = useState<Ambassador[]>([])
+  // Add debug toggle button
+  const [showDebugInfo, setShowDebugInfo] = useState(false)
   
-  // Sample ambassador data
-  const ambassadors: Ambassador[] = [
+  // Sample ambassador data as fallback
+  const mockAmbassadors: Ambassador[] = [
     {
       id: "1",
       name: "Dr. Ruby Perrin",
@@ -90,10 +103,78 @@ const Ambassadors = () => {
     }
   ]
 
+  // Fetch real ambassadors from service
+  useEffect(() => {
+    const fetchRealAmbassadors = async () => {
+      if (!ambassadorService) {
+        console.log("Ambassador service not available, using mock data");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        console.log("Fetching ambassadors with ambassador service...");
+        const result = await ambassadorService.getAvailableAmbassadors(10);
+        console.log("Ambassador service response:", result);
+        
+        if (result.success && result.data && result.data.length > 0) {
+          // Map to expected Ambassador format
+          const mappedAmbassadors = result.data.map((ambassador: any) => {
+            console.log("Processing ambassador:", ambassador.name || ambassador.id);
+            return {
+              id: ambassador.id || Math.random().toString(),
+              name: ambassador.name || "Ambassador",
+              credentials: ambassador.credentials || "Mental Health Professional",
+              specialty: ambassador.specialty || "Mental Health Support",
+              rating: ambassador.rating || 4.5,
+              totalRatings: ambassador.reviews || 10,
+              feedback: ambassador.reviews || 10,
+              location: ambassador.location || "Remote",
+              isFree: ambassador.isFree !== false,
+              therapyTypes: Array.isArray(ambassador.services) ? ambassador.services : 
+                (ambassador.specialty ? [ambassador.specialty] : ["Mental Health Support"]),
+              image: ambassador.avatar || "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80",
+              satisfaction: 95
+            };
+          });
+          
+          setRealAmbassadors(mappedAmbassadors);
+          console.log("Successfully fetched real ambassadors:", mappedAmbassadors.length);
+          console.log("Ambassador details:", mappedAmbassadors);
+        } else {
+          console.log("No ambassadors returned from service or error in response");
+        }
+      } catch (error) {
+        console.error("Error fetching ambassadors:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRealAmbassadors();
+  }, []);
+  
+  // Combine real and mock ambassadors, ALWAYS show real ambassadors first
+  const combinedAmbassadors = () => {
+    if (realAmbassadors.length === 0) {
+      console.log("No real ambassadors available, using mock data only");
+      return mockAmbassadors;
+    }
+    
+    console.log("Combining real ambassadors with mock data");
+    // Always show real ambassadors first, then mock ones
+    return [...realAmbassadors, ...mockAmbassadors.filter(mock => 
+      !realAmbassadors.some(real => real.id === mock.id)
+    )];
+  };
+
   // Apply filters in real-time
   useEffect(() => {
+    // Use the combined list of ambassadors
+    const ambassadorsList = combinedAmbassadors();
+    
     // Filter ambassadors based on selected specialties
-    const filtered = ambassadors.filter(ambassador => {
+    const filtered = ambassadorsList.filter(ambassador => {
       // Check if ambassador's specialty matches any selected specialty
       const hasSpecialty = specialties.some(specialty => {
         if (specialty === "Depression & Anxiety") {
@@ -114,8 +195,8 @@ const Ambassadors = () => {
       return hasSpecialty;
     });
     
-    setFilteredAmbassadors(filtered.length > 0 ? filtered : ambassadors);
-  }, [specialties, gender]);
+    setFilteredAmbassadors(filtered.length > 0 ? filtered : ambassadorsList);
+  }, [specialties, gender, realAmbassadors]);
 
   const toggleGender = (value: string) => {
     setGender(
@@ -143,19 +224,14 @@ const Ambassadors = () => {
           <div className="absolute left-1/3 top-1/3 w-64 h-64 rounded-full bg-white"></div>
         </div>
         <div className="container mx-auto px-4 relative z-10">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center max-w-3xl mx-auto"
-          >
+          <div className="text-center max-w-3xl mx-auto">
             <h1 className="text-4xl md:text-5xl font-bold mb-6 text-center">Our Mental Health Ambassadors</h1>
             <p className="text-lg md:text-xl max-w-2xl mx-auto text-blue-50 mb-8 text-center">
               Our Mental Health Ambassadors are dedicated professionals providing
               compassionate support for your emotional well-being. These specialists focus on various areas of
               mental health to help you navigate life's challenges with confidence and resilience.
             </p>
-          </motion.div>
+          </div>
         </div>
         
         {/* Curved bottom edge */}
@@ -171,6 +247,75 @@ const Ambassadors = () => {
             <div className="bg-white p-6 rounded-md shadow-sm text-left">
               <h2 className="text-lg font-bold text-gray-800 mb-6 text-left">Search Filter</h2>
               
+              {/* Add debug button */}
+              <div className="mb-4 p-3 border border-blue-200 rounded-md bg-blue-50">
+                <Button 
+                  onClick={() => setShowDebugInfo(prev => !prev)}
+                  variant="outline"
+                  className="w-full mb-2"
+                >
+                  {showDebugInfo ? 'Hide Debug Info' : 'Show Debug Info'}
+                </Button>
+                
+                {showDebugInfo && (
+                  <div className="mt-2 text-xs">
+                    <p>Real ambassadors: {realAmbassadors.length}</p>
+                    <p>Ambassador Service: {ambassadorService ? 'Available' : 'Not Available'}</p>
+                    <p>Loading: {loading ? 'Yes' : 'No'}</p>
+                    {realAmbassadors.length > 0 && (
+                      <div className="mt-2">
+                        <p className="font-bold">Ambassador IDs:</p>
+                        <ul className="list-disc pl-4">
+                          {realAmbassadors.map(amb => (
+                            <li key={amb.id}>{amb.name} (ID: {amb.id})</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    <Button 
+                      onClick={async () => {
+                        try {
+                          setLoading(true);
+                          console.log("Manual refresh: Fetching ambassadors...");
+                          const result = await ambassadorService.getAvailableAmbassadors(10);
+                          console.log("Manual refresh result:", result);
+                          
+                          if (result.success && result.data && result.data.length > 0) {
+                            const mappedAmbassadors = result.data.map((ambassador: any) => ({
+                              id: ambassador.id,
+                              name: ambassador.name || "Ambassador",
+                              credentials: ambassador.credentials || "Mental Health Professional",
+                              specialty: ambassador.specialty || "Mental Health Support",
+                              rating: ambassador.rating || 4.5,
+                              totalRatings: ambassador.reviews || 10,
+                              feedback: ambassador.reviews || 10,
+                              location: ambassador.location || "Remote",
+                              isFree: ambassador.isFree !== false,
+                              therapyTypes: Array.isArray(ambassador.services) 
+                                ? ambassador.services 
+                                : (ambassador.specialty ? [ambassador.specialty] : ["Mental Health Support"]),
+                              image: ambassador.avatar || "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80",
+                              satisfaction: 95
+                            }));
+                            
+                            setRealAmbassadors(mappedAmbassadors);
+                            console.log("Manual refresh successful:", mappedAmbassadors);
+                          }
+                        } catch (err) {
+                          console.error("Manual refresh error:", err);
+                        } finally {
+                          setLoading(false);
+                        }
+                      }}
+                      className="w-full mt-2 bg-green-600 hover:bg-green-700 text-white"
+                      size="sm"
+                    >
+                      Refresh Ambassadors
+                    </Button>
+                  </div>
+                )}
+              </div>
+
               <div className="mb-6">
                 <label className="block text-sm mb-2 text-gray-600 text-left">Select Date</label>
                 <Input 
@@ -274,7 +419,7 @@ const Ambassadors = () => {
           {/* Ambassadors List */}
           <div className="flex-1">
             <div className="space-y-6">
-              {(filteredAmbassadors.length > 0 ? filteredAmbassadors : ambassadors).map((ambassador) => (
+              {(filteredAmbassadors.length > 0 ? filteredAmbassadors : combinedAmbassadors()).map((ambassador) => (
                 <Card key={ambassador.id} className="p-6 flex flex-col md:flex-row gap-6 bg-white border-none shadow-sm">
                   <div className="flex-shrink-0" style={{ width: '180px' }}>
                     <img 
@@ -341,7 +486,7 @@ const Ambassadors = () => {
                         <Link to={`/ambassadors/${ambassador.id}`}>VIEW PROFILE</Link>
                       </Button>
                       <BookingButton 
-                        ambassadorId={parseInt(ambassador.id)}
+                        ambassadorId={parseInt(ambassador.id) || 0}
                         buttonText="BOOK APPOINTMENT"
                         className="rounded-md uppercase bg-[#007BFF] hover:bg-blue-600"
                         variant="default"

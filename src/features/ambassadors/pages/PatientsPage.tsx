@@ -115,15 +115,8 @@ const PatientsPage = () => {
       setIsLoading(true);
       console.log('Starting patient fetch...');
 
-      // First, let's check if we can query the users table
-      const { data: userCount, error: countError } = await supabase
-        .from('users')
-        .select('*', { count: 'exact' })
-        .eq('role', 'patient');
-
-      console.log('User count check:', { userCount, countError });
-
-      const { data: patients, error } = await supabase
+      // First try to get all users with role='patient' and join with their profiles
+      const { data: patientUsers, error: userError } = await supabase
         .from('users')
         .select(`
           id,
@@ -131,34 +124,98 @@ const PatientsPage = () => {
           role,
           created_at,
           avatar_url,
-          patient_profiles (*)
+          patient_profiles!left (
+            id,
+            first_name,
+            last_name,
+            phone_number,
+            date_of_birth,
+            country,
+            city,
+            state
+          )
         `)
         .eq('role', 'patient');
 
-      console.log('Query result:', {
-        patients: patients,
-        error: error,
-        patientsLength: patients?.length,
-        hasProfiles: patients?.some(p => p.patient_profiles?.length > 0)
-      });
+      if (userError) {
+        console.error('Error fetching patient users:', userError);
+        
+        // Fallback to directly querying patient_profiles if users query fails
+        const { data: profilesOnly, error: profilesError } = await supabase
+          .from('patient_profiles')
+          .select('*');
 
-      if (error) {
-        console.error('Error fetching patients:', error);
-        toast.error("Failed to load patients");
-        setPatients([]);
+        if (profilesError) {
+          console.error('Error in fallback patient profiles query:', profilesError);
+          toast.error("Failed to load patients");
+          setPatients([]);
+          return;
+        }
+
+        if (!profilesOnly || profilesOnly.length === 0) {
+          console.log('No patient profiles found');
+          setPatients([]);
+          return;
+        }
+
+        // Transform profile data without user data
+        const transformedProfiles = profilesOnly.map(profile => ({
+          id: profile.id,
+          email: profile.email || '',
+          first_name: profile.first_name || 'Unknown',
+          last_name: profile.last_name || '',
+          phone_number: profile.phone_number || '',
+          date_of_birth: profile.date_of_birth || '',
+          country: profile.country || 'Unknown',
+          city: profile.city || '',
+          state: profile.state || '',
+          avatar_url: undefined,
+          created_at: profile.created_at
+        }));
+
+        setPatients(transformedProfiles);
         return;
       }
 
-      if (!patients || patients.length === 0) {
-        console.log('No patients found in database');
-        setPatients([]);
-        toast.info("No patients found in the system");
+      if (!patientUsers || patientUsers.length === 0) {
+        // If no patient users found, try to query auth.users to get all users with role=patient in metadata
+        console.log('No patient users found in users table, trying auth.users table...');
+        
+        const { data: authUsers, error: authError } = await supabase.rpc('get_patient_users');
+        
+        if (authError || !authUsers || authUsers.length === 0) {
+          console.log('No patients found in auth.users either:', authError);
+          setPatients([]);
+          toast.info("No patients found in the system");
+          return;
+        }
+        
+        // Process auth users (these will have limited profile data)
+        const authPatients = authUsers.map(user => ({
+          id: user.id,
+          email: user.email,
+          first_name: user.raw_user_meta_data?.first_name || user.email?.split('@')[0] || 'Unknown',
+          last_name: user.raw_user_meta_data?.last_name || '',
+          phone_number: user.raw_user_meta_data?.phone_number || '',
+          date_of_birth: '',
+          country: user.raw_user_meta_data?.country || 'Unknown',
+          city: '',
+          state: '',
+          avatar_url: user.raw_user_meta_data?.avatar_url,
+          created_at: user.created_at
+        }));
+        
+        console.log('Auth patients:', authPatients);
+        setPatients(authPatients);
         return;
       }
 
-      const transformedData = patients.map(user => {
+      console.log('Found patient users:', patientUsers.length);
+
+      // Transform the joined data
+      const transformedData = patientUsers.map(user => {
         const profile = user.patient_profiles?.[0] || {};
-        const transformed = {
+        return {
           id: user.id,
           email: user.email,
           first_name: profile.first_name || user.email?.split('@')[0] || 'Unknown',
@@ -171,11 +228,9 @@ const PatientsPage = () => {
           avatar_url: user.avatar_url,
           created_at: user.created_at
         };
-        console.log('Transformed patient:', transformed);
-        return transformed;
       });
 
-      console.log('Final transformed data:', transformedData);
+      console.log('Transformed patients:', transformedData.length);
       setPatients(transformedData);
     } catch (error) {
       console.error('Error in fetchPatients:', error);

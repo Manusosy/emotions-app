@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,6 +11,8 @@ import { useAuth } from '@/hooks/use-auth';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import BookingButton from '@/features/booking/components/BookingButton';
+import { ambassadorService } from '@/integrations/supabase/services/ambassador.service';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Define types for the profile data
 type Education = {
@@ -71,7 +73,15 @@ type AmbassadorProfileData = {
 };
 
 const AmbassadorProfile = () => {
+  // Get both URL params and query params
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const queryId = queryParams.get('id');
+  
+  // Priority: query ID first (from name-based URLs), then param ID
+  const ambassadorId = queryId || id;
+  
   const [activeTab, setActiveTab] = useState('overview');
   const [showAvailability, setShowAvailability] = useState(false);
   const [showCallDialog, setShowCallDialog] = useState(false);
@@ -81,13 +91,54 @@ const AmbassadorProfile = () => {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [showAvailabilityDialog, setShowAvailabilityDialog] = useState(false);
   const [showChatAuthDialog, setShowChatAuthDialog] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [ambassador, setAmbassador] = useState<AmbassadorProfileData | null>(null);
+  const [profileCompleteness, setProfileCompleteness] = useState<{
+    percentage: number;
+    isComplete: boolean;
+  } | null>(null);
   
   // Use the auth hook to check authentication
   const { isAuthenticated, user } = useAuth();
   
-  // Mock data - would be fetched from API based on id in real implementation
-  const ambassador: AmbassadorProfileData = {
-    id: "2",
+  // Fetch ambassador data
+  useEffect(() => {
+    const fetchAmbassadorData = async () => {
+      if (!ambassadorId) return;
+      
+      console.log(`Fetching ambassador data for ID: ${ambassadorId}`);
+      setLoading(true);
+      try {
+        const response = await ambassadorService.getFormattedAmbassadorData(ambassadorId);
+        
+        if (response.success && response.data) {
+          console.log("Successfully fetched ambassador data:", response.data.name);
+          setAmbassador(response.data);
+          if (response.completeness) {
+            setProfileCompleteness(response.completeness);
+          }
+        } else {
+          console.error("Failed to load ambassador profile:", response.error);
+          toast.error("Failed to load ambassador profile");
+          // Fallback to mock data
+          setAmbassador({...mockAmbassador, id: ambassadorId || "1"});
+        }
+      } catch (error) {
+        console.error("Error fetching ambassador data:", error);
+        toast.error("An error occurred while loading the profile");
+        // Fallback to mock data
+        setAmbassador({...mockAmbassador, id: ambassadorId || "1"});
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchAmbassadorData();
+  }, [ambassadorId]);
+  
+  // Mock data for fallback if API fails
+  const mockAmbassador: AmbassadorProfileData = {
+    id: ambassadorId || "2",
     name: "Dr. Darren Elder",
     credentials: "MSc in Clinical Psychology, Certified Counselor",
     specialty: "Trauma & PTSD Specialist",
@@ -201,7 +252,7 @@ const AmbassadorProfile = () => {
   // Function to handle making a call
   const handleMakeCall = () => {
     if (isAuthenticated) {
-      window.location.href = `tel:${ambassador.phoneNumber}`;
+      window.location.href = `tel:${ambassador?.phoneNumber}`;
     } else {
       setShowCallDialog(true);
     }
@@ -210,7 +261,7 @@ const AmbassadorProfile = () => {
   // Function to handle video call
   const handleVideoCall = () => {
     if (isAuthenticated) {
-      toast.success("Setting up video call with " + ambassador.name);
+      toast.success("Setting up video call with " + ambassador?.name);
       // Implement your video call functionality here
     } else {
       setShowVideoDialog(true);
@@ -235,7 +286,7 @@ const AmbassadorProfile = () => {
         setChatMessages([
           {
             sender: 'ambassador',
-            message: `Hello! I'm ${ambassador.name}. How can I help you today?`,
+            message: `Hello! I'm ${ambassador?.name}. How can I help you today?`,
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           }
         ]);
@@ -271,7 +322,7 @@ const AmbassadorProfile = () => {
 
   // Function to book an appointment slot
   const bookAppointment = (day: string, time: string) => {
-    toast.success(`Booking appointment with ${ambassador.name} on ${day} at ${time}`);
+    toast.success(`Booking appointment with ${ambassador?.name} on ${day} at ${time}`);
     setShowAvailability(false);
     // Implement your booking logic here
   };
@@ -331,20 +382,20 @@ const AmbassadorProfile = () => {
               <div className="flex-shrink-0">
                 <div className="mb-3">
                   <img 
-                    src={ambassador.image} 
-                    alt={ambassador.name}
+                    src={ambassador?.image} 
+                    alt={ambassador?.name || "Ambassador"}
                     className="w-32 h-32 object-cover rounded-lg shadow-sm"
                   />
                 </div>
                 <div className="flex gap-2 flex-wrap">
-                  {ambassador.therapyTypes.map((type, index) => (
+                  {ambassador?.therapyTypes.map((type, index) => (
                     <div key={index} className="w-12 h-12 rounded bg-gray-100 flex items-center justify-center">
                       <img src={type.icon} alt={type.name} className="w-6 h-6" />
                     </div>
                   ))}
                 </div>
                 <div className="flex text-xs text-gray-500 mt-2 justify-between">
-                  {ambassador.therapyTypes.map((type, index) => (
+                  {ambassador?.therapyTypes.map((type, index) => (
                     <div key={index} className="text-center w-12 overflow-hidden">
                       <span className="block truncate">{type.name}</span>
                     </div>
@@ -356,24 +407,24 @@ const AmbassadorProfile = () => {
               <div className="flex-1">
                 <div className="flex flex-col md:flex-row justify-between">
                   <div>
-                    <h2 className="text-xl font-semibold text-[#001A41] text-left">{ambassador.name}</h2>
-                    <p className="text-gray-600 text-sm text-left">{ambassador.credentials}</p>
-                    <p className="text-[#007BFF] font-medium mb-2 text-left">{ambassador.specialty}</p>
+                    <h2 className="text-xl font-semibold text-[#001A41] text-left">{ambassador?.name}</h2>
+                    <p className="text-gray-600 text-sm text-left">{ambassador?.credentials}</p>
+                    <p className="text-[#007BFF] font-medium mb-2 text-left">{ambassador?.specialty}</p>
                     
                     {/* Star rating */}
                     <div className="flex items-center mb-2">
                       {[...Array(5)].map((_, i) => (
-                        <svg key={i} className={`w-4 h-4 ${i < Math.floor(ambassador.rating) ? "text-amber-400" : "text-gray-200"}`} fill="currentColor" viewBox="0 0 20 20">
+                        <svg key={i} className={`w-4 h-4 ${i < Math.floor(ambassador?.rating) ? "text-amber-400" : "text-gray-200"}`} fill="currentColor" viewBox="0 0 20 20">
                           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
                         </svg>
                       ))}
-                      <span className="ml-1 text-sm text-gray-500">({ambassador.totalRatings})</span>
+                      <span className="ml-1 text-sm text-gray-500">({ambassador?.totalRatings})</span>
                     </div>
                     
                     {/* Location */}
                     <div className="flex items-center gap-1 text-gray-600 mb-2 text-left">
                       <MapPin className="h-4 w-4" />
-                      <span className="text-sm">{ambassador.location}</span>
+                      <span className="text-sm">{ambassador?.location}</span>
                       <span className="text-xs text-[#007BFF] ml-2 underline cursor-pointer">Get Directions</span>
                     </div>
                   </div>
@@ -382,11 +433,11 @@ const AmbassadorProfile = () => {
                   <div className="mt-4 md:mt-0">
                     <div className="flex items-center justify-end mb-2">
                       <ThumbsUp className="w-4 h-4 text-gray-500 mr-1" />
-                      <span className="text-gray-900 font-semibold">{ambassador.satisfaction}%</span>
+                      <span className="text-gray-900 font-semibold">{ambassador?.satisfaction}%</span>
                     </div>
                     <div className="flex items-center justify-end mb-2">
                       <MessageSquare className="w-4 h-4 text-gray-500 mr-1" />
-                      <span className="text-sm text-gray-600">{ambassador.feedback} Feedback</span>
+                      <span className="text-sm text-gray-600">{ambassador?.feedback} Feedback</span>
                     </div>
                     <div className="flex items-center justify-end mb-2">
                       <span className="text-sm text-gray-600 flex items-center">
@@ -439,11 +490,11 @@ const AmbassadorProfile = () => {
                     </Button>
                   </div>
                   <BookingButton 
-                    ambassadorId={parseInt(ambassador.id)} 
+                    ambassadorId={parseInt(ambassador?.id || "2")} 
                     className="mt-2 md:mt-0 md:ml-2" 
-                    buttonText={ambassador.isFree ? "BOOK APPOINTMENT" : "UNAVAILABLE"}
+                    buttonText={ambassador?.isFree ? "BOOK APPOINTMENT" : "UNAVAILABLE"}
                     variant="default"
-                    disabled={!ambassador.isFree}
+                    disabled={!ambassador?.isFree}
                   />
                 </div>
               </div>
@@ -488,14 +539,14 @@ const AmbassadorProfile = () => {
               <TabsContent value="overview" className="mt-0">
                 <div className="bg-white rounded-lg shadow-sm p-6 mb-8 text-left">
                   <h3 className="text-lg font-semibold mb-4 text-[#001A41]">About Me</h3>
-                  <p className="text-gray-700">{ambassador.about}</p>
+                  <p className="text-gray-700">{ambassador?.about}</p>
                 </div>
                 
                 {/* Education */}
                 <div className="bg-white rounded-lg shadow-sm p-6 mb-8 text-left">
                   <h3 className="text-lg font-semibold mb-4 text-[#001A41]">Education</h3>
                   <div className="space-y-6">
-                    {ambassador.education.map((edu, index) => (
+                    {ambassador?.education.map((edu, index) => (
                       <div key={index} className="relative pl-8 before:absolute before:left-2 before:top-2 before:w-3 before:h-3 before:bg-[#007BFF] before:rounded-full before:z-10 after:absolute after:left-3 after:top-5 after:bottom-0 after:w-0.5 after:bg-gray-200 after:-z-10">
                         <h4 className="font-medium">{edu.university}</h4>
                         <p className="text-sm text-gray-600">{edu.degree}</p>
@@ -509,7 +560,7 @@ const AmbassadorProfile = () => {
                 <div className="bg-white rounded-lg shadow-sm p-6 mb-8 text-left">
                   <h3 className="text-lg font-semibold mb-4 text-[#001A41]">Work & Experience</h3>
                   <div className="space-y-6">
-                    {ambassador.experience.map((exp, index) => (
+                    {ambassador?.experience.map((exp, index) => (
                       <div key={index} className="relative pl-8 before:absolute before:left-2 before:top-2 before:w-3 before:h-3 before:bg-[#007BFF] before:rounded-full before:z-10 after:absolute after:left-3 after:top-5 after:bottom-0 after:w-0.5 after:bg-gray-200 after:-z-10">
                         <h4 className="font-medium">{exp.company}</h4>
                         <p className="text-sm text-gray-600">{exp.period} {exp.duration}</p>
@@ -522,7 +573,7 @@ const AmbassadorProfile = () => {
                 <div className="bg-white rounded-lg shadow-sm p-6 mb-8 text-left">
                   <h3 className="text-lg font-semibold mb-4 text-[#001A41]">Awards</h3>
                   <div className="space-y-6">
-                    {ambassador.awards.map((award, index) => (
+                    {ambassador?.awards.map((award, index) => (
                       <div key={index} className="relative pl-8 before:absolute before:left-2 before:top-2 before:w-3 before:h-3 before:bg-[#007BFF] before:rounded-full before:z-10 after:absolute after:left-3 after:top-5 after:bottom-0 after:w-0.5 after:bg-gray-200 after:-z-10">
                         <p className="text-sm text-gray-500">{award.date}</p>
                         <h4 className="font-medium">{award.title}</h4>
@@ -536,7 +587,7 @@ const AmbassadorProfile = () => {
                 <div className="bg-white rounded-lg shadow-sm p-6 mb-8 text-left">
                   <h3 className="text-lg font-semibold mb-4 text-[#001A41]">Services</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {ambassador.services.map((service, index) => (
+                    {ambassador?.services.map((service, index) => (
                       <div key={index} className="flex items-center gap-2">
                         <span className="text-[#007BFF]">→</span>
                         <span className="text-gray-700">{service}</span>
@@ -549,7 +600,7 @@ const AmbassadorProfile = () => {
                 <div className="bg-white rounded-lg shadow-sm p-6 text-left">
                   <h3 className="text-lg font-semibold mb-4 text-[#001A41]">Specializations</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {ambassador.specializations.map((specialization, index) => (
+                    {ambassador?.specializations.map((specialization, index) => (
                       <div key={index} className="flex items-center gap-2">
                         <span className="text-[#007BFF]">→</span>
                         <span className="text-gray-700">{specialization}</span>
@@ -641,11 +692,11 @@ const AmbassadorProfile = () => {
             <DialogHeader>
               <DialogTitle className="text-[#007BFF]">Available Appointment Slots</DialogTitle>
               <DialogDescription>
-                Select an available time slot to book an appointment with {ambassador.name}.
+                Select an available time slot to book an appointment with {ambassador?.name}.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-6 mt-4">
-              {ambassador.availability.map((day, idx) => (
+              {ambassador?.availability.map((day, idx) => (
                 <div key={idx} className="border-b pb-4 last:border-b-0">
                   <h4 className="font-medium mb-2">{day.day}</h4>
                   <div className="flex flex-wrap gap-2">
@@ -680,7 +731,7 @@ const AmbassadorProfile = () => {
             <DialogHeader>
               <DialogTitle className="text-[#007BFF]">Authentication Required</DialogTitle>
               <DialogDescription>
-                You need to be logged in to call {ambassador.name}.
+                You need to be logged in to call {ambassador?.name}.
               </DialogDescription>
             </DialogHeader>
             <div className="mt-4 text-center">
@@ -701,7 +752,7 @@ const AmbassadorProfile = () => {
             <DialogHeader>
               <DialogTitle className="text-[#007BFF]">Authentication Required</DialogTitle>
               <DialogDescription>
-                You need to be logged in to video call with {ambassador.name}.
+                You need to be logged in to video call with {ambassador?.name}.
               </DialogDescription>
             </DialogHeader>
             <div className="mt-4 text-center">
@@ -720,7 +771,7 @@ const AmbassadorProfile = () => {
         <Dialog open={showChatDialog} onOpenChange={setShowChatDialog}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-[#007BFF]">Chat with {ambassador.name}</DialogTitle>
+              <DialogTitle className="text-[#007BFF]">Chat with {ambassador?.name}</DialogTitle>
               <DialogDescription>
                 Send a message and get a quick response from your mental health ambassador.
               </DialogDescription>
@@ -779,7 +830,7 @@ const AmbassadorProfile = () => {
             <DialogHeader>
               <DialogTitle className="text-[#007BFF]">Authentication Required</DialogTitle>
               <DialogDescription>
-                You need to be logged in to view availability for {ambassador.name}.
+                You need to be logged in to view availability for {ambassador?.name}.
               </DialogDescription>
             </DialogHeader>
             <div className="mt-4 text-center">
@@ -800,7 +851,7 @@ const AmbassadorProfile = () => {
             <DialogHeader>
               <DialogTitle className="text-[#007BFF]">Authentication Required</DialogTitle>
               <DialogDescription>
-                You need to be logged in to chat with {ambassador.name}.
+                You need to be logged in to chat with {ambassador?.name}.
               </DialogDescription>
             </DialogHeader>
             <div className="mt-4 text-center">

@@ -60,6 +60,8 @@ import ScrollToTop from "@/components/layout/ScrollToTop";
 import SettingsPage from "@/features/ambassadors/pages/SettingsPage";
 import ProfilePage from "@/features/ambassadors/pages/ProfilePage";
 import DeleteAccountPage from "@/features/ambassadors/pages/DeleteAccountPage";
+import { profileService } from "@/integrations/supabase/services/profile.service";
+import { ambassadorService } from "@/integrations/supabase/services/ambassador.service";
 
 // Type definition for UserRole
 type UserRole = 'patient' | 'ambassador' | 'admin';
@@ -455,11 +457,49 @@ const AppContent = () => {
 const App = () => {
   console.log('App component mounting...');
 
+  // Run database migrations when the app starts
+  useEffect(() => {
+    const runMigrations = async () => {
+      try {
+        // Ensure ambassador_profiles schema
+        await profileService.ensureAmbassadorProfileSchema();
+        
+        // Ensure ambassador dashboard schema
+        await ambassadorService.ensureDashboardSchema();
+        
+        console.log("Database schema checks completed");
+      } catch (error) {
+        console.error("Error running migrations:", error);
+      }
+    };
+    
+    runMigrations();
+  }, []);
+
   return (
-    <BrowserRouter>
-      <ScrollToTop />
-      <AppContent />
-    </BrowserRouter>
+    <ErrorBoundary
+      fallback={
+        <div className="flex flex-col items-center justify-center min-h-screen p-4">
+          <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-lg">
+            <h2 className="text-2xl font-bold text-red-600 mb-4">Something went wrong</h2>
+            <p className="text-gray-700 mb-4">
+              We're sorry, but there was an error loading the application. Please try refreshing the page.
+            </p>
+            <Button
+              onClick={() => window.location.reload()}
+              className="w-full bg-blue-600 hover:bg-blue-700"
+            >
+              Refresh Page
+            </Button>
+          </div>
+        </div>
+      }
+    >
+      <BrowserRouter>
+        <ScrollToTop />
+        <AppContent />
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 };
 

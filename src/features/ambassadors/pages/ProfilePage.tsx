@@ -17,12 +17,14 @@ import {
   Monitor,
   Languages,
   Star,
-  MapPin
+  MapPin,
+  RefreshCw
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 interface AmbassadorProfile {
   id: string;
@@ -32,13 +34,21 @@ interface AmbassadorProfile {
   bio: string;
   speciality: string; 
   languages: string[];
-  education: string;
-  experience: string;
+  education: any[];
+  experience: any[];
+  awards?: any[];
   availability_status: string;
   avatar_url: string;
   ambassador_id: string;
   created_at: string;
   updated_at: string;
+  specialty?: string;
+  specialties?: string[];
+  credentials?: string;
+  location?: string;
+  therapyTypes?: any[];
+  consultation_fee?: number;
+  isFree?: boolean;
 }
 
 export default function ProfilePage() {
@@ -46,6 +56,8 @@ export default function ProfilePage() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<AmbassadorProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [profileCompleteness, setProfileCompleteness] = useState(0);
   const [stats, setStats] = useState({
     totalSessions: 0,
     activeClients: 0,
@@ -53,73 +65,184 @@ export default function ProfilePage() {
     averageRating: 0,
   });
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        setIsLoading(true);
-        
-        if (!user) {
-          return;
-        }
+  const calculateProfileCompletion = (profileData: AmbassadorProfile) => {
+    let completedSections = 0;
+    let totalSections = 7; // Total number of important profile sections
+    
+    // Personal info section
+    if (profileData.full_name && profileData.email && profileData.phone_number) completedSections++;
+    
+    // Bio & Specialties
+    if (profileData.bio && 
+       ((profileData.specialties && profileData.specialties.length > 0) || 
+        profileData.speciality || 
+        profileData.specialty)) 
+      completedSections++;
+    
+    // Education & Experience
+    const hasValidEducation = Array.isArray(profileData.education) && profileData.education.some(
+      edu => edu.university && edu.degree && edu.period
+    );
+    
+    const hasValidExperience = Array.isArray(profileData.experience) && profileData.experience.some(
+      exp => exp.company && exp.position && exp.period
+    );
+    
+    if (hasValidEducation && hasValidExperience) completedSections++;
+    
+    // Therapy & Services
+    if ((profileData.therapyTypes && profileData.therapyTypes.length > 0) && 
+        (profileData.specialty || profileData.speciality)) completedSections++;
+    
+    // Availability & Pricing
+    if (profileData.availability_status) completedSections++;
+    
+    // Media
+    if (profileData.avatar_url) completedSections++;
+    
+    // Location and other info
+    if (profileData.location && 
+        (Array.isArray(profileData.languages) && profileData.languages.length > 0)) 
+      completedSections++;
+    
+    return Math.round((completedSections / totalSections) * 100);
+  };
 
-        // Fetch ambassador profile from database
-        const { data, error } = await supabase
+  const fetchProfile = async () => {
+    try {
+      setIsLoading(true);
+      
+      if (!user) {
+        return;
+      }
+
+      // Fetch from both tables to ensure we get the most complete data
+      const [ambassadorResult, profileResult] = await Promise.all([
+        supabase
           .from("ambassador_profiles")
           .select("*")
           .eq("id", user.id)
-          .single();
-
-        if (error) {
-          throw error;
-        }
-
-        if (data) {
-          // Handle formatting/processing of data
-          const processedProfile = {
-            ...data,
-            languages: data.languages ? data.languages.split(',') : [],
-            speciality: data.speciality || '',
-          };
-          
-          setProfile(processedProfile);
-        } else {
-          // Create default profile from user metadata
-          const userProfile: AmbassadorProfile = {
+          .single(),
+        supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single()
+      ]);
+      
+      let finalProfile: AmbassadorProfile | null = null;
+      
+      // First try ambassador_profiles table
+      if (!ambassadorResult.error && ambassadorResult.data) {
+        // Handle formatting/processing of data
+        finalProfile = {
+          ...ambassadorResult.data,
+          languages: ambassadorResult.data.languages ? 
+            (typeof ambassadorResult.data.languages === 'string' ? 
+              ambassadorResult.data.languages.split(',') : 
+              ambassadorResult.data.languages) : [],
+          speciality: ambassadorResult.data.speciality || '',
+          specialty: ambassadorResult.data.specialty || '',
+          specialties: ambassadorResult.data.specialties || [],
+          education: Array.isArray(ambassadorResult.data.education) ? 
+            ambassadorResult.data.education : [],
+          experience: Array.isArray(ambassadorResult.data.experience) ? 
+            ambassadorResult.data.experience : [],
+        };
+      }
+      
+      // Then check if profiles table has additional data
+      if (!profileResult.error && profileResult.data) {
+        if (!finalProfile) {
+          finalProfile = {
+            ...profileResult.data,
             id: user.id,
             ambassador_id: user.id,
-            full_name: `${user.user_metadata?.first_name || ''} ${user.user_metadata?.last_name || ''}`.trim(),
-            email: user.email || '',
-            phone_number: user.user_metadata?.phone_number || '',
-            bio: '',
-            speciality: '',
-            languages: [],
-            education: '',
-            experience: '',
-            availability_status: 'Available',
-            avatar_url: user.user_metadata?.avatar_url || '',
-            created_at: user.created_at || new Date().toISOString(),
-          updated_at: new Date().toISOString()
+            languages: profileResult.data.languages ? 
+              (typeof profileResult.data.languages === 'string' ? 
+                profileResult.data.languages.split(',') : 
+                profileResult.data.languages) : [],
+            speciality: profileResult.data.speciality || profileResult.data.specialty || '',
+            education: Array.isArray(profileResult.data.education) ? 
+              profileResult.data.education : [],
+            experience: Array.isArray(profileResult.data.experience) ? 
+              profileResult.data.experience : [],
+            created_at: profileResult.data.created_at || new Date().toISOString(),
+            updated_at: profileResult.data.updated_at || new Date().toISOString()
+          } as AmbassadorProfile;
+        } else {
+          // Merge data, preferring ambassador_profiles but filling gaps from profiles
+          finalProfile = {
+            ...finalProfile,
+            full_name: finalProfile.full_name || profileResult.data.full_name || '',
+            email: finalProfile.email || profileResult.data.email || user.email || '',
+            avatar_url: finalProfile.avatar_url || profileResult.data.avatar_url || '',
+            speciality: finalProfile.speciality || profileResult.data.speciality || profileResult.data.specialty || '',
+            specialty: finalProfile.specialty || profileResult.data.specialty || profileResult.data.speciality || '',
+            specialties: finalProfile.specialties || profileResult.data.specialties || [],
+            credentials: finalProfile.credentials || profileResult.data.credentials || '',
+            location: finalProfile.location || profileResult.data.location || '',
+            therapyTypes: finalProfile.therapyTypes || profileResult.data.therapyTypes || [],
+            consultation_fee: finalProfile.consultation_fee || profileResult.data.consultation_fee || 0,
+            isFree: finalProfile.isFree !== undefined ? finalProfile.isFree : profileResult.data.isFree,
           };
-
-          setProfile(userProfile);
         }
-
-        // Mock stats for now - would normally fetch from database
-        setStats({
-          totalSessions: 24,
-          activeClients: 8,
-          totalHours: 42,
-          averageRating: 4.8,
-        });
-    } catch (error: any) {
-        console.error('Error fetching profile:', error);
-    } finally {
-        setIsLoading(false);
       }
-    };
+      
+      // If we still don't have a profile, create from user metadata
+      if (!finalProfile) {
+        finalProfile = {
+          id: user.id,
+          ambassador_id: user.id,
+          full_name: user.user_metadata?.full_name || 
+                    `${user.user_metadata?.first_name || ''} ${user.user_metadata?.last_name || ''}`.trim() || 
+                    user.email?.split('@')[0] || 'Ambassador',
+          email: user.email || '',
+          phone_number: user.user_metadata?.phone_number || '',
+          bio: user.user_metadata?.bio || '',
+          speciality: user.user_metadata?.speciality || user.user_metadata?.specialty || '',
+          specialty: user.user_metadata?.specialty || user.user_metadata?.speciality || '',
+          languages: user.user_metadata?.languages || [],
+          education: user.user_metadata?.education || [],
+          experience: user.user_metadata?.experience || [],
+          availability_status: 'Available',
+          avatar_url: user.user_metadata?.avatar_url || '',
+          created_at: user.created_at || new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+      }
+      
+      // Calculate profile completeness
+      const completenessPercentage = calculateProfileCompletion(finalProfile);
+      setProfileCompleteness(completenessPercentage);
+      
+      setProfile(finalProfile);
 
+      // Mock stats for now - would normally fetch from database
+      setStats({
+        totalSessions: 24,
+        activeClients: 8,
+        totalHours: 42,
+        averageRating: 4.8,
+      });
+    } catch (error: any) {
+      console.error('Error fetching profile:', error);
+      toast.error("Couldn't load profile completely");
+    } finally {
+      setIsLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  // Initial profile fetch
+  useEffect(() => {
     fetchProfile();
   }, [user]);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchProfile();
+  };
 
   if (!user) {
     return null;
@@ -138,7 +261,12 @@ export default function ProfilePage() {
   }
 
   // Parse specialties from comma-separated string if available
-  const specialties = profile?.speciality ? profile.speciality.split(',') : [];
+  const specialties = profile?.specialties && profile.specialties.length > 0 ? 
+    profile.specialties : 
+    profile?.speciality ? 
+      profile.speciality.split(',') : 
+      profile?.specialty ? 
+        profile.specialty.split(',') : [];
 
   return (
     <DashboardLayout>
@@ -146,9 +274,25 @@ export default function ProfilePage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Ambassador Profile</h1>
-            <p className="text-muted-foreground mt-1">View and manage your ambassador information</p>
+            <p className="text-muted-foreground mt-1">
+              Profile Completeness: {profileCompleteness}%
+              {profileCompleteness < 80 && (
+                <span className="text-red-500 ml-2">
+                  (Complete at least 80% to be visible to patients)
+                </span>
+              )}
+            </p>
           </div>
           <div className="flex gap-3">
+            <Button 
+              variant="outline"
+              onClick={handleRefresh}
+              className="border-blue-200 text-blue-600"
+              disabled={refreshing}
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
             <Button 
               variant="outline"
               onClick={() => navigate('/ambassador-dashboard/clients')}
@@ -176,7 +320,7 @@ export default function ProfilePage() {
                   <Avatar className="h-32 w-32 border-4 border-white shadow-md">
                     <AvatarImage src={profile.avatar_url} />
                     <AvatarFallback className="bg-blue-700 text-white text-2xl">
-                      {profile.full_name.charAt(0)}
+                      {profile.full_name ? profile.full_name.charAt(0) : "A"}
                     </AvatarFallback>
                   </Avatar>
                 </div>
@@ -189,6 +333,11 @@ export default function ProfilePage() {
                       <Badge variant="outline" className="bg-blue-100 border-blue-200 text-blue-700 font-medium">
                         Ambassador
                       </Badge>
+                      {profile.credentials && (
+                        <Badge variant="outline" className="bg-purple-100 border-purple-200 text-purple-700 font-medium">
+                          {profile.credentials}
+                        </Badge>
+                      )}
                       <Badge variant="outline" className={`${
                         profile.availability_status === 'Available' 
                           ? 'bg-green-100 border-green-200 text-green-700' 
@@ -233,6 +382,18 @@ export default function ProfilePage() {
                       <div>
                         <p className="text-sm text-muted-foreground">Phone</p>
                         <p className="font-medium">{profile.phone_number}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {profile.location && (
+                    <div className="flex items-center gap-3 p-4 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
+                      <div className="bg-blue-100 p-2 rounded-full">
+                        <MapPin className="h-5 w-5 text-blue-700" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Location</p>
+                        <p className="font-medium">{profile.location}</p>
                       </div>
                     </div>
                   )}
@@ -315,25 +476,55 @@ export default function ProfilePage() {
                   </div>
                 )}
 
-                {profile.education && (
+                {Array.isArray(profile.education) && profile.education.length > 0 && (
                   <div>
                     <h3 className="text-md font-semibold mb-2 flex items-center">
                       <BookOpen className="h-4 w-4 mr-2 text-blue-600" />
                       Education
                     </h3>
-                    <p className="text-sm text-slate-700">{profile.education}</p>
+                    <div className="space-y-2">
+                      {profile.education.map((edu, index) => (
+                        <div key={index} className="text-sm text-slate-700">
+                          <p><strong>{edu.degree}</strong></p>
+                          <p>{edu.university} • {edu.period}</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 
-                {profile.experience && (
+                {Array.isArray(profile.experience) && profile.experience.length > 0 && (
                   <div>
                     <h3 className="text-md font-semibold mb-2 flex items-center">
                       <Monitor className="h-4 w-4 mr-2 text-blue-600" />
                       Professional Experience
                     </h3>
-                    <p className="text-sm text-slate-700">{profile.experience}</p>
+                    <div className="space-y-2">
+                      {profile.experience.map((exp, index) => (
+                        <div key={index} className="text-sm text-slate-700">
+                          <p><strong>{exp.position}</strong></p>
+                          <p>{exp.company} • {exp.period}</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
+                
+                {/* Consultation Fee & Availability */}
+                <div>
+                  <h3 className="text-md font-semibold mb-2 flex items-center">
+                    <Calendar className="h-4 w-4 mr-2 text-blue-600" />
+                    Availability & Pricing
+                  </h3>
+                  <div className="text-sm text-slate-700">
+                    <p>Status: <strong>{profile.availability_status}</strong></p>
+                    {profile.isFree ? (
+                      <p className="text-green-600 font-medium mt-1">Offering free consultations</p>
+                    ) : (
+                      <p className="mt-1">Consultation fee: <strong>${profile.consultation_fee?.toFixed(2) || '0.00'}</strong></p>
+                    )}
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
