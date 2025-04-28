@@ -288,6 +288,9 @@ const AmbassadorDashboard = () => {
         // Ensure the ambassador_profiles schema is up-to-date
         await profileService.ensureAmbassadorProfileSchema();
         
+        // Check if the welcome dialog has been shown before - use a more specific key with user ID
+        const hasSeenWelcome = localStorage.getItem(`ambassadorWelcomeShown_${user.id}`);
+        
         // Check user creation date
         const creationDate = new Date(user.created_at);
         const currentDate = new Date();
@@ -304,8 +307,9 @@ const AmbassadorDashboard = () => {
           let completionPercentage = calculateProfileCompletion(data);
           setProfileCompletionPercentage(completionPercentage);
           
-          // Show welcome dialog for new users or incomplete profiles
-          if (diffDays <= 3 || completionPercentage < 40) {
+          // Only show welcome dialog if they haven't seen it before
+          if (!hasSeenWelcome) {
+            console.log("Showing welcome dialog - not seen before");
             setIsNewUser(true);
             setShowWelcomeDialog(true);
           }
@@ -314,13 +318,17 @@ const AmbassadorDashboard = () => {
           console.error("Error fetching profile:", error);
           toast.error("Failed to load your profile data");
           
-          // Create a basic profile for new users
-          setIsNewUser(true);
-          setShowWelcomeDialog(true);
+          // Create a basic profile for new users and show welcome if they haven't seen it
+          if (!hasSeenWelcome) {
+            setIsNewUser(true);
+            setShowWelcomeDialog(true);
+          }
         } else {
-          // No profile found, this is a new user
-          setIsNewUser(true);
-          setShowWelcomeDialog(true);
+          // No profile found, this is a new user. Show welcome if they haven't seen it
+          if (!hasSeenWelcome) {
+            setIsNewUser(true);
+            setShowWelcomeDialog(true);
+          }
         }
       } catch (error) {
         console.error("Error checking user status:", error);
@@ -567,6 +575,45 @@ const AmbassadorDashboard = () => {
     ];
   };
 
+  // Function to handle closing the welcome dialog - update to match the key used in checkUserStatus
+  const handleCloseWelcomeDialog = () => {
+    setShowWelcomeDialog(false);
+    // Store in localStorage that the user has seen the welcome dialog - use more specific key with user ID
+    if (user?.id) {
+      localStorage.setItem(`ambassadorWelcomeShown_${user.id}`, "true");
+      console.log("Welcome dialog shown status saved to localStorage");
+    }
+  };
+
+  // Get the appropriate greeting based on time of day
+  const getTimeBasedGreeting = () => {
+    const hours = new Date().getHours();
+    const firstName = profile?.full_name?.split(' ')[0] || 'Ambassador';
+    
+    if (hours < 12) {
+      return `Good morning, ${firstName}`;
+    } else if (hours < 18) {
+      return `Good afternoon, ${firstName}`;
+    } else {
+      return `Good evening, ${firstName}`;
+    }
+  };
+
+  // Random positive messages to show with the greeting
+  const positiveMessages = [
+    "We hope you're having a wonderful day!",
+    "Thank you for making a difference in mental health support.",
+    "Your dedication to helping others is inspiring.",
+    "Today is a new opportunity to make a positive impact.",
+    "Your expertise matters to those seeking support."
+  ];
+
+  // Get a random positive message
+  const getRandomPositiveMessage = () => {
+    const randomIndex = Math.floor(Math.random() * positiveMessages.length);
+    return positiveMessages[randomIndex];
+  };
+
   return (
     <DashboardLayout>
       {/* Welcome Dialog for new ambassadors */}
@@ -574,7 +621,7 @@ const AmbassadorDashboard = () => {
         <DialogContent className="sm:max-w-[550px]">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-center text-[#20C0F3]">
-              Welcome to Your Ambassador Dashboard!
+              Hello {profile?.full_name?.split(' ')[0] || 'Ambassador'}, Welcome to Emotions!
             </DialogTitle>
             <DialogDescription className="text-center pt-2">
               We're excited to have you join our mental health community
@@ -593,7 +640,7 @@ const AmbassadorDashboard = () => {
               <Button 
                 size="sm" 
                 onClick={() => {
-                  setShowWelcomeDialog(false);
+                  handleCloseWelcomeDialog();
                   navigate('/ambassador-dashboard/settings');
                 }}
                 className="bg-[#20C0F3] hover:bg-[#20C0F3]/90 text-white"
@@ -614,7 +661,7 @@ const AmbassadorDashboard = () => {
                 size="sm" 
                 variant="outline"
                 onClick={() => {
-                  setShowWelcomeDialog(false);
+                  handleCloseWelcomeDialog();
                   navigate('/ambassador-dashboard/availability');
                 }}
                 className="border-green-200 text-green-600"
@@ -635,7 +682,7 @@ const AmbassadorDashboard = () => {
                 size="sm" 
                 variant="outline"
                 onClick={() => {
-                  setShowWelcomeDialog(false);
+                  handleCloseWelcomeDialog();
                 }}
                 className="border-purple-200 text-purple-600"
               >
@@ -646,25 +693,36 @@ const AmbassadorDashboard = () => {
           
           <DialogFooter className="flex flex-col gap-2">
             <Button 
-              onClick={() => setShowWelcomeDialog(false)}
+              onClick={handleCloseWelcomeDialog}
               className="w-full bg-[#20C0F3] hover:bg-[#20C0F3]/90 text-white"
             >
               Get Started
             </Button>
-            {!isNewUser && (
-              <Button 
-                variant="ghost" 
-                onClick={() => setShowWelcomeDialog(false)}
-                className="w-full"
-              >
-                Don't show again
-              </Button>
-            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <div className="space-y-5">
+        {/* Greeting Card */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100 mb-5">
+            <CardContent className="p-4">
+              <div className="flex flex-col md:flex-row md:items-center gap-2">
+                <div>
+                  <h2 className="text-xl font-semibold text-blue-800">{getTimeBasedGreeting()}</h2>
+                  <p className="text-sm text-blue-700 mt-1">
+                    {getRandomPositiveMessage()}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
         {/* Profile Completion Alert for incomplete profiles */}
         {profileCompletionPercentage < 80 && (
           <motion.div
