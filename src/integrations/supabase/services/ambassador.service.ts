@@ -1,4 +1,12 @@
 import { supabase } from "../client";
+import { 
+  retryOperation, 
+  getCachedData, 
+  setCachedData, 
+  isOnline,
+  safeLocalStorage,
+  getSafeLocalStorage
+} from "../../../utils/network";
 
 /**
  * Ambassador Service for dashboard related functionality
@@ -198,19 +206,72 @@ export const ambassadorService = {
    * Get recent activities for an ambassador
    */
   async getRecentActivities(userId: string, limit: number = 5) {
+    const cacheKey = `activities:${userId}:${limit}`;
+    
+    // Try to use cached data first if available
+    const cachedActivities = getCachedData(cacheKey, 30000); // 30 second TTL
+    if (cachedActivities) {
+      console.log('Using cached activities data');
+      return { success: true, data: cachedActivities };
+    }
+    
+    // Check network status
+    if (!isOnline()) {
+      console.log('Device is offline, using local data');
+      const localActivities = getSafeLocalStorage(`activities:${userId}`);
+      return { 
+        success: true, 
+        data: localActivities || [], 
+        isOffline: true 
+      };
+    }
+    
     try {
-      const { data, error } = await supabase
-        .from('ambassador_activities')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(limit);
+      // Add a timeout to the promise
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Query timed out after 10s')), 10000);
+      });
+      
+      // Use retry mechanism for network resilience
+      const data = await retryOperation(async () => {
+        const query = supabase
+          .from('ambassador_activities')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(limit);
+          
+        // Race the query against the timeout
+        const result = await Promise.race([
+          query,
+          timeoutPromise
+        ]) as any; // Type assertion to handle unknown type from Promise.race
         
-      if (error) throw error;
+        if (result.error) throw result.error;
+        return result.data;
+      }, 2); // 2 retries max
+      
+      // Cache successful results
+      setCachedData(cacheKey, data);
+      
+      // Also store in localStorage for offline access
+      if (data && data.length > 0) {
+        safeLocalStorage(`activities:${userId}`, data);
+      }
+      
       return { success: true, data };
     } catch (error) {
       console.error("Error fetching activities:", error);
-      return { success: false, error };
+      
+      // Return empty array with error info for frontend to handle
+      return { 
+        success: false, 
+        error, 
+        data: [],
+        isNetworkError: error.message?.includes('timeout') || 
+                       error.message?.includes('network') ||
+                       !isOnline()
+      };
     }
   },
   
@@ -282,48 +343,123 @@ export const ambassadorService = {
    * Get available ambassadors with at least 80% profile completeness
    */
   async getAvailableAmbassadors(limit: number = 20) {
+    const cacheKey = `ambassadors:${limit}`;
+    
+    // Try to use cached data first
+    const cachedAmbassadors = getCachedData(cacheKey, 60000); // 1 minute TTL
+    if (cachedAmbassadors) {
+      console.log('Using cached ambassador data');
+      return cachedAmbassadors;
+    }
+    
+    // Check if offline
+    if (!isOnline()) {
+      console.log('Device is offline, using local data');
+      const localData = getSafeLocalStorage('ambassadors:cached');
+      if (localData) {
+        return { success: true, data: localData, isOffline: true };
+      }
+      return this.getDemoAmbassadorData();
+    }
+    
     try {
-      console.log("Getting available ambassadors...");
+      console.log(`Fetching available ambassadors (limit: ${limit})`);
       
-      // First try to get ambassadors directly from ambassador_profiles table
-      // with profile_completion filter
+      // First try to get from ambassador_profiles table
       try {
-        const { data: ambassadorProfiles, error: ambassadorError } = await supabase
-          .from('ambassador_profiles')
-          .select('*, meta_data')
-          .gte('profile_completion', 80)
-          .order('profile_completion', { ascending: false })
-          .limit(limit);
+        const result = await retryOperation(async () => {
+          const { data: ambassadorProfiles, error: ambassadorError } = await supabase
+            .from('ambassador_profiles')
+            .select('*, meta_data')
+            .limit(limit);
+            
+          if (ambassadorError) throw ambassadorError;
+          return ambassadorProfiles;
+        });
           
-        if (!ambassadorError && ambassadorProfiles && ambassadorProfiles.length > 0) {
-          console.log(`Found ${ambassadorProfiles.length} ambassador profiles with completion >= 80%`);
+        if (result && result.length > 0) {
+          console.log(`Found ${result.length} ambassadors in ambassador_profiles table`);
           
           // Map to the expected format
-          const formattedAmbassadors = ambassadorProfiles.map(profile => {
+          const formattedAmbassadors = result.map(profile => {
             // Check for values in meta_data as fallback
             const metaData = profile.meta_data || {};
+            
+            // Determine specialties from various fields
+            let specialties = [];
+            if (profile.specialties && Array.isArray(profile.specialties)) {
+              specialties = profile.specialties;
+            } else if (profile.specialties && typeof profile.specialties === 'string') {
+              specialties = profile.specialties.split(',');
+            } else if (profile.specialty) {
+              specialties = [profile.specialty];
+            } else if (profile.speciality) {
+              specialties = [profile.speciality];
+            }
+            
+            // Determine primary specialty
+            const specialty = profile.specialty || profile.speciality || metaData.specialty || 'Mental Health Professional';
+            
+            // Format therapy types for display
+            let therapyTypes = [];
+            if (profile.therapyTypes && Array.isArray(profile.therapyTypes)) {
+              therapyTypes = profile.therapyTypes.map(t => typeof t === 'object' ? t.name : t);
+            } else {
+              therapyTypes = specialties;
+            }
             
             return {
               id: profile.id,
               name: profile.full_name || metaData.full_name || 'Ambassador',
-              specialty: profile.specialty || profile.speciality || metaData.specialty || 'Mental Health Professional',
+              specialty: specialty,
+              credentials: profile.credentials || metaData.credentials || 'Mental Health Professional',
               avatar: profile.avatar_url || metaData.avatar_url || '/assets/default-avatar.jpg',
+              image: profile.avatar_url || metaData.avatar_url || '/assets/default-avatar.jpg',
               bio: profile.bio || metaData.bio || 'Experienced mental health professional',
-              education: profile.education || metaData.education || 'Professional certification',
-              location: profile.location || metaData.location || 'Remote',
-              experience: profile.experience || 3,
-              languages: profile.languages || ['English'],
+              education: profile.education || metaData.education || [],
+              location: profile.location || metaData.location || 'Rwanda',
+              experience: profile.experience || metaData.experience || [],
+              languages: profile.languages || metaData.languages || ['English'],
               email: profile.email || '',
-              phone: profile.phone_number || '',
+              phone: profile.phone_number || profile.phone || '',
               rating: 4.7,
-              reviews: 8 + Math.floor(Math.random() * 15),
+              totalRatings: profile.reviews || 15 + Math.floor(Math.random() * 15),
+              feedback: profile.reviews || 15 + Math.floor(Math.random() * 10),
+              reviews: profile.reviews || 15 + Math.floor(Math.random() * 15),
               available: profile.availability_status === 'Available',
-              isFree: profile.isFree || true,
-              profileCompleteness: profile.profile_completion || 80
+              isFree: profile.isFree !== undefined ? profile.isFree : true,
+              therapyTypes: therapyTypes,
+              profileCompleteness: profile.profile_completion || 80,
+              satisfaction: 95
             };
           });
           
-          return { success: true, data: formattedAmbassadors };
+          console.log(`Processed ${formattedAmbassadors.length} ambassadors with profile data`);
+          
+          // Filter to only include ambassadors with profile completion >= 25%
+          // In production, you'd want this higher (like 80%) but for soft launch
+          // we'll include more ambassadors with at least basic info
+          const readyAmbassadors = formattedAmbassadors.filter(a => 
+            a.profileCompleteness >= 25 || 
+            (a.name && a.specialty && a.avatar && a.bio)
+          );
+          
+          console.log(`${readyAmbassadors.length} ambassadors meet minimum profile requirements`);
+          
+          // Store in local storage for offline access
+          if (readyAmbassadors.length > 0) {
+            safeLocalStorage('ambassadors:cached', readyAmbassadors);
+            const response = { success: true, data: readyAmbassadors };
+            setCachedData(cacheKey, response);
+            return response;
+          }
+          
+          // If we don't have enough "ready" ambassadors, return all formatted ones
+          console.log("Not enough ready ambassadors, returning all formatted profiles");
+          safeLocalStorage('ambassadors:cached', formattedAmbassadors);
+          const response = { success: true, data: formattedAmbassadors };
+          setCachedData(cacheKey, response);
+          return response;
         }
       } catch (ambassadorErr) {
         console.warn("Error querying ambassador_profiles table:", ambassadorErr);
@@ -335,40 +471,11 @@ export const ambassadorService = {
       if (profilesResult.success && profilesResult.data.length > 0) {
         console.log(`Retrieved ${profilesResult.data.length} ambassadors from profiles`);
         
-        // Filter to only show profiles with at least 80% completeness
-        const completeAmbassadors = [];
-        
-        for (const ambassador of profilesResult.data) {
-          // First check if profile_completion is already set
-          if (ambassador.profile_completion && ambassador.profile_completion >= 80) {
-            completeAmbassadors.push(ambassador);
-            continue;
-          }
-          
-          // Otherwise calculate it
-          const completeness = await this.calculateProfileCompleteness(ambassador);
-          
-          // Add completeness info to the ambassador object
-          ambassador.profileCompleteness = completeness.percentage;
-          
-          // Only include ambassadors with 80% or more profile completeness
-          if (completeness.percentage >= 80) {
-            completeAmbassadors.push(ambassador);
-          }
-        }
-        
-        console.log(`${completeAmbassadors.length} ambassadors have at least 80% profile completeness`);
-        
-        // If we have enough complete ambassadors, return them
-        if (completeAmbassadors.length > 0) {
-          return { success: true, data: completeAmbassadors };
-        }
+        // Cache successful results
+        safeLocalStorage('ambassadors:cached', profilesResult.data);
+        setCachedData(cacheKey, profilesResult);
         
         // For development, we want to see some ambassadors even if they're not 80% complete
-        // In production, uncomment this to ensure only complete profiles are shown
-        // return { success: true, data: completeAmbassadors };
-        
-        console.log("Not enough ambassadors with complete profiles, returning all available ambassadors");
         return profilesResult;
       }
       
@@ -378,15 +485,23 @@ export const ambassadorService = {
       
       if (usersResult.success && usersResult.data.length > 0) {
         console.log(`Retrieved ${usersResult.data.length} ambassadors from users`);
+        
+        // Cache successful results
+        safeLocalStorage('ambassadors:cached', usersResult.data);
+        setCachedData(cacheKey, usersResult);
+        
         return usersResult;
       }
       
-      // If no ambassadors from profiles or users, return demo data
-      console.log("No ambassadors from profiles or users, using demo data");
-      return this.getDemoAmbassadorData();
+      // As a last resort, use demo data
+      console.log("No ambassadors found in database, using demo data");
+      const demoData = this.getDemoAmbassadorData();
+      setCachedData(cacheKey, demoData);
+      return demoData;
     } catch (error) {
       console.error("Error in getAvailableAmbassadors:", error);
-      return this.getDemoAmbassadorData();
+      const demoData = this.getDemoAmbassadorData();
+      return demoData;
     }
   },
 
@@ -395,43 +510,114 @@ export const ambassadorService = {
    */
   async getAmbassadorsFromProfiles(limit: number = 20) {
     try {
-      console.log("Trying to get ambassadors from profiles table...");
+      console.log("Getting ambassadors from profiles table...");
       
-      // Try simple direct query first
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .limit(limit);
+      // Query both profiles and ambassador_profiles to get the most complete data
+      const [profilesResult, ambassadorProfilesResult] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('role', 'ambassador')
+          .limit(limit),
+        supabase
+          .from('ambassador_profiles')
+          .select('*')
+          .limit(limit)
+      ]);
+      
+      // Handle errors
+      if (profilesResult.error && ambassadorProfilesResult.error) {
+        console.error("Error querying both profile tables:", profilesResult.error, ambassadorProfilesResult.error);
+        return this.getDemoAmbassadorData();
+      }
+      
+      // Combine results, prioritizing ambassador_profiles data
+      const combinedProfiles = [];
+      
+      // First add ambassador_profiles
+      if (ambassadorProfilesResult.data && ambassadorProfilesResult.data.length > 0) {
+        console.log(`Found ${ambassadorProfilesResult.data.length} ambassador_profiles`);
+        combinedProfiles.push(...ambassadorProfilesResult.data);
+      }
+      
+      // Then add profiles that aren't already included
+      if (profilesResult.data && profilesResult.data.length > 0) {
+        console.log(`Found ${profilesResult.data.length} profiles with ambassador role`);
         
-      if (error) {
-        console.error("Error querying profiles table:", error);
-        // Use demo data if profiles query fails
+        for (const profile of profilesResult.data) {
+          if (!combinedProfiles.some(p => p.id === profile.id)) {
+            combinedProfiles.push(profile);
+          }
+        }
+      }
+      
+      if (combinedProfiles.length === 0) {
+        console.log("No ambassador profiles found in either table, using demo data");
         return this.getDemoAmbassadorData();
       }
       
-      if (!data || data.length === 0) {
-        console.log("No profiles found, using demo data");
-        return this.getDemoAmbassadorData();
-      }
+      console.log(`Combined ${combinedProfiles.length} ambassador profiles`);
       
-      // Use all users in the database as potential ambassadors
-      // This ensures we have data to show
-      const ambassadors = data.slice(0, limit).map(profile => {
+      // Convert to standard format
+      const ambassadors = combinedProfiles.map(profile => {
+        // Determine profile image
+        let avatarUrl = profile.avatar_url || profile.avatar || null;
+        if (!avatarUrl && profile.meta_data?.avatar_url) {
+          avatarUrl = profile.meta_data.avatar_url;
+        }
+        
+        // Determine name
+        let name = profile.full_name || '';
+        if (!name && profile.meta_data?.full_name) {
+          name = profile.meta_data.full_name;
+        }
+        if (!name) {
+          name = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
+        }
+        
+        // Convert specialties from string or array
+        let specialties = [];
+        if (profile.specialties) {
+          specialties = Array.isArray(profile.specialties) ? profile.specialties : [profile.specialties];
+        } else if (profile.specialty) {
+          specialties = [profile.specialty];
+        } else if (profile.speciality) {
+          specialties = [profile.speciality];
+        }
+        
+        // Get primary specialty
+        const specialty = profile.specialty || profile.speciality || 
+          (specialties.length > 0 ? specialties[0] : 'Mental Health Professional');
+        
+        // Get credentials
+        const credentials = profile.credentials || 
+          profile.meta_data?.credentials || 
+          'Mental Health Professional';
+        
         return {
-          id: profile.id || profile.user_id || 'ambassador-' + Math.random().toString(36).substring(2, 9),
-          name: profile.full_name || `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Ambassador',
-          specialty: profile.specialization || profile.specialty || 'Mental Health Professional',
-          avatar: profile.avatar_url || profile.avatar || '/assets/default-avatar.jpg',
-          bio: profile.bio || 'Experienced in providing mental health support.',
-          education: profile.education || 'Professional certification',
-          location: profile.location || 'Remote',
-          experience: profile.years_experience || profile.experience || 3,
-          languages: profile.languages || ['English'],
+          id: profile.id || profile.user_id || `ambassador-${Math.random().toString(36).substring(2, 10)}`,
+          name: name || 'Ambassador',
+          specialty: specialty,
+          avatar: avatarUrl || '/assets/default-avatar.jpg',
+          image: avatarUrl || '/assets/default-avatar.jpg',
+          bio: profile.bio || profile.meta_data?.bio || 'Experienced mental health professional',
+          credentials: credentials,
+          education: profile.education || profile.meta_data?.education || [],
+          location: profile.location || profile.meta_data?.location || 'Rwanda',
+          experience: profile.experience || profile.meta_data?.experience || [],
+          languages: profile.languages || profile.meta_data?.languages || ['English'],
           email: profile.email || '',
-          phone: profile.phone || '',
+          phone: profile.phone_number || profile.phone || '',
           rating: 4.7,
+          totalRatings: 12 + Math.floor(Math.random() * 15),
+          feedback: 12 + Math.floor(Math.random() * 15),
           reviews: 12 + Math.floor(Math.random() * 15),
-          available: true
+          isFree: profile.isFree !== undefined ? profile.isFree : true,
+          available: profile.availability_status === 'Available',
+          therapyTypes: profile.therapyTypes && Array.isArray(profile.therapyTypes) ? 
+            profile.therapyTypes.map(t => typeof t === 'object' ? t.name : t) : 
+            specialties,
+          satisfaction: 95
         };
       });
       
@@ -671,31 +857,105 @@ export const ambassadorService = {
   // Return mock and real data in the same format for consistency
   async getFormattedAmbassadorData(ambassadorId: string) {
     try {
-      // Try to get real ambassador data first
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', ambassadorId)
-        .single();
+      console.log(`Getting formatted ambassador data for ID: ${ambassadorId}`);
       
-      if (error || !data) {
-        console.log("Error getting ambassador data, using demo data:", error);
-        // Fallback to demo data with the requested ID
-        const demoData = await this.getDemoAmbassadorData();
+      // Try to get ambassador from both tables to ensure we have the most complete data
+      const [ambassadorProfileResult, profileResult] = await Promise.all([
+        supabase
+          .from('ambassador_profiles')
+          .select('*')
+          .eq('id', ambassadorId)
+          .single(),
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', ambassadorId)
+          .single()
+      ]);
+      
+      // If we have data from ambassador_profiles, use it as primary
+      if (!ambassadorProfileResult.error && ambassadorProfileResult.data) {
+        console.log("Found ambassador in ambassador_profiles table");
         
-        if (demoData.success && demoData.data && demoData.data.length > 0) {
-          const ambassador = {...demoData.data[0], id: ambassadorId};
-          return { success: true, data: this.formatAmbassadorProfile(ambassador) };
+        // If we also have data from profiles, merge them with ambassador_profiles taking precedence
+        if (!profileResult.error && profileResult.data) {
+          console.log("Also found in profiles table, merging data");
+          
+          const mergedData = {
+            ...profileResult.data,
+            ...ambassadorProfileResult.data
+          };
+          
+          return { 
+            success: true, 
+            data: this.formatAmbassadorProfile(mergedData),
+            completeness: await this.calculateProfileCompleteness(mergedData)
+          };
         }
         
-        return { success: false, error };
+        // Just use ambassador_profiles data
+        return { 
+          success: true, 
+          data: this.formatAmbassadorProfile(ambassadorProfileResult.data),
+          completeness: await this.calculateProfileCompleteness(ambassadorProfileResult.data)
+        };
       }
       
-      // Format real data to match the expected format in the profile page
+      // If no ambassador_profiles data but we have profiles data
+      if (!profileResult.error && profileResult.data) {
+        console.log("Found ambassador in profiles table only");
+        return { 
+          success: true, 
+          data: this.formatAmbassadorProfile(profileResult.data),
+          completeness: await this.calculateProfileCompleteness(profileResult.data)
+        };
+      }
+      
+      // If both queries failed, try to get user data from auth
+      console.log("Ambassador not found in database tables, trying auth");
+      try {
+        const { data: userData, error: userError } = await supabase.auth.admin.getUserById(ambassadorId);
+        
+        if (!userError && userData && userData.user) {
+          console.log("Found user in auth, using metadata");
+          
+          // Create profile from user metadata
+          const profile = {
+            id: ambassadorId,
+            full_name: userData.user.user_metadata?.full_name || '',
+            email: userData.user.email || '',
+            avatar_url: userData.user.user_metadata?.avatar_url || '',
+            bio: userData.user.user_metadata?.bio || '',
+            specialty: userData.user.user_metadata?.specialty || '',
+            role: userData.user.user_metadata?.role || '',
+            created_at: userData.user.created_at || new Date().toISOString()
+          };
+          
+          return { 
+            success: true, 
+            data: this.formatAmbassadorProfile(profile),
+            completeness: await this.calculateProfileCompleteness(profile)
+          };
+        }
+      } catch (authError) {
+        console.error("Error getting user from auth:", authError);
+      }
+      
+      // Fallback to demo data if all else fails
+      console.log("No ambassador data found, using demo data");
+      const demoData = await this.getDemoAmbassadorData();
+      
+      if (demoData.success && demoData.data && demoData.data.length > 0) {
+        const ambassador = {...demoData.data[0], id: ambassadorId};
+        return { 
+          success: true, 
+          data: this.formatAmbassadorProfile(ambassador)
+        };
+      }
+      
       return { 
-        success: true, 
-        data: this.formatAmbassadorProfile(data),
-        completeness: await this.calculateProfileCompleteness(data)
+        success: false, 
+        error: { message: "Ambassador not found" } 
       };
     } catch (error) {
       console.error("Error in getFormattedAmbassadorData:", error);
@@ -705,49 +965,195 @@ export const ambassadorService = {
   
   // Format ambassador data to match the expected profile format
   formatAmbassadorProfile(data: any) {
-    // Convert from database format to AmbassadorProfileData format
-    return {
-      id: data.id,
-      name: data.name || data.full_name || 'Ambassador',
-      credentials: data.credentials || 'Mental Health Professional',
-      specialty: data.specialty || data.specialization || 'Mental Health Support',
-      rating: data.rating || 4.5,
-      totalRatings: data.reviews || 10,
-      feedback: data.reviews || 10,
-      location: data.location || 'Remote',
-      isFree: true,
-      therapyTypes: data.therapyTypes || [
-        { name: "Individual Support", icon: "https://img.icons8.com/color/96/000000/user.png" },
-        { name: "Group Therapy", icon: "https://img.icons8.com/color/96/000000/conference-call.png" }
-      ],
-      image: data.avatar || data.avatar_url || "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80",
-      galleryImages: data.gallery || [
-        "https://images.unsplash.com/photo-1566492031773-4f4e44671857?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80",
-        "https://images.unsplash.com/photo-1531983412531-1f49a365ffed?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80"
-      ],
-      satisfaction: data.satisfaction || 95,
-      about: data.bio || 'Mental health professional dedicated to providing support and guidance.',
-      education: data.education ? 
-        (Array.isArray(data.education) ? data.education : JSON.parse(data.education)) :
-        [{ university: 'University', degree: 'Mental Health Professional', period: '2015 - 2020' }],
-      experience: data.experience ? 
-        (Array.isArray(data.experience) ? data.experience : JSON.parse(data.experience)) :
-        [{ company: 'Mental Health Support', period: '2020 - Present', duration: '(3 years)' }],
-      awards: data.awards ? 
-        (Array.isArray(data.awards) ? data.awards : JSON.parse(data.awards)) : 
-        [{ date: '2020', title: 'Mental Health Support', description: 'Recognition for excellence in mental health support' }],
-      services: data.services ? 
-        (Array.isArray(data.services) ? data.services : data.services.split(',')) : 
-        ['Individual Support', 'Crisis Intervention', 'Emotional Guidance'],
-      specializations: data.specializations ? 
-        (Array.isArray(data.specializations) ? data.specializations : data.specializations.split(',')) : 
-        ['Stress Management', 'Anxiety Support', 'Depression Support'],
-      phoneNumber: data.phone || '+123 456 7890',
-      availability: data.availability || [
-        { day: 'Monday', slots: ['10:00 AM', '2:00 PM'] },
-        { day: 'Wednesday', slots: ['11:00 AM', '3:00 PM'] },
-        { day: 'Friday', slots: ['9:00 AM', '1:00 PM'] }
-      ]
-    };
+    try {
+      // Process image and gallery images
+      const avatarUrl = data.avatar_url || data.avatar || '/assets/default-avatar.jpg';
+      let galleryImages = [];
+      
+      // Add gallery images if available
+      if (data.gallery_images && Array.isArray(data.gallery_images) && data.gallery_images.length > 0) {
+        galleryImages = data.gallery_images;
+      } else {
+        // Default gallery images if none available
+        galleryImages = [
+          "https://images.unsplash.com/photo-1566492031773-4f4e44671857?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80",
+          "https://images.unsplash.com/photo-1531983412531-1f49a365ffed?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80"
+        ];
+      }
+      
+      // Get name and credentials
+      const name = data.full_name || data.name || 'Ambassador';
+      const credentials = data.credentials || 'Mental Health Professional';
+      
+      // Process specialty and specialties
+      const specialty = data.specialty || data.speciality || 'Mental Health Professional';
+      
+      let specializations = [];
+      if (data.specialties && Array.isArray(data.specialties)) {
+        specializations = data.specialties;
+      } else if (data.specialties && typeof data.specialties === 'string') {
+        specializations = data.specialties.split(',').map(s => s.trim());
+      } else if (specialty) {
+        specializations = [specialty];
+      }
+      
+      // Get bio/about
+      const about = data.bio || 'Experienced mental health professional';
+      
+      // Process therapy types
+      let therapyTypes = [];
+      if (data.therapyTypes && Array.isArray(data.therapyTypes)) {
+        therapyTypes = data.therapyTypes.map(type => {
+          // Handle both string and object formats
+          if (typeof type === 'string') {
+            return { name: type, icon: "https://img.icons8.com/color/96/000000/brain.png" };
+          } else if (typeof type === 'object') {
+            return {
+              name: type.name || 'Therapy',
+              icon: type.icon || type.iconName || "https://img.icons8.com/color/96/000000/brain.png"
+            };
+          }
+          return { name: 'Therapy', icon: "https://img.icons8.com/color/96/000000/brain.png" };
+        });
+      } else if (specializations && specializations.length > 0) {
+        // Generate therapy types from specializations if not available
+        therapyTypes = specializations.map(spec => ({
+          name: spec,
+          icon: "https://img.icons8.com/color/96/000000/psychological-process.png"
+        }));
+      }
+      
+      // Process education
+      let education = [];
+      if (data.education) {
+        if (Array.isArray(data.education)) {
+          education = data.education;
+        } else if (typeof data.education === 'string') {
+          education = [{ 
+            university: data.education,
+            degree: 'Professional Certification',
+            period: 'N/A'
+          }];
+        } else if (typeof data.education === 'object') {
+          education = [data.education];
+        }
+      }
+      
+      // Process experience
+      let experience = [];
+      if (data.experience) {
+        if (Array.isArray(data.experience)) {
+          experience = data.experience;
+        } else if (typeof data.experience === 'number') {
+          experience = [{ 
+            company: 'Mental Health Professional',
+            period: `${data.experience} years`,
+            duration: `(${data.experience} years)`
+          }];
+        } else if (typeof data.experience === 'object') {
+          experience = [data.experience];
+        }
+      }
+      
+      // Process awards
+      let awards = [];
+      if (data.awards) {
+        if (Array.isArray(data.awards)) {
+          awards = data.awards;
+        } else if (typeof data.awards === 'object') {
+          awards = [data.awards];
+        }
+      }
+      
+      // Process services
+      let services = [];
+      if (data.services && Array.isArray(data.services)) {
+        services = data.services;
+      } else if (specializations && specializations.length > 0) {
+        // Generate services from specializations if not available
+        services = specializations.map(spec => `${spec} Support`);
+      }
+      
+      // Set isFree and phone number
+      const isFree = data.isFree !== undefined ? data.isFree : true;
+      const phoneNumber = data.phone_number || data.phone || '+250 788 123 456';
+      
+      // Ratings and feedback
+      const rating = data.rating || 4.5;
+      const totalRatings = data.reviews || data.totalRatings || 15;
+      const feedback = data.feedback || totalRatings;
+      const satisfaction = data.satisfaction || 95;
+      
+      // Location
+      const location = data.location || 'Rwanda';
+      
+      // Availability slots
+      const availability = data.availability && Array.isArray(data.availability) 
+        ? data.availability 
+        : [
+            {
+              day: "Monday",
+              slots: ["10:00 AM", "2:00 PM", "4:00 PM"]
+            },
+            {
+              day: "Wednesday",
+              slots: ["9:00 AM", "11:00 AM", "3:00 PM"]
+            },
+            {
+              day: "Friday",
+              slots: ["10:00 AM", "2:00 PM"]
+            }
+          ];
+          
+      return {
+        id: data.id,
+        name,
+        credentials,
+        specialty,
+        rating,
+        totalRatings,
+        feedback,
+        location,
+        isFree,
+        therapyTypes,
+        image: avatarUrl,
+        galleryImages,
+        satisfaction,
+        about,
+        education,
+        experience,
+        awards,
+        services,
+        specializations,
+        phoneNumber,
+        availability
+      };
+    } catch (error) {
+      console.error("Error formatting ambassador profile:", error);
+      // Return basic profile with essential fields
+      return {
+        id: data.id,
+        name: data.full_name || data.name || 'Ambassador',
+        credentials: 'Mental Health Professional',
+        specialty: data.specialty || data.speciality || 'Mental Health Support',
+        rating: 4.5,
+        totalRatings: 10,
+        feedback: 10,
+        location: 'Rwanda',
+        isFree: true,
+        therapyTypes: [{ name: 'Therapy', icon: "https://img.icons8.com/color/96/000000/brain.png" }],
+        image: data.avatar_url || data.avatar || '/assets/default-avatar.jpg',
+        galleryImages: [],
+        satisfaction: 95,
+        about: data.bio || 'Experienced mental health professional',
+        education: [],
+        experience: [],
+        awards: [],
+        services: ['Mental Health Support'],
+        specializations: ['Mental Health'],
+        phoneNumber: data.phone_number || data.phone || '+250 788 123 456',
+        availability: []
+      };
+    }
   },
 }; 

@@ -102,23 +102,46 @@ export const profileService = {
   async getAmbassadorProfile(userId: string) {
     try {
       // Ensure schema first
-      await this.ensureAmbassadorProfileSchema();
-
-      const { data, error } = await supabase
-        .from('ambassador_profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching ambassador profile:', error);
-        return { data: null, error };
+      const schemaResult = await this.ensureAmbassadorProfileSchema();
+      if (!schemaResult.success) {
+        console.error('Failed to ensure ambassador profile schema:', schemaResult.error);
       }
 
-      return { data, error: null };
+      try {
+        const { data, error } = await supabase
+          .from('ambassador_profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+
+        if (error) {
+          console.error('Error fetching ambassador profile:', {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint
+          });
+          return { data: null, error };
+        }
+
+        return { data, error: null };
+      } catch (fetchError) {
+        console.error('Exception fetching ambassador profile:', fetchError);
+        return { 
+          data: null, 
+          error: fetchError instanceof Error 
+            ? { message: fetchError.message, code: 'FETCH_ERROR' } 
+            : { message: 'Unknown error', code: 'UNKNOWN' }
+        };
+      }
     } catch (err) {
-      console.error('Exception fetching ambassador profile:', err);
-      return { data: null, error: err };
+      console.error('Top-level exception in getAmbassadorProfile:', err);
+      return { 
+        data: null, 
+        error: err instanceof Error 
+          ? { message: err.message, code: 'GENERAL_ERROR' } 
+          : { message: 'Unknown error', code: 'UNKNOWN' }
+      };
     }
   },
 
