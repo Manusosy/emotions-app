@@ -147,25 +147,51 @@ const DashboardMoodAssessment = () => {
     const saveMoodEntry = async () => {
       if (isAuthenticated && user && showResults && !resultSaved) {
         try {
+          console.log("Attempting to save mood entry...", { 
+            userId: user.id, 
+            emotion: selectedEmotion, 
+            score: score 
+          });
+          
           const moodScore = getMoodScore(selectedEmotion, score);
           const moodResult = getMoodResult(selectedEmotion);
           
-          const { error } = await supabase
-            .from("mood_entries")
-            .insert({
-              user_id: user.id,
-              mood_score: moodScore,
-              assessment_result: moodResult,
-              notes: `Assessment score: ${score}, Selected emotion: ${selectedEmotion}`
-            });
-
-          if (error) throw error;
+          // Add retry logic for better resilience
+          let retryCount = 0;
+          let saveSuccessful = false;
+          
+          while (retryCount < 3 && !saveSuccessful) {
+            try {
+              const { data, error } = await supabase
+                .from("mood_entries")
+                .insert({
+                  user_id: user.id,
+                  mood_score: moodScore,
+                  assessment_result: moodResult,
+                  notes: `Assessment score: ${score}, Selected emotion: ${selectedEmotion}`
+                })
+                .select();
+              
+              if (error) {
+                console.error(`Error saving mood entry (attempt ${retryCount + 1}):`, error);
+                throw error;
+              }
+              
+              console.log("Mood entry saved successfully:", data);
+              saveSuccessful = true;
+            } catch (innerError) {
+              retryCount++;
+              if (retryCount >= 3) throw innerError;
+              // Wait before retry
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+          }
           
           setResultSaved(true);
           toast.success("Mood assessment saved");
         } catch (error) {
           console.error("Error saving mood entry:", error);
-          toast.error("Failed to save assessment");
+          toast.error("Failed to save assessment. Please try again.");
         }
       }
     };

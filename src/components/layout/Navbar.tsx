@@ -3,11 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Menu, X, LogOut, LayoutDashboard } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
+import { toast } from 'sonner';
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [localAuthState, setLocalAuthState] = useState({ isAuthenticated: false, userRole: null });
-  const { isAuthenticated, userRole, logout: signout, getDashboardUrlForRole } = useAuth();
+  const { isAuthenticated, userRole, signout, getDashboardUrlForRole } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -50,12 +51,53 @@ export default function Navbar() {
   const handleSignout = async () => {
     try {
       setIsMobileMenuOpen(false);
-      console.log("Starting signout...");
+      console.log("Starting signout from navbar...");
+      
+      // Show feedback to user
+      toast.loading("Signing out...");
+      
+      // Prevent multiple clicks - desktop button
+      const signoutButton = document.getElementById('signout-button');
+      if (signoutButton) {
+        signoutButton.setAttribute('disabled', 'true');
+        signoutButton.textContent = 'Signing out...';
+      }
+      
+      // Prevent multiple clicks - mobile button
+      const mobileSignoutButton = document.getElementById('signout-button-mobile');
+      if (mobileSignoutButton) {
+        mobileSignoutButton.setAttribute('disabled', 'true');
+        const textSpan = mobileSignoutButton.querySelector('span');
+        if (textSpan) {
+          textSpan.textContent = 'Signing out...';
+        }
+      }
       
       await signout();
-      // After signout, let the auth state handle the redirect
+      
+      // The signout function in useAuth will handle the redirect
+      // This code may not run if the page redirects quickly
+      toast.success("Signed out successfully");
     } catch (error) {
       console.error("Signout failed:", error);
+      toast.error("Failed to sign out. Please try again.");
+      
+      // Re-enable desktop button on error
+      const signoutButton = document.getElementById('signout-button');
+      if (signoutButton) {
+        signoutButton.removeAttribute('disabled');
+        signoutButton.textContent = 'Signout';
+      }
+      
+      // Re-enable mobile button on error
+      const mobileSignoutButton = document.getElementById('signout-button-mobile');
+      if (mobileSignoutButton) {
+        mobileSignoutButton.removeAttribute('disabled');
+        const textSpan = mobileSignoutButton.querySelector('span');
+        if (textSpan) {
+          textSpan.textContent = 'Signout';
+        }
+      }
     }
   };
 
@@ -131,6 +173,7 @@ export default function Navbar() {
                   </Button>
                 </Link>
                 <Button 
+                  id="signout-button"
                   variant="ghost" 
                   onClick={handleSignout}
                   className="text-white hover:bg-[#fda802] rounded-full px-6 font-medium transition-all"
@@ -178,6 +221,7 @@ export default function Navbar() {
                   </Button>
                 </a>
                 <Button 
+                  id="signout-button-mobile"
                   variant="ghost" 
                   size="sm"
                   onClick={handleSignout}

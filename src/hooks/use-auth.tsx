@@ -272,26 +272,39 @@ export const useAuth = () => {
     setIsAuthenticating(true);
     
     try {
-      const { error } = await authService.signOut();
-      if (error) {
-        console.error("Error during sign out:", error.message);
-        throw error;
-      }
+      // First clear local storage to ensure we don't get stuck in authentication
+      localStorage.removeItem('auth_state');
       
-      // Explicitly reset auth state after successful sign-out
+      // Manually reset auth state before API call to prevent UI flashes
       setUser(null);
       setIsAuthenticated(false);
       setUserRole(null);
       
-      // Clear stored authentication state
-      localStorage.removeItem('auth_state');
+      // Then perform API signout
+      const { error } = await authService.signOut();
+      if (error) {
+        console.error("Error during sign out:", error.message);
+        // Even with error, we've already cleared local state, so user is effectively signed out
+        console.log("Auth state and local storage cleared despite API error");
+      }
       
-      // Let the component handle redirects
+      // Force a redirect to home page
+      console.log("Redirecting to home page after signout");
+      setTimeout(() => window.location.href = '/', 100);
+      
       return;
     } catch (error: any) {
       console.error('Signout error:', error);
       toast.error('Failed to sign out: ' + (error.message || 'Unknown error'));
-      throw error; 
+      
+      // Even if there's an error, ensure user is signed out locally
+      localStorage.removeItem('auth_state');
+      setUser(null);
+      setIsAuthenticated(false);
+      setUserRole(null);
+      
+      // Force a redirect to home page
+      setTimeout(() => window.location.href = '/', 100);
     } finally {
       if (isMountedRef.current) {
         setIsAuthenticating(false);
